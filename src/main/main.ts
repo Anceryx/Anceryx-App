@@ -1,0 +1,367 @@
+import { app, BrowserWindow, ipcMain, net, protocol, safeStorage, shell } from 'electron'
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
+import { isAbsolute, join, relative, resolve } from 'path'
+import { pathToFileURL } from 'url'
+import type { LicenseManifest } from '../shared/licenseTypes'
+import { UpdateManager } from './updater/updateManager'
+import { registerUpdateIpc } from './updater/updateIpc'
+
+// ── Protocolos permitidos para links externos ─────────────────────────────────
+const SAFE_EXTERNAL_PROTOCOLS = new Set(['https:'])
+const RENDERER_SCHEME = 'app'
+const RENDERER_HOST = 'anceryx'
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: RENDERER_SCHEME,
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true },
+}])
+const DEFAULT_WINDOW_STATE = {
+  width: 1280,
+  height: 700,
+  minWidth: 1024,
+  minHeight: 640,
+}
+
+const OAUTH_SCHEME = 'anceryx'
+app.setName('Anceryx')
+
+const updateManager = new UpdateManager()
+registerUpdateIpc(updateManager)
+
+const OAUTH_HOST = 'oauth'
+let mainWindow: BrowserWindow | null = null
+let pendingGoogleHandoff: { code?: string; error?: string } | null = null
+let pendingCommunityInvite: string | null = null
+
+if (!app.requestSingleInstanceLock()) app.quit()
+else app.setAsDefaultProtocolClient(OAUTH_SCHEME)
+
+function handleAppProtocolUrl(rawUrl: string): void {
+  try {
+    const parsed = new URL(rawUrl)
+    if (parsed.protocol !== `${OAUTH_SCHEME}:`) return
+    if (parsed.hostname === 'invite' && !parsed.port && !parsed.username && !parsed.password && !parsed.search && !parsed.hash) {
+      const token = parsed.pathname.slice(1)
+      if (!/^[A-Za-z0-9_-]{24,128}$/.test(token)) return
+      pendingCommunityInvite = token
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const target = mainWindow
+        const deliver = () => {
+          if (!pendingCommunityInvite || target.isDestroyed()) return
+          target.webContents.send('community:invite', pendingCommunityInvite)
+          pendingCommunityInvite = null
+        }
+        if (target.webContents.isLoading()) target.webContents.once('did-finish-load', deliver)
+        else deliver()
+      }
+      return
+    }
+    if (parsed.hostname !== OAUTH_HOST || parsed.pathname !== '/google') return
+    const code = parsed.searchParams.get('code')
+    const error = parsed.searchParams.get('error')
+    if ((code && !/^[A-Za-z0-9_-]{32,512}$/.test(code)) || (error && !/^[A-Za-z0-9_-]{3,64}$/.test(error))) return
+    const payload = code ? { code } : { error: error ?? 'oauth_failed' }
+    pendingGoogleHandoff = payload
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const target = mainWindow
+      const deliver = () => {
+        if (!pendingGoogleHandoff || target.isDestroyed()) return
+        target.webContents.send('auth:google-handoff', pendingGoogleHandoff)
+        pendingGoogleHandoff = null
+      }
+      if (target.webContents.isLoading()) target.webContents.once('did-finish-load', deliver)
+      else deliver()
+    }
+  } catch {
+    // Ignore malformed custom-protocol URLs.
+  }
+}
+
+app.on('second-instance', (_event, commandLine) => {
+  const callbackUrl = commandLine.find((argument) => argument.startsWith(`${OAUTH_SCHEME}://`))
+  if (callbackUrl) handleAppProtocolUrl(callbackUrl)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.focus()
+  }
+})
+app.on('open-url', (event, url) => { event.preventDefault(); handleAppProtocolUrl(url) })
+
+interface WindowState {
+  width: number
+  height: number
+  x?: number
+  y?: number
+  isMaximized?: boolean
+}
+
+function getWindowStatePath(): string {
+  return join(app.getPath('userData'), 'window-state.json')
+}
+
+function getRefreshTokenPath(): string {
+  return join(app.getPath('userData'), 'auth-session.bin')
+}
+
+function resolveRendererAsset(requestUrl: string): string | null {
+  const url = new URL(requestUrl)
+  if (url.hostname !== RENDERER_HOST) return null
+  const root = resolve(__dirname, '../renderer')
+  const requested = decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html'
+  const target = resolve(root, requested)
+  const rel = relative(root, target)
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null
+  return target
+}
+
+ipcMain.handle('auth:refresh-token:get', () => {
+  try {
+    const tokenPath = getRefreshTokenPath()
+    if (!safeStorage.isEncryptionAvailable() || !existsSync(tokenPath)) return null
+    return safeStorage.decryptString(readFileSync(tokenPath))
+  } catch {
+    return null
+  }
+})
+ipcMain.handle('auth:refresh-token:set', (_event, token: unknown) => {
+  if (typeof token !== 'string' || token.length < 32 || !safeStorage.isEncryptionAvailable()) return false
+  writeFileSync(getRefreshTokenPath(), safeStorage.encryptString(token))
+  return true
+})
+ipcMain.handle('auth:refresh-token:clear', () => {
+  const tokenPath = getRefreshTokenPath()
+  if (existsSync(tokenPath)) unlinkSync(tokenPath)
+  return true
+})
+
+function loadWindowState(): WindowState {
+  const fallback: WindowState = {
+    width: DEFAULT_WINDOW_STATE.width,
+    height: DEFAULT_WINDOW_STATE.height,
+  }
+
+  try {
+    const statePath = getWindowStatePath()
+    if (!existsSync(statePath)) return fallback
+
+    const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as Partial<WindowState>
+    if (
+      typeof parsed.width !== 'number' ||
+      typeof parsed.height !== 'number' ||
+      parsed.width < DEFAULT_WINDOW_STATE.minWidth ||
+      parsed.height < DEFAULT_WINDOW_STATE.minHeight
+    ) {
+      return fallback
+    }
+
+    return {
+      width: parsed.width,
+      height: parsed.height,
+      x: typeof parsed.x === 'number' ? parsed.x : undefined,
+      y: typeof parsed.y === 'number' ? parsed.y : undefined,
+      isMaximized: parsed.isMaximized === true,
+    }
+  } catch {
+    return fallback
+  }
+}
+
+function saveWindowState(win: BrowserWindow): void {
+  try {
+    const bounds = win.getBounds()
+    const state: WindowState = {
+      width: bounds.width,
+      height: bounds.height,
+      x: bounds.x,
+      y: bounds.y,
+      isMaximized: win.isMaximized(),
+    }
+    writeFileSync(getWindowStatePath(), JSON.stringify(state, null, 2), 'utf8')
+  } catch (error) {
+    console.warn('[main] Nao foi possivel salvar estado da janela:', error)
+  }
+}
+
+function createWindow(): void {
+  const windowState = loadWindowState()
+  const win = new BrowserWindow({
+    title: 'Anceryx',
+    width: windowState.width,
+    height: windowState.height,
+    x: windowState.x,
+    y: windowState.y,
+    minWidth: DEFAULT_WINDOW_STATE.minWidth,
+    minHeight: DEFAULT_WINDOW_STATE.minHeight,
+    resizable: true,
+    maximizable: true,
+    minimizable: true,
+    closable: true,
+    frame: false,
+    icon: join(__dirname, '../../resources/icon.png'),
+    webPreferences: {
+      contextIsolation: true,       // renderer não acessa APIs Node diretamente
+      nodeIntegration: false,       // Node.js desabilitado no renderer
+      sandbox: true,                // processo renderer isolado em sandbox
+      preload: join(__dirname, '../preload/preload.js'),
+      // Desabilita WebSecurity apenas em dev com Vite (hot-reload exige)
+      webSecurity: !process.env['ELECTRON_RENDERER_URL'],
+      allowRunningInsecureContent: false,
+      // Desabilita APIs deprecadas e perigosas
+      experimentalFeatures: false,
+    }
+  })
+  mainWindow = win
+
+  if (windowState.isMaximized) {
+    win.maximize()
+  }
+
+  // ── Content Security Policy ───────────────────────────────────────────────
+  // Bloqueia eval, inline scripts não autorizados e fontes externas não listadas.
+  // Em DEV: relaxa script-src para permitir hot-reload do Vite.
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    const isDev = !!process.env['ELECTRON_RENDERER_URL']
+    const scriptSrc = isDev
+      ? "'self' 'unsafe-inline' 'unsafe-eval'"   // necessário apenas para Vite HMR
+      : "'self'"
+
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          [
+            `default-src 'self'`,
+            `script-src ${scriptSrc}`,
+            `style-src 'self' 'unsafe-inline'`,  // Tailwind injeta estilos inline
+            `img-src 'self' data: blob: https:${isDev ? ' http://localhost:3000' : ''}`,
+            `font-src 'self' data:`,
+            `connect-src 'self' https: wss:${isDev ? ' http://localhost:3000 ws://localhost:3000' : ''}`,
+            `media-src 'self' blob:`,
+            `object-src 'none'`,
+            `base-uri 'self'`,
+            `form-action 'self'`,
+            `frame-ancestors 'none'`,
+          ].join('; ')
+        ]
+      }
+    })
+  })
+
+  // ── Bloquear navegação arbitrária ─────────────────────────────────────────
+  // Impede que conteúdo da página redirecione a janela para URLs externas.
+  win.webContents.on('will-navigate', (event, url) => {
+    const parsed = new URL(url)
+    const isLocalDev  = url.startsWith(process.env['ELECTRON_RENDERER_URL'] ?? '__never__')
+    const isLocalFile = parsed.protocol === 'file:'
+
+    if (!isLocalDev && !isLocalFile) {
+      event.preventDefault()
+      console.warn('[main] Navegação bloqueada:', url)
+    }
+  })
+
+  // ── Impedir abertura de novas janelas não autorizadas ──────────────────────
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const parsed = new URL(url)
+      if (SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol)) {
+        // Abre links HTTPS externos no browser padrão do SO, nunca em nova BrowserWindow
+        void shell.openExternal(url)
+      } else {
+        console.warn('[main] window.open bloqueado para protocolo inseguro:', parsed.protocol)
+      }
+    } catch {
+      console.warn('[main] window.open bloqueado para URL inválida:', url)
+    }
+    // Sempre retorna deny — nunca cria uma nova BrowserWindow a partir do renderer
+    return { action: 'deny' }
+  })
+
+  // ── Carregar a aplicação ───────────────────────────────────────────────────
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    void win.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  } else {
+    void win.loadURL('app://anceryx/index.html')
+  }
+
+  win.webContents.once('did-finish-load', () => {
+    if (pendingGoogleHandoff) win.webContents.send('auth:google-handoff', pendingGoogleHandoff)
+    if (pendingCommunityInvite) { win.webContents.send('community:invite', pendingCommunityInvite); pendingCommunityInvite = null }
+    pendingGoogleHandoff = null
+  })
+
+  // ── IPC: controles de janela ──────────────────────────────────────────────
+  // Apenas os três canais mínimos necessários são registrados.
+  // Nenhum canal expõe APIs arbitrárias do Node ou do sistema.
+  ipcMain.on('win:minimize', (_event) => { win.minimize() })
+  ipcMain.on('win:maximize', (_event) => {
+    if (win.isMaximized()) { win.unmaximize() } else { win.maximize() }
+  })
+  ipcMain.on('win:close',    (_event) => { win.close() })
+  ipcMain.handle('win:isMaximized', () => win.isMaximized())
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+  ipcMain.handle('licenses:get-manifest', (): LicenseManifest => {
+    const licensePath = join(__dirname, '../licenses/licenses.json')
+    if (!existsSync(licensePath)) return { generatedAt: '', source: 'package-lock.json', records: [], warnings: [], legalNotes: ['O inventário de licenças será gerado durante o build.'] }
+    return JSON.parse(readFileSync(licensePath, 'utf8')) as LicenseManifest
+  })
+  updateManager.start()
+
+  win.on('maximize', () => {
+    win.webContents.send('win:maximized-change', true)
+  })
+  win.on('unmaximize', () => {
+    win.webContents.send('win:maximized-change', false)
+  })
+  win.on('close', () => {
+    saveWindowState(win)
+  })
+
+  ipcMain.on('shell:openExternal', (_event, url: string) => {
+    try {
+      const parsed = new URL(url)
+      if (
+        SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol) &&
+        ['www.anceryx.site', 'checkout.stripe.com', 'billing.stripe.com', 'accounts.google.com'].includes(parsed.hostname)
+      ) {
+        void shell.openExternal(url)
+      }
+    } catch {
+      console.warn('[main] shell:openExternal bloqueado para URL inválida:', url)
+    }
+  })
+}
+
+app.whenReady().then(() => {
+  protocol.handle(RENDERER_SCHEME, async (request) => {
+    try {
+      const asset = resolveRendererAsset(request.url)
+      if (!asset) return new Response('Not found', { status: 404 })
+      return net.fetch(pathToFileURL(asset).toString())
+    } catch {
+      return new Response('Not found', { status: 404 })
+    }
+  })
+  // Desativa o menu padrão do Electron (evita acesso a DevTools em produção)
+  if (!process.env['ELECTRON_RENDERER_URL']) {
+    app.applicationMenu = null
+  }
+
+  const initialProtocolUrl = process.argv.find((argument) => argument.startsWith(`${OAUTH_SCHEME}://`))
+  if (initialProtocolUrl) handleAppProtocolUrl(initialProtocolUrl)
+  createWindow()
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
+  })
+})
+
+app.on('will-quit', () => updateManager.stop())
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})

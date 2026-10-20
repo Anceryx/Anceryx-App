@@ -1,0 +1,68 @@
+name: Windows release artifacts
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout approved tag or branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install Electron runtime for Windows security checks
+        run: node node_modules/electron/install.js
+
+      - name: Validate root
+        run: |
+          npm run typecheck
+          npm run build
+          npm run audit:licenses
+          npm run test:license-audit
+          npm run test:update-security
+          npm run test:connection-config
+          npm run test:encoding
+          npm audit --omit=dev --audit-level=moderate
+
+      - name: Run Windows and release security checks
+        shell: pwsh
+        run: |
+          npm run test:electron-safe-storage
+
+      - name: Build Windows NSIS without publishing
+        run: npm run electron:build -- --publish never
+
+      - name: Upload review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: anceryx-windows-${{ github.ref_name }}
+          retention-days: 3
+          # Metadata/blockmaps are optional until an approved publish/feed
+          # configuration is supplied; never turn a review build into a
+          # publication requirement.
+          if-no-files-found: warn
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/*.yml
+
+# This workflow only creates review artifacts. It never creates a GitHub
+# Release or uploads to the future update server. Publication must be a
+# separate, manually approved workflow/job using a protected GitHub
+# Environment and organization-managed signing/update credentials.

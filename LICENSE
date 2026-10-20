@@ -1,0 +1,51 @@
+ANCERYX SOURCE-AVAILABLE LICENSE 1.0
+
+Copyright (c) 2026 Anceryx. All rights reserved.
+
+This license applies only to the Anceryx client code in this repository (the “Software”). It does not grant rights to Anceryx brand or artwork assets, third-party materials governed by their own licenses, the Anceryx API, backend source code, databases, infrastructure, hosted services, or administrative systems, whether or not they are referenced by the Software.
+
+1. Definitions
+
+“Anceryx” means the copyright holder identified above.
+
+“Study” means non-commercial personal learning, inspection, evaluation, testing, or preparation of a contribution to the official Anceryx client repository.
+
+“Official repository” means the repository published by Anceryx for the Anceryx client, including its successor repository.
+
+2. Limited permission
+
+Subject to this license, Anceryx grants you a worldwide, non-exclusive, non-transferable license to view, download, reproduce, and modify the Software solely for Study. You may create and share source-code forks on GitHub solely for Study and contribution to the official project, provided that each fork retains this license and all applicable copyright and third-party notices, clearly identifies itself as an unofficial fork, and does not offer or promote a competing Anceryx product or service.
+
+You may submit changes to the official repository through issues or pull requests under the contribution terms in CONTRIBUTING.md. This license does not grant rights beyond the limited permissions stated here.
+
+3. Restrictions
+
+Except for the limited permissions in Section 2 or separate prior written permission from Anceryx, you may not:
+
+- use the Software or a modified version for commercial purposes, including offering it for a fee, monetizing it, or operating it as a service;
+- distribute, publish, sell, sublicense, or provide copies of the Software or a modified version outside the GitHub source-fork and contribution activity expressly allowed above;
+- distribute or make available an executable, installer, hosted application, or other product based on the Software;
+- use the Software to create, market, or operate a competing product or service;
+- remove copyright, license, or third-party notices, misrepresent authorship, or imply that Anceryx endorses an unofficial fork.
+
+4. Trademarks and other rights
+
+No trademark, service-mark, trade-name, logo, mascot, artwork, visual identity, domain-name, or other branding rights are granted by this license. The Anceryx name and marks, including Kaoli and related artwork, may not be used to identify, market, or endorse an unofficial product without separate written permission. Third-party assets and dependencies remain subject to their own notices and license terms.
+
+5. No rights in private services
+
+This license grants no access to or rights in the private Anceryx API, backend, database, infrastructure, billing systems, deployment configuration, administrative tools, credentials, or hosted services. The Software's references to or integration with an official service do not grant permission to access that service or bypass its terms and controls.
+
+6. Termination
+
+The permissions in this license terminate automatically if you materially violate its terms. Upon termination, stop using and distributing the Software and its modified versions. Sections concerning ownership, restrictions on unauthorized use, disclaimers, and liability survive to the extent permitted by law.
+
+7. Disclaimer and limitation
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT, TO THE MAXIMUM EXTENT PERMITTED BY LAW. TO THE MAXIMUM EXTENT PERMITTED BY LAW, ANCERYX SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES ARISING FROM THIS LICENSE OR THE SOFTWARE.
+
+8. Other terms
+
+This license does not transfer ownership of the Software. If any provision is unenforceable, it will be limited only to the extent necessary, and the remaining provisions will continue to apply. Any permission beyond this license must be granted in a separate written agreement by Anceryx.
+
+This is a custom source-available license, not an OSI-approved open-source license. It is provided as the project's intended terms and should receive qualified legal review before public release. It is not legal advice.

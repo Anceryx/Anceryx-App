@@ -1,0 +1,36 @@
+name: License compliance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: License audit (separate from npm audit)
+        run: npm run audit:licenses
+      - name: Security audit
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Preserve notices and generated center
+        run: |
+          test -s docs/legal/third-party-notices.md
+          npm run build
+          test -s out/licenses/licenses.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-audit-report
+          retention-days: 3
+          path: artifacts/license-audit.json

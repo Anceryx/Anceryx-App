@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, isSafeUpdateInfo, releaseNotesToLines, resolveUpdateChannel } from '../src/main/updater/updateUtils.ts'
+
+assert.equal(UPDATE_GITHUB_OWNER, 'Anceryx')
+assert.equal(UPDATE_GITHUB_REPOSITORY, 'Anceryx-App')
+assert.equal(resolveUpdateChannel('beta', false), 'stable')
+assert.equal(resolveUpdateChannel('beta', true, '0.15.0'), 'stable')
+assert.equal(resolveUpdateChannel(undefined, false, '0.15.1-beta.1'), 'beta')
+assert.equal(resolveUpdateChannel(undefined, false, '0.13.0-alpha.1'), 'stable')
+assert.equal(resolveUpdateChannel(undefined, false, '0.12.0'), 'stable')
+assert.equal(resolveUpdateChannel(undefined, false, '0.14.4'), 'stable')
+assert.deepEqual(releaseNotesToLines('<b>Fixed</b>\n<script>bad()</script>'), ['Fixed', 'bad()'])
+assert.equal(releaseNotesToLines('x'.repeat(500))[0].length, 240)
+
+const digest = Buffer.alloc(64, 7).toString('base64')
+const update = (version, filename = `Anceryx-Setup-${version}.exe`, size = 1234, sha512 = digest) => ({
+  version,
+  files: [{ url: filename, size, sha512 }],
+})
+assert.equal(isSafeUpdateInfo(update('0.15.1'), '0.15.0', 'stable'), true)
+assert.equal(isSafeUpdateInfo(update('0.15.1-beta.1'), '0.15.0-beta.1', 'beta'), true)
+assert.equal(isSafeUpdateInfo(update('0.16.0'), '0.15.0-beta.1', 'beta'), true)
+assert.equal(isSafeUpdateInfo(update('0.15.0'), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('0.14.9'), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('bad'), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1-beta.1'), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1-alpha.1'), '0.15.0-beta.1', 'beta'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1-beta.preview'), '0.15.0-beta.1', 'beta'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1', 'other.exe'), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1', undefined, 0), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1', undefined, 1234, 'not-base64'), '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo({ version: '0.15.1', files: [] }, '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(null, '0.15.0', 'stable'), false)
+assert.equal(isSafeUpdateInfo(update('0.15.1-beta.01'), '0.15.0-beta.1', 'beta'), false)
+assert.equal(releaseNotesToLines('<img src=x onerror=alert(1)>').join('').includes('<'), false)
+assert.equal(releaseNotesToLines(Array.from({ length: 20 }, (_, i) => ({ note: String(i) }))).length, 12)
+
+const manager = readFileSync(new URL('../src/main/updater/updateManager.ts', import.meta.url), 'utf8')
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+assert.match(manager, /autoUpdater\.autoDownload = false/)
+assert.match(manager, /autoUpdater\.autoInstallOnAppQuit = false/)
+assert.match(manager, /this\.channel === 'beta' \? 'beta' : 'latest'/)
+assert.match(manager, /autoUpdater\.allowDowngrade = false/)
+assert.match(manager, /this\.snapshot\.state !== 'available'/)
+assert.match(manager, /this\.snapshot\.state !== 'downloaded'/)
+assert.match(manager, /autoUpdater\.quitAndInstall\(false, true\)/)
+assert.equal(packageJson.scripts['electron:build'].includes('--publish never'), true)
+assert.equal(/process\.env\[['"](?:GH_TOKEN|GITHUB_TOKEN|ANCERYX_UPDATE_TOKEN)/.test(manager), false)
+console.log('update security smoke: PASS (policy, manifests, consent gates, bounded notes, no publication token)')

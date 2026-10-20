@@ -1,0 +1,92 @@
+<p align="center">
+  <img src=".github/assets/anceryx-banner.png" alt="Anceryx" width="100%" />
+</p>
+
+🇧🇷 **Português (Brasil)** | [🇺🇸 English](README.en.md)
+
+# Anceryx
+
+Uma plataforma social em desenvolvimento, reunindo experiências de comunidade em um aplicativo para desktop.
+
+## Sobre o projeto
+
+Este repositório contém o aplicativo cliente da Anceryx, desenvolvido com Electron, React e TypeScript. Ele oferece uma interface desktop para interações sociais e comunidades. A disponibilidade de cada recurso depende da versão do cliente e dos serviços oficiais em operação.
+
+## Funcionalidades
+
+- Feed social, Explorar e perfis
+- Mensagens diretas e interfaces de chamadas
+- Fóruns e espaços de comunidade
+- Temas, experiências premium, insígnias e conquistas
+- Aplicativo desktop construído com Electron
+
+Essas áreas fazem parte do produto em desenvolvimento. A lista não significa que todos os recursos estejam disponíveis em todos os ambientes.
+
+## Tecnologias
+
+- Electron
+- React e TypeScript
+- Vite com electron-vite
+- Integração HTTP e WebSocket com a API oficial da Anceryx
+
+## Estrutura do repositório
+
+| Diretório | Conteúdo |
+| --- | --- |
+| `src/main/` | Processo principal do Electron, janelas e integração desktop |
+| `src/preload/` | Ponte controlada entre o Electron e a interface |
+| `src/renderer/` | Interface do aplicativo em React |
+| `src/shared/` | Tipos e contratos compartilhados pelo cliente |
+| `resources/` | Recursos usados no empacotamento do aplicativo |
+| `scripts/` | Verificações e utilitários de desenvolvimento |
+| `docs/` | Documentação do cliente, licenças e distribuição |
+
+A API, o banco de dados e a infraestrutura de produção não fazem parte deste repositório. Eles permanecem privados e são operados separadamente.
+
+## Situação do desenvolvimento
+
+A Anceryx está em desenvolvimento ativo. O código deste repositório corresponde ao cliente; ele não comprova que cada funcionalidade esteja concluída, disponível publicamente ou pronta para produção.
+
+## Executar localmente
+
+Requisitos: Node.js 22 e npm.
+
+```sh
+npm ci
+npm run dev
+```
+
+Durante o desenvolvimento, o cliente usa `http://localhost:3000` por padrão. O arquivo `.env.example` aponta para a API oficial. Defina `VITE_ANCERYX_API_URL` conforme o ambiente desejado; nunca coloque segredos em variáveis `VITE_*`. O repositório privado da API não é necessário para instalar ou compilar o cliente.
+
+Verificações úteis:
+
+```sh
+npm run typecheck
+npm run build
+npm run test:api-config
+npm run test:connection-config
+npm run test:update-security
+npm run test:encoding
+```
+
+## Instalação e atualizações
+
+O repositório está em preparação para distribuição; não há instalador oficial publicado por este fluxo neste momento. Consulte [instalação e atualizações do Windows](docs/INSTALLATION.md). Builds de revisão não são Releases. A versão `0.15.0` existente ainda aponta para o feed antigo e precisará de uma instalação manual da primeira versão publicada em `Anceryx/Anceryx-App`; a instalação NSIS será validada para preservar os dados locais antes dessa transição.
+
+## Contribuições
+
+Contribuições por Issues e Pull Requests são bem-vindas. Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer o processo, os padrões de qualidade e os termos aplicáveis às contribuições. Ao atualizar este README, atualize também o [README em inglês](README.en.md) na mesma alteração.
+
+## Segurança
+
+Para relatar uma vulnerabilidade, siga as orientações de divulgação responsável em [SECURITY.md](SECURITY.md). Este repositório cobre o cliente; a API e a infraestrutura privada têm escopo separado.
+
+## Licença e propriedade
+
+O código do cliente é disponibilizado sob uma licença personalizada *source-available*. Ele pode ser estudado e usado para preparar contribuições nos limites da [LICENSE](LICENSE). Não há autorização geral para uso comercial nem para redistribuir versões próprias do aplicativo ou seus binários. A API e a infraestrutura de produção permanecem privadas. A marca Anceryx, o mascote Kaoli e os demais elementos de identidade visual têm direitos reservados. Consulte também os [avisos de terceiros](docs/legal/third-party-notices.md) e as [notas sobre assets da marca](docs/brand/brand-assets.md).
+
+## Links oficiais
+
+- [Site da Anceryx](https://www.anceryx.site)
+- [Organização Anceryx no GitHub](https://github.com/Anceryx)
+- [Documentação do escopo deste repositório](docs/project/public-repository-scope.md)

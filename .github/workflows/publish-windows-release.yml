@@ -1,0 +1,153 @@
+name: Publish approved Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing reviewed tag to package (for example v0.15.1)
+        required: true
+        type: string
+      confirmation:
+        description: Type PUBLISH ANCERYX WINDOWS RELEASE
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-signed:
+    if: vars.ANCERYX_PUBLIC_RELEASE_ENABLED == 'true' && inputs.confirmation == 'PUBLISH ANCERYX WINDOWS RELEASE'
+    environment: windows-signing
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Require a public repository and signing configuration
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISHER: ${{ vars.ANCERYX_WINDOWS_PUBLISHER_SUBJECT }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if (-not ($env:TAG -match '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(beta|rc)\.(0|[1-9]\d*))?$')) { throw 'Tag must be a stable, beta, or rc SemVer tag.' }
+          if ([string]::IsNullOrWhiteSpace($env:PUBLISHER)) { throw 'Protected Windows publisher subject is not configured.' }
+          $visibility = gh api "repos/$env:GITHUB_REPOSITORY" --jq .visibility
+          if ($visibility -ne 'public') { throw 'Repository must be public before release publication is enabled.' }
+          gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:TAG" | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'The reviewed release tag does not exist.' }
+          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) { throw 'A release already exists for this tag.' }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate tag, version, and ancestry
+        shell: pwsh
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          git fetch origin main
+          $tagCommit = git rev-list -n 1 $env:TAG
+          git merge-base --is-ancestor $tagCommit origin/main
+          if ($LASTEXITCODE -ne 0) { throw 'Release tag is not reachable from main.' }
+          $tagVersion = $env:TAG.Substring(1)
+          $packageVersion = node -p "require('./package.json').version"
+          if ($tagVersion -ne $packageVersion) { throw "Tag version $tagVersion does not match package.json $packageVersion." }
+      - run: npm ci
+      - name: Install the Windows Electron runtime
+        run: node node_modules/electron/install.js
+      - name: Validate source and dependency policies
+        run: |
+          npm run typecheck
+          npm run build
+          npm run audit:licenses
+          npm run test:license-audit
+          npm run test:update-security
+          npm run test:connection-config
+          npm run test:encoding
+          npm run test:electron-safe-storage
+          npm audit --audit-level=moderate
+          npm audit --omit=dev --audit-level=moderate
+      - name: Build signed NSIS installer
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          PUBLISHER: ${{ vars.ANCERYX_WINDOWS_PUBLISHER_SUBJECT }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) -or [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) { throw 'Windows signing secrets are unavailable.' }
+          npx electron-builder --win nsis --publish never --config.forceCodeSigning=true --config.win.publisherName="$env:PUBLISHER"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify signed installer and update metadata
+        shell: pwsh
+        env:
+          TAG: ${{ inputs.tag }}
+          PUBLISHER: ${{ vars.ANCERYX_WINDOWS_PUBLISHER_SUBJECT }}
+        run: |
+          $version = $env:TAG.Substring(1)
+          $installer = Get-Item "dist/Anceryx-Setup-$version.exe"
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -ne $env:PUBLISHER) { throw 'Installer signature or publisher subject is invalid.' }
+          if ($version -match '-beta\.') { $channel = 'beta' } elseif ($version -match '-rc\.') { $channel = 'rc' } else { $channel = 'latest' }
+          $manifest = Get-Content "dist/$channel.yml" -Raw
+          if ($manifest -notmatch ('(?m)^version:\s*' + [regex]::Escape($version) + '\s*$')) { throw 'Update manifest version does not match tag.' }
+          if ($manifest -notmatch ('(?m)^\s+url:\s*' + [regex]::Escape($installer.Name) + '\s*$')) { throw 'Manifest installer path is missing.' }
+          if ($manifest -notmatch "(?m)^\s+size:\s*$($installer.Length)\s*$") { throw 'Manifest installer size is invalid.' }
+          if ($manifest -notmatch '(?m)^\s+sha512:\s*[A-Za-z0-9+/]{86}==$') { throw 'Manifest SHA-512 is missing or malformed.' }
+          $actualHash = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData([IO.File]::ReadAllBytes($installer.FullName)))
+          $manifestHash = [regex]::Match($manifest, '(?m)^\s+sha512:\s*([A-Za-z0-9+/]{86}==)$').Groups[1].Value
+          if ($manifestHash -ne $actualHash) { throw 'Manifest SHA-512 does not match installer.' }
+          if (-not (Test-Path "dist/$($installer.Name).blockmap")) { throw 'NSIS blockmap is missing.' }
+          New-Item -ItemType Directory -Path release-assets | Out-Null
+          Copy-Item $installer.FullName release-assets/
+          Copy-Item "dist/$($installer.Name).blockmap" release-assets/
+          Copy-Item "dist/$channel.yml" release-assets/
+          "Verified release channel: $channel" | Out-File -FilePath release-assets/release-channel.txt -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-release-${{ inputs.tag }}
+          retention-days: 3
+          if-no-files-found: error
+          path: release-assets/*
+
+  publish-release:
+    needs: build-signed
+    if: needs.build-signed.result == 'success'
+    environment: public-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-release-${{ inputs.tag }}
+          path: release-files
+      - name: Ensure tag has no existing release, then publish exact artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          test "${{ inputs.confirmation }}" = 'PUBLISH ANCERYX WINDOWS RELEASE'
+          gh api "repos/$GITHUB_REPOSITORY" --jq .visibility | grep -qx public
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "A release already exists for $TAG" >&2
+            exit 1
+          fi
+          channel=$(cat release-files/release-channel.txt)
+          test -n "$channel"
+          mapfile -t assets < <(find release-files -maxdepth 1 -type f \( -name '*.exe' -o -name '*.blockmap' -o -name 'latest.yml' -o -name 'beta.yml' -o -name 'rc.yml' \) | sort)
+          test "${#assets[@]}" -ge 3
+          if [[ "$channel" == 'Verified release channel: latest' ]]; then
+            gh release create "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Anceryx $TAG" --notes-from-tag --latest
+          else
+            gh release create "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Anceryx $TAG" --notes-from-tag --prerelease
+          fi

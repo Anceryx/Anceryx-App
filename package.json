@@ -1,0 +1,53 @@
+{
+  "name": "anceryx",
+  "version": "0.15.0",
+  "author": "Anceryx",
+  "description": "Plataforma social Anceryx",
+  "main": "out/main/main.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && node scripts/generate-license-assets.mjs",
+    "audit:licenses": "node scripts/audit-licenses.mjs",
+    "test:license-audit": "node --test scripts/license-audit.test.mjs",
+    "preview": "electron-vite preview",
+    "electron:dev": "electron-vite dev",
+    "electron:build": "npm run build && electron-builder --publish never",
+    "test:update-security": "node --experimental-strip-types scripts/update-security-smoke.mjs",
+    "test:connection-config": "node --experimental-strip-types scripts/connection-config-smoke.mjs",
+    "test:api-config": "node --experimental-strip-types scripts/api-config.test.mjs",
+    "test:electron-safe-storage": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/electron-safe-storage-two-process-smoke.ps1",
+    "test:session-revision": "node --experimental-strip-types scripts/session-revision.test.mjs",
+    "test:image-crop": "node --experimental-strip-types scripts/image-crop.test.mjs",
+    "test:shared-post-link": "node --experimental-strip-types scripts/shared-post-link.test.mjs",
+    "test:dialog-accessibility": "node --experimental-strip-types scripts/dialog-accessibility.test.mjs",
+    "test:theme-entitlement": "node --experimental-strip-types scripts/theme-entitlement.test.mjs",
+    "test:community-member-groups": "node --experimental-strip-types scripts/community-member-groups.test.mjs",
+    "test:community-voice-realtime": "node --experimental-strip-types scripts/community-voice-realtime.test.mjs",
+    "test:community-moderation-permissions": "node --experimental-strip-types scripts/community-moderation-permissions.test.mjs",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "test:encoding": "node scripts/check-text-encoding.mjs",
+    "test:community-permissions": "node --experimental-strip-types scripts/community-permissions.test.mjs"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "lucide-react": "^0.414.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.4",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^20.14.11",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.17.0",
+    "electron-vite": "^5.0.0",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.5.3",
+    "vite": "^7.3.7"
+  }
+}

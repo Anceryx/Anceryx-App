@@ -1,0 +1,348 @@
+import React, { useState } from 'react'
+import { useUIStore } from '@/store/uiStore'
+import { useAuthStore } from '@/store/authStore'
+import { hasAnceryxPlus } from '@/lib/premium'
+import { Lock } from 'lucide-react'
+import type { Theme } from '@/types/ui'
+import ToggleSwitch from '../ToggleSwitch'
+
+// ── helpers de layout ─────────────────────────────────────────────────────────
+
+const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h3 className="text-base font-semibold text-text-primary mt-8 mb-2 first:mt-0">{children}</h3>
+)
+
+interface ToggleRowProps {
+  label: string
+  description?: string
+  checked: boolean
+  onChange: (v: boolean) => void
+  disabled?: boolean
+}
+const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, checked, onChange, disabled }) => (
+  <div className="flex items-center justify-between py-3.5 border-b border-border last:border-0">
+    <div className="flex-1 pr-8">
+      <p className="text-sm text-text-primary">{label}</p>
+      {description && <p className="text-xs text-text-disabled mt-0.5">{description}</p>}
+    </div>
+    <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} ariaLabel={label} />
+  </div>
+)
+
+interface SliderRowProps {
+  label: string
+  value: number
+  min?: number
+  max?: number
+  onChange: (v: number) => void
+  unit?: string
+}
+const SliderRow: React.FC<SliderRowProps> = ({ label, value, min = 0, max = 100, onChange, unit = '%' }) => (
+  <div className="py-3.5 border-b border-border last:border-0">
+    <div className="flex justify-between mb-2">
+      <p className="text-sm text-text-primary">{label}</p>
+      <span className="text-xs text-text-secondary">{value}{unit}</span>
+    </div>
+    <input
+      type="range"
+      min={min}
+      max={max}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full accent-purple-500 cursor-pointer h-1.5"
+      aria-label={label}
+    />
+  </div>
+)
+
+interface SelectRowProps {
+  label: string
+  description?: string
+  value: string
+  options: { value: string; label: string }[]
+  onChange: (v: string) => void
+}
+const SelectRow: React.FC<SelectRowProps> = ({ label, description, value, options, onChange }) => (
+  <div className="flex items-center justify-between py-3.5 border-b border-border last:border-0">
+    <div className="flex-1 pr-8">
+      <p className="text-sm text-text-primary">{label}</p>
+      {description && <p className="text-xs text-text-disabled mt-0.5">{description}</p>}
+    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="bg-background-primary border border-border text-text-primary text-xs rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+      aria-label={label}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  </div>
+)
+
+// ── componente principal ──────────────────────────────────────────────────────
+
+const ExperienciaSection: React.FC = () => {
+  const theme = useUIStore((s) => s.theme)
+  const setTheme = useUIStore((s) => s.setTheme)
+  const sidebarMode = useUIStore((s) => s.sidebarMode)
+  const setSidebarMode = useUIStore((s) => s.setSidebarMode)
+  const reduzirMotion = useUIStore((s) => s.reduceMotion)
+  const setReduceMotion = useUIStore((s) => s.setReduceMotion)
+  const user      = useAuthStore((s) => s.user)
+  const subscriptionVerified = useAuthStore((s) => s.subscriptionVerified)
+  const isPremium = subscriptionVerified && hasAnceryxPlus(user?.subscription)
+
+  // Aviso inline para temas premium bloqueados
+  const [premiumNotice, setPremiumNotice] = useState(false)
+  // Aviso inline para qualidade de stream bloqueada
+  const [streamPremiumNotice, setStreamPremiumNotice] = useState(false)
+
+  // Voz e Áudio
+  const [mic,        setMic]        = useState('default')
+  const [volMic,     setVolMic]     = useState(80)
+  const [saida,      setSaida]      = useState('default')
+  const [volSaida,   setVolSaida]   = useState(100)
+
+  // Transmissão e Chamadas
+  const [reducaoRuido, setReducaoRuido] = useState(true)
+  const [ecoCancelado, setEcoCancelado] = useState(true)
+  const [videoHD,      setVideoHD]      = useState(false)
+  const [qualStream,   setQualStream]   = useState('720p')
+
+  // Acessibilidade
+  const [tamChat,        setTamChat]        = useState<'sm' | 'md' | 'lg'>('md')
+  const [sublinharLinks, setSublinharLinks] = useState(true)
+  const [altoContraste,  setAltoContraste]  = useState(false)
+
+  const MIC_OPTIONS    = [{ value: 'default', label: 'Microfone padrão' }, { value: 'usb', label: 'Microfone USB' }, { value: 'webcam', label: 'Webcam' }]
+  const SAIDA_OPTIONS  = [{ value: 'default', label: 'Alto-falantes padrão' }, { value: 'fones', label: 'Fones de ouvido' }]
+  const STREAM_OPTIONS = [
+    { value: '720p',  label: '720p' },
+    { value: '1080p', label: '1080p' },
+    { value: '1440p', label: isPremium ? '1440p' : '1440p (Anceryx+)' },
+    { value: '2160p', label: isPremium ? '2160p (4K)' : '2160p / 4K (Anceryx+)' },
+  ]
+
+  return (
+    <div className="max-w-2xl">
+
+      <SectionTitle>Sidebar</SectionTitle>
+      <div className="bg-background-secondary rounded-lg px-5 border border-border">
+        <SelectRow
+          label="Comportamento da sidebar"
+          description="No modo automático, a navegação compacta ao abrir Fóruns e retorna ao sair."
+          value={sidebarMode}
+          options={[{ value: 'automatic', label: 'Automática' }, { value: 'manual', label: 'Manual' }]}
+          onChange={(value) => setSidebarMode(value === 'manual' ? 'manual' : 'automatic')}
+        />
+      </div>
+
+      {/* ── Voz e Áudio ── */}
+      <SectionTitle>Voz e Áudio</SectionTitle>
+      <div className="bg-background-secondary rounded-lg px-5 border border-border">
+        <SelectRow label="Microfone" value={mic} options={MIC_OPTIONS} onChange={setMic} />
+        <SliderRow label="Volume do microfone" value={volMic} onChange={setVolMic} />
+        <SelectRow label="Saída de áudio" value={saida} options={SAIDA_OPTIONS} onChange={setSaida} />
+        <SliderRow label="Volume de saída" value={volSaida} onChange={setVolSaida} />
+      </div>
+
+      {/* ── Transmissão e Chamadas ── */}
+      <SectionTitle>Transmissão e Chamadas</SectionTitle>
+      <div className="bg-background-secondary rounded-lg px-5 border border-border">
+        <ToggleRow label="Redução de ruído"      description="Filtra ruídos de fundo durante chamadas"  checked={reducaoRuido} onChange={setReducaoRuido} />
+        <ToggleRow label="Eco cancelado"          description="Evita eco durante chamadas de voz"        checked={ecoCancelado} onChange={setEcoCancelado} />
+        <ToggleRow label="Vídeo HD em chamadas"   description="Transmite vídeo em alta definição"        checked={videoHD}      onChange={setVideoHD} />
+        <SelectRow label="Qualidade de stream"    description="Resolução das transmissões ao vivo"       value={qualStream} options={STREAM_OPTIONS} onChange={(v) => {
+          if ((v === '1440p' || v === '2160p') && !isPremium) {
+            // Show inline feedback instead of silently ignoring the selection
+            setStreamPremiumNotice(true)
+            setTimeout(() => setStreamPremiumNotice(false), 3000)
+            return
+          }
+          setQualStream(v)
+        }} />
+        {streamPremiumNotice && (
+          <div
+            className="mb-2 mt-1 text-xs px-3 py-2 rounded-lg border"
+            style={{
+              color: 'var(--color-accent)',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 30%, transparent)',
+              background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+            }}
+          >
+            Disponível com Anceryx+
+          </div>
+        )}
+      </div>
+
+      {/* ── Acessibilidade ── */}
+      <SectionTitle>Acessibilidade</SectionTitle>
+      <div className="bg-background-secondary rounded-lg px-5 border border-border">
+
+        {/* Tamanho do chat */}
+        <div className="py-3.5 border-b border-border">
+          <p className="text-sm text-text-primary mb-3">Tamanho do chat</p>
+          <div className="flex gap-2">
+            {(['sm', 'md', 'lg'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTamChat(t)}
+                className={[
+                  'flex-1 py-2 rounded-lg border text-xs font-medium transition-colors',
+                  tamChat === t
+                    ? 'border-accent bg-surface-selected text-accent-secondary'
+                    : 'border-border bg-background-primary text-text-secondary hover:border-border-hover',
+                ].join(' ')}
+              >
+                {t === 'sm' ? 'Pequeno' : t === 'md' ? 'Médio' : 'Grande'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <ToggleRow label="Sublinhar links"           description="Adiciona sublinhado em links no chat"       checked={sublinharLinks} onChange={setSublinharLinks} />
+        <ToggleRow label="Reduzir movimento"          description="Desativa animações e transições do app"    checked={reduzirMotion}  onChange={setReduceMotion} />
+        <ToggleRow label="Alto contraste"             description="Aumenta o contraste dos elementos visuais" checked={altoContraste}  onChange={setAltoContraste} />
+      </div>
+
+      {/* ── Sistema / Tema ── */}
+      <SectionTitle>Sistema</SectionTitle>
+      <div className="bg-background-secondary rounded-lg px-5 py-4 border border-border">
+        <p className="text-sm text-text-primary mb-4">Tema do aplicativo</p>
+
+        {/* Aviso inline para temas premium */}
+        {premiumNotice && (
+          <div
+            className="mb-3 text-xs px-3 py-2 rounded-lg border"
+            style={{
+              color: 'var(--color-accent)',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 30%, transparent)',
+              background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+            }}
+          >
+            Disponível com Anceryx+
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          {THEME_OPTIONS.map((t) => {
+            const isActive  = theme === t.id
+            const isLocked  = t.premium && !isPremium
+
+            const handleClick = () => {
+              if (isLocked) {
+                setPremiumNotice(true)
+                setTimeout(() => setPremiumNotice(false), 3000)
+                return
+              }
+              setTheme(t.id as Theme)
+            }
+
+            return (
+              <button
+                key={t.id}
+                onClick={handleClick}
+                className={[
+                  'relative rounded-xl border-2 overflow-hidden transition-all text-left',
+                isActive
+                    ? 'border-accent ring-1 ring-accent/50'
+                    : 'border-border hover:border-border-hover',
+                ].join(' ')}
+                aria-pressed={isActive}
+                aria-label={`Tema ${t.label}${t.premium ? ' (Anceryx+)' : ''}`}
+              >
+                {/* Preview swatches */}
+                <div className="p-3" style={{ background: t.previewBg }}>
+                  <div className="flex h-[52px] gap-2 rounded-md p-2" style={{ background: t.panel }}>
+                    <div className="w-1/4 rounded-sm" style={{ background: t.surface }} />
+                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+                      <span className="text-[10px] font-semibold leading-none" style={{ color: t.text }}>Aa</span>
+                      <span className="h-1.5 w-4/5 rounded-full" style={{ background: t.text, opacity: 0.78 }} />
+                      <span className="h-1.5 w-1/2 rounded-full" style={{ background: t.accent }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="py-2 text-center" style={{ background: t.labelBg }}>
+                  <span className={[
+                    'text-xs font-medium',
+                    isActive ? 'text-accent-secondary' : 'text-text-secondary',
+                  ].join(' ')}>
+                    {t.label}
+                  </span>
+                </div>
+
+                {/* Lock overlay for premium themes */}
+                {isLocked && (
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-[11px]"
+                    style={{ background: 'rgba(0,0,0,0.55)' }}
+                    aria-hidden="true"
+                  >
+                    <Lock size={14} style={{ color: 'var(--color-accent)' }} />
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-accent)' }}>
+                      Anceryx+
+                    </span>
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+// Theme preview config (colors are hardcoded to avoid relying on CSS vars in preview)
+const THEME_OPTIONS = [
+  {
+    id: 'dark',
+    label: 'Escuro',
+    premium: false,
+    previewBg: '#0d0d0d',
+    panel: '#18181b',
+    surface: '#242424',
+    text: '#ffffff',
+    accent: '#8b5cf6',
+    labelBg: '#1a1a1a',
+  },
+  {
+    id: 'light',
+    label: 'Claro',
+    premium: false,
+    previewBg: '#f4f4f5',
+    panel: '#ffffff',
+    surface: '#e4e4e7',
+    text: '#09090b',
+    accent: '#7c3aed',
+    labelBg: '#f4f4f5',
+  },
+  {
+    id: 'autumn',
+    label: 'Outono',
+    premium: true,
+    previewBg: 'hsl(349 28% 22%)',
+    panel: 'hsl(345 27% 29%)',
+    surface: 'hsl(341 27% 36%)',
+    text: 'hsl(350 62% 93%)',
+    accent: 'hsl(347 50% 55%)',
+    labelBg: 'hsl(345 27% 29%)',
+  },
+  {
+    id: 'rose-moon',
+    label: 'Rose Moon',
+    premium: true,
+    previewBg: 'hsl(246 24% 17%)',
+    panel: 'hsl(248 24% 20%)',
+    surface: 'hsl(248 21% 26%)',
+    text: 'hsl(245 50% 95%)',
+    accent: 'hsl(2 66% 75%)',
+    labelBg: 'hsl(248 24% 20%)',
+  },
+] as const
+
+export default ExperienciaSection

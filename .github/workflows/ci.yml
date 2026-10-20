@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run test:api-config
+      - run: npm run test:license-audit
+      - run: npm run test:update-security
+      - run: npm run test:connection-config
+      - run: npm run test:encoding
+      - run: npm run test:dialog-accessibility
+      - run: npm run test:session-revision
+      - run: npm run test:image-crop
+      - run: npm run test:shared-post-link
+      - run: npm run test:theme-entitlement
+      - run: npm run test:community-member-groups
+      - run: npm run test:community-voice-realtime
+      - run: npm run test:community-moderation-permissions
+      - run: npm run test:community-permissions

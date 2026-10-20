@@ -1,0 +1,36 @@
+appId: io.anceryx.app
+protocols:
+  - name: Anceryx OAuth
+    schemes:
+      - anceryx
+productName: Anceryx
+executableName: Anceryx
+copyright: "Copyright © 2026 Anceryx. Todos os direitos reservados."
+
+directories:
+  buildResources: resources
+  output: dist
+
+files:
+  - out/**/*
+
+win:
+  target: nsis
+  icon: resources/icon.png
+
+nsis:
+  artifactName: Anceryx-Setup-${version}.${ext}
+
+mac:
+  target: dmg
+  icon: resources/icon.png
+
+linux:
+  target: AppImage
+  icon: resources/icon.png
+
+publish:
+  provider: github
+  owner: Anceryx
+  repo: Anceryx-App
+  private: false
