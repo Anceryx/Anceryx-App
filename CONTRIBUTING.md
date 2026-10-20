@@ -18,6 +18,12 @@ Thank you for your interest in improving the Anceryx desktop client. Contributio
 5. Review `git diff --check` and confirm the diff contains only intended files.
 6. Open a pull request with a concise summary, motivation, test results, and screenshots for visual changes where useful.
 
+## Commit messages and version history
+
+Use a short, descriptive commit subject in the Conventional Commits style, such as `fix(profile): preserve avatar crop` or `docs(readme): clarify setup`. Keep each commit focused. Do not create release tags or publish binaries from a contribution branch. Maintainers update `CHANGELOG.md` and choose release versions after reviewing the changes. The changelog must describe only implemented and validated behavior; planned work belongs in an issue or roadmap.
+
+Escreva o assunto do commit de forma curta e descritiva, seguindo o padrão Conventional Commits, por exemplo: `fix(profile): preserve avatar crop` ou `docs(readme): clarify setup`. Mantenha cada commit focado. Não crie tags de versão nem publique binários em uma branch de contribuição. Os mantenedores atualizam o `CHANGELOG.md` e definem as versões após revisar as alterações. O changelog deve descrever apenas comportamentos implementados e validados; trabalho planejado deve ficar em uma issue ou no roadmap.
+
 ## Documentation and translations
 
 The repository maintains a Portuguese (Brazil) README in `README.md` and an English version in `README.en.md`. Whenever one README changes, update the other in the same pull request so both versions remain equivalent in structure and information. Translation corrections and wording improvements in either language are welcome.

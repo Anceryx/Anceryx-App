@@ -1,9 +1,6 @@
 name: Windows release artifacts
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -14,7 +11,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout approved tag or branch
+      - name: Checkout approved ref
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -62,7 +59,7 @@ jobs:
             dist/*.blockmap
             dist/*.yml
 
-# This workflow only creates review artifacts. It never creates a GitHub
-# Release or uploads to the future update server. Publication must be a
-# separate, manually approved workflow/job using a protected GitHub
-# Environment and organization-managed signing/update credentials.
+# This workflow only creates review artifacts when manually dispatched. Tags
+# do not build or upload installers automatically. It never creates a GitHub
+# Release or uploads to the update server. Publication requires the separate,
+# manually approved workflow and protected GitHub Environments.

@@ -1,0 +1,13 @@
+# Registro de alterações
+
+Este arquivo registra versões preparadas a partir do histórico disponível no repositório. O snapshot independente não importa o histórico privado anterior; por isso, esta versão registra a linha de base do código-fonte e não atribui mudanças específicas a commits antigos.
+
+## [0.15.0] — linha de base do código-fonte
+
+- Identifica a versão do cliente contida neste snapshot independente.
+- Não inclui instalador nem artefatos binários de distribuição.
+- A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
+
+## Próxima versão
+
+Correções e recursos serão registrados aqui quando forem implementados e validados. Itens apenas planejados não devem ser descritos como disponíveis.
