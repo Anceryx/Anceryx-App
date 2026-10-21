@@ -5,6 +5,10 @@ import { resolveApiBaseUrl } from '../src/renderer/services/apiConfig.ts'
 test('keeps normal development and production API targets unchanged', () => {
   assert.equal(resolveApiBaseUrl(undefined, false), 'http://localhost:3000')
   assert.equal(resolveApiBaseUrl(undefined, true), 'https://admin-anceryx.site')
+  assert.equal(resolveApiBaseUrl(undefined, true, 'web'), 'https://api.anceryx.site')
+  assert.equal(resolveApiBaseUrl('https://api.anceryx.site', true, 'web'), 'https://api.anceryx.site')
+  assert.throws(() => resolveApiBaseUrl('https://admin-anceryx.site', true, 'web'), /API HTTPS oficial/)
+  assert.throws(() => resolveApiBaseUrl('https://api.anceryx.site', true, 'electron'), /API HTTPS oficial/)
 })
 
 test('does not allow loopback overrides in a normal production build', () => {

@@ -5,6 +5,9 @@
   "author": "Anceryx",
   "description": "Plataforma social Anceryx",
   "main": "out/main/main.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build && node scripts/generate-license-assets.mjs",

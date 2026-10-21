@@ -32,6 +32,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ### Aplicativo
 
+- Inicia a preparação de uma build Web independente do Electron, com configuração Vercel e rotas SPA. O acesso público continua bloqueado até a configuração da API, DNS e QA em navegador.
 - A interface de licenças foi removida das Configurações. Os avisos e ferramentas de conformidade continuam no pacote e no processo de build.
 - A interface informa que atualizações automáticas estão pausadas por segurança enquanto os manifests não tiverem verificação criptográfica habilitada.
 

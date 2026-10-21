@@ -10,6 +10,7 @@ const electronViteConfig = readFileSync(new URL('../electron.vite.config.ts', im
 
 assert.match(csp, /connect-src 'self' https: wss:/)
 assert.match(apiConfig, /PRODUCTION_API_URL = 'https:\/\/admin-anceryx\.site'/)
+assert.match(apiConfig, /PRODUCTION_WEB_API_URL = 'https:\/\/api\.anceryx\.site'/)
 assert.doesNotMatch(apiConfig, /const importMeta = import\.meta/)
 assert.match(authApi, /request failed before receiving a response/)
 assert.match(authApi, /apiOrigin: redactConnectionOrigin\(API_BASE_URL\)/)
