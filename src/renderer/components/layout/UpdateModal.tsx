@@ -53,7 +53,7 @@ const UpdateModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
         <div className="space-y-4 p-4">
           <div className="rounded-lg border border-border bg-background-tertiary p-3">
             <p className="text-sm font-medium text-text-primary">
-              {info.state === 'available' ? `Nova versão ${info.latestVersion ?? ''} disponível!` : info.state === 'downloaded' ? 'Atualização pronta para instalar.' : info.message ?? 'Verificação de atualizações'}
+              {!info.configured && info.message?.includes('assinatura criptográfica') ? 'Atualizações automáticas pausadas por segurança. A assinatura criptográfica dos manifests ainda não é verificada neste cliente.' : info.state === 'available' ? `Nova versão ${info.latestVersion ?? ''} disponível!` : info.state === 'downloaded' ? 'Atualização pronta para instalar.' : info.message ?? 'Verificação de atualizações'}
             </p>
           </div>
           {info.releaseNotes.length > 0 && <ul className="list-disc space-y-1 pl-5">{info.releaseNotes.map((item) => <li key={item} className="text-sm text-text-secondary">{item}</li>)}</ul>}

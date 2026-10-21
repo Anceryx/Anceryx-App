@@ -10,6 +10,18 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ## Próxima versão
 
+### Comunidades
+
+- O canal de publicações agora lista tópicos reais, permite criar, abrir, editar e excluir publicações próprias e responder a tópicos existentes.
+- A tela inicial do fórum usa uma única ação para entrar/abrir a comunidade; o gerenciamento permanece dentro da experiência da comunidade.
+- Canais podem ser recolhidos, e participantes de voz aparecem junto ao canal correspondente. A área de voz mostra participantes, estado do microfone e transmissões ativas.
+- O compartilhamento de tela no Electron permite escolher uma janela ou tela. A transmissão inclui vídeo; áudio do sistema não está habilitado.
+
+### Aplicativo
+
+- A interface de licenças foi removida das Configurações. Os avisos e ferramentas de conformidade continuam no pacote e no processo de build.
+- A interface informa que atualizações automáticas estão pausadas por segurança enquanto os manifests não tiverem verificação criptográfica habilitada.
+
 ### Distribuição Windows
 
 - Builds de revisão permanecem sem assinatura Authenticode e são armazenadas como artifacts temporários, sem publicação de Release.

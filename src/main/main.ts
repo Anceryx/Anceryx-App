@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, net, protocol, safeStorage, shell } from 'electron'
+import { app, BrowserWindow, desktopCapturer, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import { isAbsolute, join, relative, resolve } from 'path'
 import { pathToFileURL } from 'url'
@@ -32,6 +32,8 @@ const OAUTH_HOST = 'oauth'
 let mainWindow: BrowserWindow | null = null
 let pendingGoogleHandoff: { code?: string; error?: string } | null = null
 let pendingCommunityInvite: string | null = null
+let selectedScreenSourceId: string | null = null
+let selectedScreenSourceExpiresAt = 0
 
 if (!app.requestSingleInstanceLock()) app.quit()
 else app.setAsDefaultProtocolClient(OAUTH_SCHEME)
@@ -333,6 +335,34 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  session.defaultSession.setDisplayMediaRequestHandler(async (request, callback) => {
+    if (!request.frame || request.frame !== request.frame.top || request.frame !== mainWindow?.webContents.mainFrame) { callback({}); return }
+    const requestedSourceId = selectedScreenSourceId
+    selectedScreenSourceId = null
+    const selectionValid = Date.now() <= selectedScreenSourceExpiresAt
+    selectedScreenSourceExpiresAt = 0
+    if (!requestedSourceId || !selectionValid) { callback({}); return }
+    try {
+      const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 0, height: 0 } })
+      const source = sources.find((item) => item.id === requestedSourceId)
+      callback(source ? { video: source } : {})
+    } catch {
+      callback({})
+    }
+  })
+  ipcMain.handle('screen-capture:list-sources', async (event) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) throw new Error('Ação indisponível para esta janela.')
+    const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 320, height: 180 } })
+    return sources.map(({ id, name, thumbnail }) => ({ id, name, thumbnail: thumbnail.isEmpty() ? null : thumbnail.toDataURL() }))
+  })
+  ipcMain.handle('screen-capture:select-source', async (event, sourceId: unknown) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame || typeof sourceId !== 'string') throw new Error('Fonte de captura inválida.')
+    const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 0, height: 0 } })
+    if (!sources.some((source) => source.id === sourceId)) throw new Error('A fonte de captura não está mais disponível.')
+    selectedScreenSourceId = sourceId
+    selectedScreenSourceExpiresAt = Date.now() + 30_000
+    return true
+  })
   protocol.handle(RENDERER_SCHEME, async (request) => {
     try {
       const asset = resolveRendererAsset(request.url)

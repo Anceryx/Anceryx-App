@@ -34,6 +34,17 @@ export interface ApiForumTopic {
   isLocked: boolean
   isResolved: boolean
   createdAt: string
+  author?: { id: string; displayName: string; avatarUrl: string | null }
+  replyCount?: number
+}
+
+export interface ApiForumReply {
+  id: string
+  topicId: string
+  authorUserId: string
+  content: string
+  createdAt: string
+  author: { id: string; displayName: string; avatarUrl: string | null }
 }
 
 export interface ApiForumReport {
@@ -116,6 +127,24 @@ export const forumApi = {
 
   listTopics: (forumId: string) =>
     request<{ topics: ApiForumTopic[] }>(`/forums/${forumId}/topics`),
+
+  createTopic: (forumId: string, input: { title: string; content: string }) =>
+    request<{ topic: ApiForumTopic }>(`/forums/${forumId}/topics`, { method: 'POST', body: JSON.stringify({ ...input, tagIds: [] }) }),
+
+  getTopic: (forumId: string, topicId: string) =>
+    request<{ topic: ApiForumTopic }>(`/forums/${forumId}/topics/${topicId}`),
+
+  updateTopic: (forumId: string, topicId: string, input: { title?: string; content?: string }) =>
+    request<{ topic: ApiForumTopic }>(`/forums/${forumId}/topics/${topicId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+
+  listReplies: (forumId: string, topicId: string) =>
+    request<{ replies: ApiForumReply[] }>(`/forums/${forumId}/topics/${topicId}/replies`),
+
+  createReply: (forumId: string, topicId: string, content: string) =>
+    request<{ reply: ApiForumReply }>(`/forums/${forumId}/topics/${topicId}/replies`, { method: 'POST', body: JSON.stringify({ content }) }),
+
+  deleteTopic: (forumId: string, topicId: string) =>
+    request<{ status: 'ok' }>(`/forums/${forumId}/topics/${topicId}`, { method: 'DELETE' }),
 
   setTopicFlag: (forumId: string, topicId: string, flag: TopicFlag, value: boolean) =>
     request<{ status: 'ok' }>(`/forums/${forumId}/topics/${topicId}/${flagPath(flag)}`, { method: value ? 'POST' : 'DELETE' }),

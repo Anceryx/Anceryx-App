@@ -13,7 +13,6 @@ import ConexoesLoginSection      from './sections/ConexoesLoginSection'
 import SessoesDispositivosSection from './sections/SessoesDispositivosSection'
 import UltimosLoginsSection      from './sections/UltimosLoginsSection'
 import SobreSection              from './sections/SobreSection'
-import LicencasSection           from './sections/LicencasSection'
 
 const SECTION_TITLES: Record<SettingsSection, string> = {
   'conta':             'Conta',
@@ -28,7 +27,6 @@ const SECTION_TITLES: Record<SettingsSection, string> = {
   'experiencia':       'Experiência',
   'voz':               'Voz e Dispositivos',
   'sobre':             'Sobre a Anceryx',
-  'licencas':          'Licenças de código aberto',
 }
 
 export interface SettingsModalProps {
@@ -72,8 +70,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
       case 'cobranca':          return <CobrancaSection />
       case 'experiencia':       return <ExperienciaSection />
       case 'voz':               return <VozSection />
-      case 'sobre':             return <SobreSection onOpenLicenses={() => setActiveSection('licencas')} />
-      case 'licencas':          return <LicencasSection />
+      case 'sobre':             return <SobreSection />
     }
   }
 

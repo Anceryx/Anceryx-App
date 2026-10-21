@@ -28,6 +28,10 @@ export interface ElectronAPI {
     restart(): Promise<UpdateSnapshot>
     onState(callback: (state: UpdateSnapshot) => void): () => void
   }
+  screenCapture: {
+    listSources(): Promise<Array<{ id: string; name: string; thumbnail: string | null }>>
+    selectSource(sourceId: string): Promise<boolean>
+  }
   licenses: {
     getManifest(): Promise<LicenseManifest>
   }

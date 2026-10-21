@@ -27,7 +27,11 @@
     "test:community-moderation-permissions": "node --experimental-strip-types scripts/community-moderation-permissions.test.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
     "test:encoding": "node scripts/check-text-encoding.mjs",
-    "test:community-permissions": "node --experimental-strip-types scripts/community-permissions.test.mjs"
+    "test:community-permissions": "node --experimental-strip-types scripts/community-permissions.test.mjs",
+    "test:community-posts": "node scripts/community-posts.test.mjs",
+    "test:community-screen-share": "node scripts/community-screen-share.test.mjs",
+    "test:settings-license-ui": "node scripts/settings-license-ui.test.mjs",
+    "test:updater-ui-state": "node scripts/updater-ui-state.test.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",

@@ -23,7 +23,6 @@ export type SettingsSection =
   | 'experiencia'
   | 'voz'
   | 'sobre'
-  | 'licencas'
 
 interface NavGroup {
   label: string
@@ -159,12 +158,6 @@ const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) 
               className="cursor-pointer hover:text-accent-secondary transition-colors"
             >
               Termos
-            </button>
-            <button
-              onClick={() => onSelect('licencas')}
-              className="cursor-pointer hover:text-accent-secondary transition-colors"
-            >
-              Licenças
             </button>
           </div>
         </div>

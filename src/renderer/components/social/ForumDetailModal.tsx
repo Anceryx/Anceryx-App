@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { Calendar, Crown, FileText, MessageSquare, Settings, Users, X } from 'lucide-react'
+import { Calendar, Crown, FileText, Users, X } from 'lucide-react'
 import type { Forum } from '@/types/index'
 import { Button } from '@/components/ui/index'
 import { useAuthStore } from '@/store/authStore'
 import { useSocialStore } from '@/store/socialStore'
+import { useUIStore } from '@/store/uiStore'
 import { formatTimestamp } from '@/utils/formatters'
 import { ForumAvatar } from './ForumCard'
 import CommunityWorkspaceModal from './CommunityWorkspaceModal'
@@ -21,13 +22,11 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onN
   const toggleForumJoin = useSocialStore((s) => s.toggleForumJoin)
   const liveForum = useSocialStore((s) => s.forums.find((item) => item.id === forum.id) ?? forum)
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
-  const [managementOpen, setManagementOpen] = useState(false)
+  const addNotification = useUIStore((s) => s.addNotification)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [bannerFailed, setBannerFailed] = useState(false)
 
-  const localRole = liveForum.members.find((member) => member.userId === currentUserId)?.role ?? null
   const isOwner = liveForum.ownerId === currentUserId
-  const canManage = localRole === 'owner' || localRole === 'moderator'
 
   return (
     <div
@@ -79,35 +78,14 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onN
                 </span>
               )}
             </div>
-            <Button
-              variant={liveForum.isJoined ? 'secondary' : 'primary'}
-              size="sm"
-              onClick={() => toggleForumJoin(liveForum.id)}
-              className="shrink-0"
-            >
-              {liveForum.isJoined ? 'Sair' : 'Entrar'}
-            </Button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<MessageSquare size={14} />}
-              onClick={() => setWorkspaceOpen(true)}
-            >
-              Abrir comunidade
-            </Button>
-            {canManage && (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<Settings size={14} />}
-                onClick={() => { setManagementOpen(true); setWorkspaceOpen(true) }}
-              >
-                Gerenciar fórum
-              </Button>
-            )}
+            <Button variant="primary" size="sm" className="shrink-0" onClick={async () => {
+              try {
+                if (!liveForum.isJoined) await toggleForumJoin(liveForum.id)
+                setWorkspaceOpen(true)
+              } catch (error) {
+                addNotification(error instanceof Error ? error.message : 'Não foi possível entrar nesta comunidade.', 'error')
+              }
+            }}>{liveForum.isJoined ? 'Abrir comunidade' : 'Entrar na comunidade'}</Button>
           </div>
 
           <p className="text-sm text-text-secondary mt-3 leading-relaxed">{renderAnceryxText(liveForum.description)}</p>
@@ -149,17 +127,15 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onN
             </div>
           )}
 
-          <div className="mt-6 rounded-lg border border-dashed border-border p-6 text-center">
-            <FileText size={24} className="text-text-secondary mx-auto mb-2 opacity-40" />
-            <p className="text-sm text-text-secondary opacity-60">
-              As publicações deste fórum aparecerão aqui.
-            </p>
+          <div className="mt-6 rounded-lg border border-border bg-background-tertiary/40 p-4">
+            <p className="text-sm font-semibold text-text-primary">Canais, tópicos e conversas</p>
+            <p className="mt-1 text-xs text-text-secondary">Abra a comunidade para acessar os canais e as publicações organizadas por tópico.</p>
           </div>
         </div>
       </div>
 
       {workspaceOpen && (
-        <CommunityWorkspaceModal forum={liveForum} communityId={liveForum.id} initialManagementOpen={managementOpen} onClose={() => { setWorkspaceOpen(false); setManagementOpen(false) }} onNavigateGlobal={(section) => { setWorkspaceOpen(false); onClose(); onNavigateGlobal?.(section) }} />
+        <CommunityWorkspaceModal forum={liveForum} communityId={liveForum.id} onClose={() => setWorkspaceOpen(false)} onNavigateGlobal={(section) => { setWorkspaceOpen(false); onClose(); onNavigateGlobal?.(section) }} />
       )}
     </div>
   )

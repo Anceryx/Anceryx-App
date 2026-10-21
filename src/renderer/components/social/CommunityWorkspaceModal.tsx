@@ -73,13 +73,13 @@ import { isSafeKlipyMediaUrl, registerKlipyShare } from '@/services/klipyApi'
 import type { KaoliStickerKey } from '@/lib/kaoliStickers'
 import { ApiError } from '@/services/apiClient'
 import ForumManagementModal, { type ForumManagementTab } from './ForumManagementModal'
+import CommunityForumChannel from './CommunityForumChannel'
 import CommunityManagementModal, { type CommunityManagementSection } from './CommunityManagementModal'
 import { communityPermissionLabel, getEffectiveCommunityPermissions } from '@/utils/communityPermissions'
 
 interface CommunityWorkspaceModalProps {
   communityId: string
   forum?: Forum
-  initialManagementOpen?: boolean
   onClose: () => void
   onNavigateGlobal?: (section: SidebarSection) => void
 }
@@ -153,7 +153,7 @@ function getAuditChanges(details: CommunityAuditLogDto['details']): CommunityAud
   return Array.isArray(changes) ? changes as CommunityAuditChange[] : []
 }
 
-const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ communityId, forum, initialManagementOpen = false, onClose, onNavigateGlobal }) => {
+const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ communityId, forum, onClose, onNavigateGlobal }) => {
   const token = useAuthStore((s) => s.token)
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const currentUserAvatar = useAuthStore((s) => s.user?.avatar)
@@ -161,6 +161,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const addNotification = useUIStore((s) => s.addNotification)
   const [state, setState] = useState<CommunityStateDto | null>(null)
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
+  const [showCommunityPosts, setShowCommunityPosts] = useState(false)
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [messages, setMessages] = useState<CommunityMessageDto[]>([])
   const [events, setEvents] = useState<CommunityEventDto[]>([])
   const [showEvents, setShowEvents] = useState(false)
@@ -258,7 +260,10 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const [mobileView, setMobileView] = useState<'channels' | 'content' | 'members'>('channels')
   const [selectedMember, setSelectedMember] = useState<CommunityMemberDto | null>(null)
   const [membersOpen, setMembersOpen] = useState(true)
-  const [managementOpen, setManagementOpen] = useState(initialManagementOpen)
+  const [managementOpen, setManagementOpen] = useState(false)
+  const [screenSources, setScreenSources] = useState<Array<{ id: string; name: string; thumbnail: string | null }>>([])
+  const [screenPickerOpen, setScreenPickerOpen] = useState(false)
+  const [screenPickerLoading, setScreenPickerLoading] = useState(false)
   const [managementSection, setManagementSection] = useState('overview')
   const [appealQueueLoading, setAppealQueueLoading] = useState(false)
   const [appealQueueError, setAppealQueueError] = useState<string | null>(null)
@@ -298,6 +303,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const canOpenManagement = Boolean(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || canManageBans || canCreateModerationActions || canViewAuditLog || canManageReports || isCommunityOwner || ownModerationCases.length > 0 || ownAppeals.length > 0)
   const canViewSelectedChannel = selectedChannel?.viewerCanView ?? true
   const voiceParticipants = state?.voiceStates.filter((item) => item.channelId === selectedChannelId) ?? []
+  const viewerInSelectedVoice = voiceParticipants.some((participant) => participant.userId === currentUserId)
   const membersPanelClassName = mobileView === 'members'
     ? 'fixed inset-0 z-[61] overflow-y-auto border-border bg-background-tertiary xl:static xl:inset-auto xl:z-auto xl:block xl:border-l xl:bg-background-tertiary/35'
     : membersOpen
@@ -1090,10 +1096,27 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const toggleVoiceScreenShare = async () => {
     try {
       if (communityVoiceClient.isScreenSharing) await communityVoiceClient.stopScreenShare()
-      else await communityVoiceClient.startScreenShare(30)
+      else if (window.electronAPI?.screenCapture) {
+        setScreenPickerLoading(true)
+        const sources = await window.electronAPI.screenCapture.listSources()
+        if (!sources.length) throw new Error('Nenhuma tela ou janela disponível para captura.')
+        setScreenSources(sources)
+        setScreenPickerOpen(true)
+      } else await communityVoiceClient.startScreenShare(30)
     } catch (err) {
       addNotification(err instanceof Error ? err.message : 'Não foi possível compartilhar a tela.', 'error')
-    }
+    } finally { setScreenPickerLoading(false) }
+  }
+
+  const startScreenShareFromSource = async (sourceId: string) => {
+    setScreenPickerLoading(true)
+    try {
+      await window.electronAPI?.screenCapture.selectSource(sourceId)
+      setScreenPickerOpen(false)
+      await communityVoiceClient.startScreenShare(30)
+    } catch (err) {
+      addNotification(err instanceof Error ? err.message : 'Não foi possível iniciar a transmissão.', 'error')
+    } finally { setScreenPickerLoading(false) }
   }
 
   const groupedChannels = useMemo(() => {
@@ -1309,12 +1332,11 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 if (channels.length === 0 && category.id !== 'uncategorized') return null
                 return (
                   <section key={category.id} className="mb-3">
-                    <p className="mb-1 px-2 text-[11px] font-semibold uppercase text-text-secondary">{category.name}</p>
-                    <div className="flex flex-col gap-1">
+                    <button type="button" aria-expanded={!collapsedCategories.has(category.id)} onClick={() => setCollapsedCategories((current) => { const next = new Set(current); if (next.has(category.id)) next.delete(category.id); else next.add(category.id); return next })} className="mb-1 flex w-full items-center justify-between px-2 text-left text-[11px] font-semibold uppercase text-text-secondary hover:text-text-primary"><span className="truncate">{category.name}</span><span>{collapsedCategories.has(category.id) ? '+' : '−'}</span></button>
+                    {!collapsedCategories.has(category.id) && <div className="flex flex-col gap-1">
                       {channels.map((channel) => (
-                        <button
-                          key={channel.id}
-                          onClick={() => { setSelectedChannelId(channel.id); setMobileView('content') }}
+                        <React.Fragment key={channel.id}><button
+                          onClick={() => { setSelectedChannelId(channel.id); setShowCommunityPosts(false); setMobileView('content') }}
                           className={[
                             'motion-control flex min-h-9 items-center justify-between gap-2 rounded-md px-2 text-left text-sm',
                             selectedChannelId === channel.id ? 'bg-accent text-white' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary',
@@ -1322,17 +1344,19 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                         >
                           <span className="flex min-w-0 items-center gap-2">
                             {CHANNEL_ICONS[channel.type]}
-                            <span className="truncate">{channel.name}</span>
+                            <span className="truncate">{channel.type === 'forum' ? 'Publicações' : channel.name}</span>
                           </span>
                           {channel.type === 'voice' && (
                             <span className="text-[11px] opacity-80">{state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0}</span>
                           )}
                         </button>
+                        {channel.type === 'voice' && (state?.voiceStates.filter((item) => item.channelId === channel.id) ?? []).length > 0 && <div className="ml-7 flex flex-col gap-1 pb-1">{state?.voiceStates.filter((item) => item.channelId === channel.id).slice(0, 3).map((voice) => <span key={voice.userId} className="truncate text-[11px] text-text-secondary">{voice.user.displayName}{voice.selfMuted || voice.serverMuted ? ' · microfone mudo' : ''}</span>)}{(state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0) > 3 && <span className="text-[10px] text-text-secondary">+{(state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0) - 3} pessoas</span>}</div>}</React.Fragment>
                       ))}
-                    </div>
+                    </div>}
                   </section>
                 )
               })}
+              {!state?.channels.some((channel) => channel.type === 'forum') && <button type="button" onClick={() => { setSelectedChannelId(null); setShowCommunityPosts(true); setMobileView('content') }} className={`mt-2 flex min-h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm ${showCommunityPosts ? 'bg-accent text-white' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}><MessageSquare size={14} /><span>Publicações</span></button>}
             </nav>
           )}
         </aside>
@@ -1341,12 +1365,12 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
           <header className="flex min-h-14 items-center justify-between border-b border-border px-4">
             <div className="flex min-w-0 items-center gap-2">
               <button type="button" onClick={() => setMobileView('channels')} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-text-secondary hover:bg-white/10 md:hidden" aria-label="Voltar para canais"><ArrowLeft size={18} /></button>
-              {selectedChannel ? CHANNEL_ICONS[selectedChannel.type] : <Hash size={16} />}
+              {showCommunityPosts ? <MessageSquare size={16} /> : selectedChannel ? CHANNEL_ICONS[selectedChannel.type] : <Hash size={16} />}
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-semibold text-text-primary">{selectedChannel?.name ?? 'Selecione um canal'}</h3>
+                <h3 className="truncate text-sm font-semibold text-text-primary">{showCommunityPosts ? 'Publicações' : selectedChannel?.name ?? 'Selecione um canal'}</h3>
                 {selectedChannel?.description && <p className="truncate text-xs text-text-secondary">{selectedChannel.description}</p>}
               </div>
-              {canOpenManagement && <Button size="sm" variant="ghost" onClick={() => { setManagementSection('community'); setManagementOpen(true) }} leftIcon={<Settings size={15} />}>Gerenciar fórum</Button>}
+              {canOpenManagement && <Button size="sm" variant="ghost" onClick={() => { setManagementSection('community'); setManagementOpen(true) }} leftIcon={<Settings size={15} />}>Gerenciar comunidade</Button>}
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <button type="button" onClick={() => { setMembersOpen(true); setMobileView('members') }} className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-white/10 xl:hidden" aria-label="Mostrar membros" title="Mostrar membros"><Users size={16} /></button>
@@ -1373,6 +1397,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               </article>)}
               {events.length === 0 && <p className="py-8 text-center text-sm text-text-secondary">Ainda não há eventos neste fórum.</p>}
             </section>
+          ) : showCommunityPosts ? (
+            <CommunityForumChannel forumId={communityId} currentUserId={currentUserId} canCreateTopics={hasCommunityPermission('createTopics')} />
           ) : selectedChannel?.isPrivate && !canViewSelectedChannel ? (
             <section className="flex flex-1 items-center justify-center p-6 text-center text-sm text-text-secondary">Este canal é privado. Peça acesso a um administrador do fórum.</section>
           ) : selectedChannel?.type === 'voice' ? (
@@ -1382,18 +1408,28 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 <h4 className="text-lg font-semibold text-text-primary">{selectedChannel.name}</h4>
                 <p className="text-sm text-text-secondary">{voiceParticipants.length} conectado(s)</p>
               </div>
+              <div className="grid w-full max-w-3xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Participantes no canal de voz">
+                {voiceParticipants.map((participant) => {
+                  const isSelf = participant.userId === currentUserId
+                  const isSharing = isSelf ? communityVoiceClient.isScreenSharing : communityVoiceClient.getRemoteScreenShares().some((share) => share.userId === participant.userId)
+                  return <article key={participant.userId} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background-primary p-3 text-left">
+                    <div className="min-w-0"><p className="truncate text-sm font-medium text-text-primary">{participant.user.displayName}{isSelf ? ' (você)' : ''}</p><p className="text-[11px] text-text-secondary">{participant.selfDeafened || participant.serverDeafened ? 'Áudio desativado' : participant.selfMuted || participant.serverMuted ? 'Microfone mudo' : 'Conectado'}</p></div>
+                    {isSharing && <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-semibold text-red-200">AO VIVO</span>}
+                  </article>
+                })}
+                {voiceParticipants.length === 0 && <p className="col-span-full rounded-xl border border-dashed border-border p-5 text-sm text-text-secondary">Ninguém está conectado a este canal. Entre para iniciar a conversa.</p>}
+              </div>
               <div className="flex flex-wrap justify-center gap-2">
-                <Button onClick={() => void joinVoice(selectedChannel)} loading={busy === `voice:${selectedChannel.id}`} leftIcon={<Mic size={15} />}>Entrar</Button>
-                <Button variant="secondary" onClick={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} leftIcon={communityVoiceClient.muted ? <MicOff size={15} /> : <Mic size={15} />}>
+                {!viewerInSelectedVoice ? <Button onClick={() => void joinVoice(selectedChannel)} loading={busy === `voice:${selectedChannel.id}`} leftIcon={<Mic size={15} />}>Entrar no canal</Button> : <Button variant="danger" onClick={() => void leaveVoice()} loading={busy === 'voice:leave'} leftIcon={<PhoneOff size={15} />}>Sair da voz</Button>}
+                <Button variant="secondary" disabled={!viewerInSelectedVoice} onClick={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} leftIcon={communityVoiceClient.muted ? <MicOff size={15} /> : <Mic size={15} />}>
                   {communityVoiceClient.muted ? 'Mutado' : 'Microfone'}
                 </Button>
-                <Button variant="secondary" onClick={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} leftIcon={communityVoiceClient.deafened ? <VolumeX size={15} /> : <Volume2 size={15} />}>
+                <Button variant="secondary" disabled={!viewerInSelectedVoice} onClick={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} leftIcon={communityVoiceClient.deafened ? <VolumeX size={15} /> : <Volume2 size={15} />}>
                   {communityVoiceClient.deafened ? 'Surdo' : 'Áudio'}
                 </Button>
-                <Button variant="secondary" onClick={() => void toggleVoiceScreenShare()} leftIcon={<MonitorUp size={15} />}>
+                <Button variant="secondary" disabled={!viewerInSelectedVoice || screenPickerLoading} onClick={() => void toggleVoiceScreenShare()} leftIcon={<MonitorUp size={15} />}>
                   {communityVoiceClient.isScreenSharing ? 'Parar tela' : 'Compartilhar tela'}
                 </Button>
-                <Button variant="danger" onClick={() => void leaveVoice()} loading={busy === 'voice:leave'} leftIcon={<PhoneOff size={15} />}>Sair</Button>
               </div>
               {communityVoiceClient.getRemoteScreenShares().filter((share) => voiceParticipants.some((participant) => participant.userId === share.userId)).map((share) => <figure key={share.userId} className="w-full max-w-3xl overflow-hidden rounded-lg border border-border bg-background-secondary text-left">
                 <figcaption className="border-b border-border px-3 py-2 text-xs font-medium text-text-primary">Tela compartilhada por {voiceParticipants.find((participant) => participant.userId === share.userId)?.user.displayName ?? 'participante'}</figcaption>
@@ -1402,13 +1438,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               <span className="rounded-full border border-border px-3 py-1 text-xs text-text-secondary">{voiceStatus}</span>
             </section>
           ) : selectedChannel?.type === 'forum' ? (
-            <section className="flex flex-1 items-center justify-center p-6 text-center">
-              <div>
-                <MessageSquare size={32} className="mx-auto mb-3 text-text-secondary" />
-                <h4 className="text-base font-semibold text-text-primary">Canal de forum</h4>
-                <p className="mt-1 text-sm text-text-secondary">Tópicos e respostas existentes continuam no gerenciamento do fórum.</p>
-              </div>
-            </section>
+            <CommunityForumChannel forumId={communityId} currentUserId={currentUserId} canCreateTopics={hasCommunityPermission('createTopics')} />
           ) : (
             <section className="flex min-h-0 flex-1 flex-col">
               <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -1478,24 +1508,11 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 <button key={member.userId} type="button" onClick={() => setSelectedMember(member)} className="flex items-center gap-2 rounded-lg p-1 text-left hover:bg-white/5"><Avatar src={member.user.avatarUrl} name={member.user.displayName} size="xs" /><div className="min-w-0"><p className="truncate text-sm text-text-primary">{member.user.displayName}</p><p className="truncate text-[11px] text-text-secondary">{getCommunityMemberRoleLabels(member).join(' · ') || 'Membro'}</p></div></button>
               ))}</div>}
           </div>
-          <div className="border-b border-border p-3">
-            <h3 className="text-xs font-semibold uppercase text-text-secondary">Voz</h3>
-            <div className="mt-2 flex flex-col gap-2">
-              {(state?.voiceStates ?? []).map((voice) => (
-                <div key={voice.userId} className="flex items-center justify-between gap-2 text-sm text-text-primary">
-                  <span className="truncate">{voice.user.displayName}</span>
-                  <span className="flex gap-1 text-text-secondary">
-                    {(voice.selfMuted || voice.serverMuted) && <MicOff size={13} />}
-                    {(voice.selfDeafened || voice.serverDeafened) && <VolumeX size={13} />}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </aside>
         {!membersOpen && <button type="button" onClick={() => setMembersOpen(true)} className="hidden place-items-center border-l border-border text-text-secondary hover:text-text-primary xl:grid" aria-label="Mostrar membros" title="Mostrar membros"><Users size={17} /></button>}
       </div>
-      {managementOpen && <CommunityManagementModal communityName={state?.community.name ?? forum?.name ?? 'Fórum'} sections={managementSections} activeSection={managementSection} onSelectSection={setManagementSection} onClose={() => setManagementOpen(false)}>
+      {screenPickerOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Escolher o que compartilhar"><section className="w-full max-w-2xl rounded-2xl border border-border bg-background-secondary p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-text-primary">Compartilhar tela</h2><p className="mt-1 text-sm text-text-secondary">Escolha uma tela ou janela. O compartilhamento transmite vídeo; o áudio do sistema não está habilitado.</p></div><button type="button" onClick={() => setScreenPickerOpen(false)} aria-label="Fechar seletor" className="rounded-md p-2 text-text-secondary hover:bg-background-tertiary"><X size={16} /></button></div><div className="mt-4 grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">{screenSources.map((source) => <button key={source.id} type="button" disabled={screenPickerLoading} onClick={() => void startScreenShareFromSource(source.id)} className="overflow-hidden rounded-xl border border-border bg-background-primary text-left transition hover:border-accent/60 disabled:opacity-60">{source.thumbnail ? <img src={source.thumbnail} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="grid aspect-video place-items-center bg-background-tertiary"><MonitorUp size={26} className="text-text-secondary" /></div>}<span className="block truncate px-3 py-2 text-sm font-medium text-text-primary">{source.name}</span></button>)}</div><div className="mt-4 flex justify-end"><Button variant="ghost" onClick={() => setScreenPickerOpen(false)}>Cancelar</Button></div></section></div>}
+      {managementOpen && <CommunityManagementModal communityName={state?.community.name ?? forum?.name ?? 'Comunidade'} sections={managementSections} activeSection={managementSection} onSelectSection={setManagementSection} onClose={() => setManagementOpen(false)}>
         {managementSection === 'reports' && canManageReports ? communityMessageReportsSection : ['overview', 'posts', 'members', 'reports', 'settings'].includes(managementSection) && forum && canManageLegacyForum ? <ForumManagementModal forum={forum} onClose={() => setManagementOpen(false)} presentation="embedded" initialTab={(managementSection === 'reports' ? 'moderation' : managementSection) as ForumManagementTab} /> : managementSection === 'moderation' ? <div className="space-y-4">
           <div><h2 className="text-xl font-semibold text-text-primary">Moderação</h2><p className="mt-1 text-sm text-text-secondary">Aplique medidas e consulte o histórico disciplinar deste fórum.</p></div>
           {moderationSummaryError && <p role="alert" className="text-sm text-red-300">{moderationSummaryError}</p>}

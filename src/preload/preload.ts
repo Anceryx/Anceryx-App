@@ -62,6 +62,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener('updater:state', listener)
     }
   },
+  screenCapture: {
+    listSources: (): Promise<Array<{ id: string; name: string; thumbnail: string | null }>> => ipcRenderer.invoke('screen-capture:list-sources') as Promise<Array<{ id: string; name: string; thumbnail: string | null }>>,
+    selectSource: (sourceId: string): Promise<boolean> => ipcRenderer.invoke('screen-capture:select-source', sourceId) as Promise<boolean>,
+  },
   licenses: {
     getManifest: (): Promise<LicenseManifest> => ipcRenderer.invoke('licenses:get-manifest') as Promise<LicenseManifest>,
   },
