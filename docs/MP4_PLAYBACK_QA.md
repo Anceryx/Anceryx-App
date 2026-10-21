@@ -1,31 +1,31 @@
-# Matriz de diagnóstico de MP4 no aplicativo
+# QA de recorte de banners e reprodução MP4
 
-Use os três arquivos da mesma origem, sem reexportar entre as execuções:
+## Recorte de banners
 
-| Variante | Vídeo | Áudio | Dados conhecidos |
-|---|---|---|---|
-| Original | H.264 High | HE-AAC v2 | 1024×576, 15,075 s, 522.063 bytes; FFmpeg decodificou sem erros |
-| AAC-LC | Mesmo vídeo H.264 | AAC-LC | Aguardando arquivo de comparação |
-| Sem áudio | Mesmo vídeo H.264 | Nenhum | Aguardando arquivo de comparação |
+O harness usa o componente `ImageCropModal` da aplicação e gera uma imagem assimétrica de quatro quadrantes. Ele reabre o arquivo exportado e verifica por pixels as cores dos quatro quadrantes.
 
-## Separar entrega de mídia e codec
+1. No diretório `Anceryx-App`, execute `npm run test:image-crop:visual` e abra `http://127.0.0.1:5173/image-crop-visual-test.html` no navegador. Esse harness testa o componente React real sem iniciar o Electron.
+2. O modal de teste será aberto automaticamente no navegador.
+3. Confirme visualmente que a área de recorte mostra os quatro quadrantes coloridos. Mova o zoom, arraste a imagem e aplique.
+4. Confira a imagem exportada e os resultados `Quadrantes detectados: 4/4` e `Exportação: ...`.
+5. Feche ou volte à aplicação e repita a seleção de banner em Perfil e em Gerenciar Fórum. A confirmação só habilita depois do carregamento real da imagem.
 
-1. Publique cada variante no mesmo fluxo e abra-a no mesmo contexto de DM/Feed. Anote a URL do post/mensagem e a hora; não compartilhe o ticket temporário de reprodução.
-2. No DevTools do Electron, em Network, confirme `POST /media/stream-ticket` com status 200. A resposta deve fornecer o URL de playback para a mídia privada.
-3. Inspecione `GET /media/files/...` ou o URL de playback: resposta completa 200 com `Content-Type: video/mp4`; para solicitações parciais, 206 com `Content-Range: bytes início-fim/tamanho` e `Accept-Ranges: bytes`. Um Range fora do arquivo deve retornar 416. Confira se o tamanho total coincide com o arquivo publicado.
-4. Repita primeiro no Chromium/Chrome e depois no Anceryx Electron usando a mesma conta e a mesma variante. Guarde apenas status, cabeçalhos, `MediaError.code`, `networkState`, `readyState` e os resultados `canPlayMp4`, `canPlayAacLc` e `canPlayHeAacV2` do console do aplicativo; não copie URLs de ticket ou tokens. `canPlayType` é apenas um indício do runtime, não prova que o arquivo reproduz.
+O harness verifica o recorte básico por pixels; zoom e arraste ainda precisam ser exercitados visualmente nos dois fluxos do aplicativo Windows.
 
-| Resultado observado | Indicação principal |
-|---|---|
-| Range, MIME ou tamanho incorreto em ambos | Entrega/armazenamento da mídia; investigar proxy do Blob e resposta HTTP |
-| Apenas o original falha; AAC-LC e sem áudio reproduzem no mesmo Electron | Diferença no decodificador HE-AAC v2 |
-| H.264 + AAC-LC e sem áudio falham igualmente no Electron, mas reproduzem no Chromium | Diferença no runtime/codec do Electron ou na integração Electron |
-| Todos falham também no Chromium, com 200, `video/mp4` e Range correto | Arquivo/container/codificação; comparar com a validação externa e streams identificados |
-| Ticket 401/403/404, antes da requisição de vídeo | Sessão, autorização ou acesso à mídia privada; não é evidência de codec |
-| `MediaError.code` 2 | Interrupção/entrega de rede |
-| `MediaError.code` 3 | Falha de decodificação |
-| `MediaError.code` 4 | Origem ou formato não reconhecido; inspecionar MIME, container e suporte a codecs |
+## Diagnóstico MP4
 
-## Cobertura automatizada disponível
+As três variantes abaixo já foram testadas pelo usuário no aplicativo Windows instalado e todas falharam: original H.264 High + HE-AACv2, mesmo H.264 + AAC-LC e mesmo H.264 sem áudio. Isso afasta a hipótese de falha exclusiva do HE-AACv2.
 
-`anceryx-api/tests/media.test.ts` valida upload de um MP4 estrutural e resposta completa/Range com status, MIME e tamanho. Esse fixture não contém streams H.264/AAC reais. Os testes automatizados não comprovam reprodução nem suporte do Electron aos codecs. Conclusão de correção depende da matriz acima executada no aplicativo Windows com as três variantes.
+A CSP do Electron e a política HTML tinham `media-src 'self' blob:`. Elas bloqueavam as URLs HTTPS usadas pelo endpoint de mídia privada e pelo CDN público. As políticas agora permitem fontes HTTPS. A resposta de mídia ainda precisa ser validada com os arquivos reais.
+
+1. Execute `npm run dev` e abra as ferramentas do Electron com `Ctrl+Shift+I`.
+2. Para comparar mídia local e remota, selecione cada variante no compositor de DM sem enviar e reproduza a prévia local. Depois envie uma vez e reproduza o anexo persistido. Não repita uploads que já criaram um anexo.
+3. Na aba Console, registre `[media] Video playback event`, `[media] Video playback failed`, `[media-network] response`, `[media-network] request completed` e `[media-network] request failed`. Os registros não incluem URLs, caminhos, tickets nem tokens.
+4. Em Network, registre os status do ticket e da mídia, `Content-Type`, `Content-Length`, `Content-Disposition`, `Accept-Ranges`, `Content-Range`, Range solicitado, redirecionamentos e tamanho transferido. A API deve entregar 200 para a resposta completa, 206 para Range válido e 416 para Range inválido; o tipo esperado é `video/mp4` e a disposição é `inline`.
+5. Compare as mesmas três variantes na prévia local, em Chromium e no Electron instalado. Registre código/mensagem de `MediaError`, `networkState`, `readyState`, dimensões e duração reportadas, e os resultados `canPlayType` do console.
+
+`canPlayType` é apenas um indício do runtime. Os testes da API verificam cabeçalhos e Range, mas não contêm streams reais H.264/AAC e não comprovam decodificação. A CSP corrigida não equivale a comprovação de reprodução; a matriz precisa ser repetida no Electron Windows com as variantes reais.
+
+## SquareCloud Blob
+
+O SDK instalado `@squarecloud/blob` v4 documenta orçamento de 5 chamadas de API por minuto sem plano e 30 por minuto no menor plano pago; a assinatura efetiva desta conta não está disponível no checkout. Uploads simples têm limite de 1 por segundo abaixo de Pro (sem limite por operação em Pro/Enterprise), não oferecem `Retry-After` e uma resposta `RATE_LIMITED` também pode sinalizar bloqueio de conta por 30 minutos. Por isso, não há retry automático. A criação de Fórum espaça uploads simples consecutivos em 1,1 s e preserva a URL do ícone após sucesso para não enviá-lo novamente. Esse espaçamento só cobre essa sequência no mesmo cliente; não coordena usuários ou processos da API. Um 429 agora retorna `MEDIA_STORAGE_RATE_LIMITED` sem repetir o envio.

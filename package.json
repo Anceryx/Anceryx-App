@@ -19,6 +19,7 @@
     "test:electron-safe-storage": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/electron-safe-storage-two-process-smoke.ps1",
     "test:session-revision": "node --experimental-strip-types scripts/session-revision.test.mjs",
     "test:image-crop": "node --experimental-strip-types scripts/image-crop.test.mjs",
+    "test:image-crop:visual": "vite --config scripts/image-crop-visual-vite.config.ts",
     "test:shared-post-link": "node --experimental-strip-types scripts/shared-post-link.test.mjs",
     "test:dialog-accessibility": "node --experimental-strip-types scripts/dialog-accessibility.test.mjs",
     "test:theme-entitlement": "node --experimental-strip-types scripts/theme-entitlement.test.mjs",
@@ -32,7 +33,8 @@
     "test:community-workspace-layout": "node --experimental-strip-types scripts/community-workspace-layout.test.mjs",
     "test:community-screen-share": "node scripts/community-screen-share.test.mjs",
     "test:settings-license-ui": "node scripts/settings-license-ui.test.mjs",
-    "test:updater-ui-state": "node scripts/updater-ui-state.test.mjs"
+    "test:updater-ui-state": "node scripts/updater-ui-state.test.mjs",
+    "test:mp4-diagnostics": "node scripts/mp4-playback-diagnostics.test.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.11",

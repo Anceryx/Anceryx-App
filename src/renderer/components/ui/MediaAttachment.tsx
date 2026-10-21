@@ -57,6 +57,7 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
   }, [resolved, retry])
   const handleVideoError = () => {
     const code = videoRef.current?.error?.code ?? 0
+    const video = videoRef.current
     const codecProbe = document.createElement('video')
     const message = code === 2
       ? 'A conexão foi interrompida durante o carregamento.'
@@ -67,8 +68,13 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
           : 'Não foi possível reproduzir este vídeo.'
     console.warn('[media] Video playback failed', {
       errorCode: code,
-      networkState: videoRef.current?.networkState,
-      readyState: videoRef.current?.readyState,
+      errorMessage: video?.error?.message ?? '',
+      networkState: video?.networkState,
+      readyState: video?.readyState,
+      sourceProtocol: safeProtocol(video?.currentSrc),
+      videoWidth: video?.videoWidth,
+      videoHeight: video?.videoHeight,
+      durationSeconds: Number.isFinite(video?.duration) ? video?.duration : null,
       mimeType,
       canPlayMp4: codecProbe.canPlayType('video/mp4'),
       canPlayAacLc: codecProbe.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
@@ -78,9 +84,26 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
     setResolved('')
     onError?.()
   }
+  const logVideoState = (eventName: string, video: HTMLVideoElement) => {
+    console.info('[media] Video playback event', {
+      event: eventName,
+      sourceProtocol: safeProtocol(video.currentSrc),
+      networkState: video.networkState,
+      readyState: video.readyState,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      durationSeconds: Number.isFinite(video.duration) ? video.duration : null,
+      mimeType,
+    })
+  }
   const retryButton = <button type="button" className="mt-2 rounded-md border border-border px-3 py-1.5 text-xs text-text-primary hover:bg-background-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={(event) => { event.stopPropagation(); setFailure(null); setResolved(''); setRetry((value) => value + 1) }}>Tentar novamente</button>
   if (!resolved) return <div className={`${className ?? ''} grid min-h-20 place-items-center rounded-lg bg-background-tertiary p-3 text-center text-xs text-text-secondary`} role={failure ? 'status' : undefined}>{failure ? <div>{failure}{retryButton}</div> : 'Carregando mídia…'}</div>
-  if (mimeType === 'video/mp4') return <video ref={videoRef} data-media-attachment="true" src={resolved} controls preload="metadata" playsInline className={className} aria-label={alt} onError={handleVideoError} onPlay={(event) => { document.querySelectorAll<HTMLVideoElement>('video[data-media-attachment="true"]').forEach((video) => { if (video !== event.currentTarget) video.pause() }) }} onClick={onClick} />
+  if (mimeType === 'video/mp4') return <video ref={videoRef} data-media-attachment="true" src={resolved} controls preload="metadata" playsInline className={className} aria-label={alt} onError={handleVideoError} onLoadStart={(event) => logVideoState('loadstart', event.currentTarget)} onLoadedMetadata={(event) => logVideoState('loadedmetadata', event.currentTarget)} onLoadedData={(event) => logVideoState('loadeddata', event.currentTarget)} onCanPlay={(event) => logVideoState('canplay', event.currentTarget)} onStalled={(event) => logVideoState('stalled', event.currentTarget)} onWaiting={(event) => logVideoState('waiting', event.currentTarget)} onPlay={(event) => { document.querySelectorAll<HTMLVideoElement>('video[data-media-attachment="true"]').forEach((video) => { if (video !== event.currentTarget) video.pause() }) }} onClick={onClick} />
   if (!mimeType.startsWith('image/')) return <span className="text-xs text-text-secondary">Formato de mídia indisponível.</span>
   return <img src={resolved} alt={alt} className={className} loading="lazy" draggable={false} onError={() => { console.warn('[media] Image attachment failed to load', { mimeType }); setFailure('Não foi possível carregar esta imagem.'); setResolved(''); onError?.() }} onClick={onClick} />
+}
+
+function safeProtocol(source: string | undefined): string | null {
+  if (!source) return null
+  try { return new URL(source).protocol } catch { return null }
 }

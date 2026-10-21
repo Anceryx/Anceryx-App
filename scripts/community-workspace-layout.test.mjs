@@ -43,6 +43,8 @@ assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, shari
 assert.match(forums, /onOpenWorkspace\(forum\)/)
 assert.match(forumCreation, /Criar sem \{failedOptionalImage === 'banner' \? 'o banner' : 'o ícone'\}/)
 assert.match(forumCreation, /uploadedIconUrl \?\? iconDataUrl/)
+assert.match(forumCreation, /spacingMs = 1_100/)
+assert.match(forumCreation, /lastBlobUploadAtRef\.current = Date\.now\(\)/)
 assert.match(forums, /CreateForumModal from '@\/components\/social\/CreateForumModal'/)
 assert.match(explore, /localForum\.isJoined && onOpenWorkspace/)
 

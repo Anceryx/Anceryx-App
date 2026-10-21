@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const main = await readFile(new URL('../src/main/main.ts', import.meta.url), 'utf8')
+const html = await readFile(new URL('../src/renderer/index.html', import.meta.url), 'utf8')
+const attachment = await readFile(new URL('../src/renderer/components/ui/MediaAttachment.tsx', import.meta.url), 'utf8')
+const crop = await readFile(new URL('../src/renderer/components/ui/ImageCropModal.tsx', import.meta.url), 'utf8')
+const cropHarness = await readFile(new URL('../src/renderer/image-crop-visual-test.tsx', import.meta.url), 'utf8')
+const qa = await readFile(new URL('../docs/MP4_PLAYBACK_QA.md', import.meta.url), 'utf8')
+
+assert.match(main, /media-src 'self' blob: https:/)
+assert.match(html, /media-src 'self' blob: https:/)
+for (const header of ['content-type', 'content-length', 'content-disposition', 'accept-ranges', 'content-range']) assert.ok(main.includes(`readHeader('${header}')`), `Electron media response diagnostics must include ${header}`)
+assert.match(main, /onBeforeSendHeaders/)
+assert.match(main, /rangeRequested: mediaRanges\.get\(details\.id\)/)
+assert.match(main, /onBeforeRedirect/)
+assert.match(main, /onErrorOccurred/)
+assert.match(attachment, /onLoadedMetadata=/)
+assert.match(attachment, /onLoadedData=/)
+assert.match(attachment, /errorMessage: video\?\.error\?\.message/)
+assert.match(attachment, /canPlayHeAacV2/)
+assert.match(crop, /disabled=\{!imageReady \|\| busy \|\| Boolean\(error\)\}/)
+assert.match(cropHarness, /Quadrantes detectados/)
+assert.match(cropHarness, /context\.getImageData/)
+assert.match(qa, /As três variantes.*todas falharam/)
+assert.match(qa, /prévia local/)
+
+console.log('MP4 diagnostics smoke: PASS (HTTPS CSP, media response headers, Range, redirects, failures, local/remote QA, crop harness)')

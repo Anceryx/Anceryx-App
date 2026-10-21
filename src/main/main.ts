@@ -221,11 +221,33 @@ function createWindow(): void {
   // ── Content Security Policy ───────────────────────────────────────────────
   // Bloqueia eval, inline scripts não autorizados e fontes externas não listadas.
   // Em DEV: relaxa script-src para permitir hot-reload do Vite.
+  const mediaRanges = new Map<number, string>()
+  win.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
+    if (details.resourceType === 'media') {
+      const range = details.requestHeaders.Range ?? details.requestHeaders.range
+      if (range) mediaRanges.set(details.id, String(range))
+    }
+    callback({ requestHeaders: details.requestHeaders })
+  })
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const isDev = !!process.env['ELECTRON_RENDERER_URL']
     const scriptSrc = isDev
       ? "'self' 'unsafe-inline' 'unsafe-eval'"   // necessário apenas para Vite HMR
       : "'self'"
+
+    if (details.resourceType === 'media') {
+      const responseHeaders = details.responseHeaders ?? {}
+      const readHeader = (name: string) => Object.entries(responseHeaders).find(([key]) => key.toLowerCase() === name)?.[1]?.join(', ') ?? null
+      console.info('[media-network] response', {
+        statusCode: details.statusCode,
+        mimeType: readHeader('content-type'),
+        contentLength: readHeader('content-length'),
+        contentDisposition: readHeader('content-disposition'),
+        acceptRanges: readHeader('accept-ranges'),
+        contentRange: readHeader('content-range'),
+        rangeRequested: mediaRanges.get(details.id) ?? null,
+      })
+    }
 
     callback({
       responseHeaders: {
@@ -238,7 +260,7 @@ function createWindow(): void {
             `img-src 'self' data: blob: https:${isDev ? ' http://localhost:3000' : ''}`,
             `font-src 'self' data:`,
             `connect-src 'self' https: wss:${isDev ? ' http://localhost:3000 ws://localhost:3000' : ''}`,
-            `media-src 'self' blob:`,
+            `media-src 'self' blob: https:`,
             `object-src 'none'`,
             `base-uri 'self'`,
             `form-action 'self'`,
@@ -247,6 +269,24 @@ function createWindow(): void {
         ]
       }
     })
+  })
+  win.webContents.session.webRequest.onBeforeRedirect((details) => {
+    if (details.resourceType !== 'media') return
+    let targetOrigin: string | null = null
+    try { targetOrigin = new URL(details.redirectURL).origin } catch { /* Keep malformed redirect targets out of diagnostics. */ }
+    console.info('[media-network] redirect', { statusCode: details.statusCode, targetOrigin })
+  })
+  win.webContents.session.webRequest.onErrorOccurred((details) => {
+    if (details.resourceType === 'media') {
+      mediaRanges.delete(details.id)
+      console.warn('[media-network] request failed', { error: details.error })
+    }
+  })
+  win.webContents.session.webRequest.onCompleted((details) => {
+    if (details.resourceType === 'media') {
+      mediaRanges.delete(details.id)
+      console.info('[media-network] request completed', { statusCode: details.statusCode })
+    }
   })
 
   // ── Bloquear navegação arbitrária ─────────────────────────────────────────

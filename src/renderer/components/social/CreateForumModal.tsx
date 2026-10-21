@@ -63,6 +63,7 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose, onCreated 
   const [submitting, setSubmitting] = useState(false)
   const [uploadedIconUrl, setUploadedIconUrl] = useState<string | null>(null)
   const [uploadedBannerUrl, setUploadedBannerUrl] = useState<string | null>(null)
+  const lastBlobUploadAtRef = useRef(0)
   const [failedOptionalImage, setFailedOptionalImage] = useState<'icon' | 'banner' | null>(null)
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [templateId, setTemplateId] = useState<ForumTemplateKey | null>(null)
@@ -144,13 +145,18 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose, onCreated 
         uploadingImage = 'icon'
         const extension = iconDataUrl.startsWith('data:image/webp') ? 'webp' : 'png'
         const asset = await mediaApi.uploadDataUrl('forum-icon', `forum-icon.${extension}`, iconDataUrl)
+        lastBlobUploadAtRef.current = Date.now()
         finalIcon = asset.publicUrl
         setUploadedIconUrl(asset.publicUrl)
       }
       if (bannerDataUrl && !uploadedBannerUrl && !(skipImage === 'banner' && failedOptionalImage === 'banner')) {
         uploadingImage = 'banner'
+        const spacingMs = 1_100
+        const remainingMs = Math.max(0, spacingMs - (Date.now() - lastBlobUploadAtRef.current))
+        if (lastBlobUploadAtRef.current > 0 && remainingMs > 0) await new Promise((resolve) => setTimeout(resolve, remainingMs))
         const extension = bannerDataUrl.startsWith('data:image/webp') ? 'webp' : 'png'
         const asset = await mediaApi.uploadDataUrl('forum-banner', `forum-banner.${extension}`, bannerDataUrl)
+        lastBlobUploadAtRef.current = Date.now()
         finalBanner = asset.publicUrl
         setUploadedBannerUrl(asset.publicUrl)
       }
