@@ -143,4 +143,3 @@ export function useTranslation() {
   const locale = useUIStore((state) => state.locale)
   return (key: TranslationKey) => translate(key, locale)
 }
-

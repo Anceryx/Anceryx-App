@@ -47,4 +47,3 @@ export function dispatchKeyboardShortcut(event: KeyboardEvent, shortcuts = getKe
 }
 
 export const shortcutSections = ['appearance', 'language-date-time', 'shortcuts', 'preferences'] as const satisfies readonly ExperienceSection[]
-
