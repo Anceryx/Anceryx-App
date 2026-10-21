@@ -27,6 +27,8 @@ export interface CreateForumParams {
   bannerImage: string | null
   tags: string[]
   ownerId: string
+  visibility: 'public' | 'private'
+  structure: { categories: Array<{ name: string; channels: Array<{ name: string; type: 'text' | 'voice' }> }> }
 }
 
 interface SocialState {
@@ -56,7 +58,7 @@ interface SocialState {
   setRealtimePostLike: (postId: string, userId: string, liked: boolean, likeCount: number) => void
   upsertRealtimeComment: (comment: RealtimeCommentDto) => void
   deleteRealtimeComment: (postId: string, commentId: string) => void
-  createForum: (params: CreateForumParams) => Promise<void>
+  createForum: (params: CreateForumParams) => Promise<Forum>
   toggleForumJoin: (forumId: string) => Promise<void>
   updateForum: (forumId: string, patch: Pick<Partial<Forum>, 'name' | 'description' | 'visibility' | 'iconImage' | 'bannerImage'>) => void
   updateForumTags: (forumId: string, tags: string[]) => void
@@ -256,10 +258,11 @@ export const useSocialStore = create<SocialState>()((set) => ({
       }),
     })),
 
-  createForum: async ({ name, description, iconImage, bannerImage, tags }) => {
-    const { forum } = await forumApi.createForum({ name: name.trim(), description: description.trim(), visibility: 'public', iconUrl: iconImage, bannerUrl: bannerImage })
-    for (const tag of tags) await forumApi.createTag(forum.id, tag)
-    set((state) => ({ forums: [apiForumToLocal(forum), ...state.forums] }))
+  createForum: async ({ name, description, iconImage, bannerImage, tags, visibility, structure }) => {
+    const { forum } = await forumApi.createForum({ name: name.trim(), description: description.trim(), visibility, iconUrl: iconImage, bannerUrl: bannerImage, tags, structure })
+    const created = apiForumToLocal(forum)
+    set((state) => ({ forums: [created, ...state.forums] }))
+    return created
   },
 
   toggleForumJoin: async (forumId) => {

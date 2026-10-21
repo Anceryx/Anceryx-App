@@ -12,6 +12,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ### Comunidades
 
+- A criação de fóruns oferece modelos iniciais, revisão de categorias e canais, finalidade e visibilidade; o fórum e sua estrutura inicial são enviados em uma única operação.
 - O canal de publicações agora lista tópicos reais, permite criar, abrir, editar e excluir publicações próprias e responder a tópicos existentes.
 - A tela inicial do fórum usa uma única ação para entrar/abrir a comunidade; o gerenciamento permanece dentro da experiência da comunidade.
 - Canais podem ser recolhidos, e participantes de voz aparecem junto ao canal correspondente. A área de voz mostra participantes, estado do microfone e transmissões ativas.

@@ -21,6 +21,14 @@ import { realtimeClient } from '@/services/realtimeClient'
 import { communityApi } from '@/services/communityApi'
 
 type Tab = 'todos' | 'meus'
+type ForumTemplateKey = 'blank' | 'games' | 'friends' | 'community'
+type ForumChannelType = 'text' | 'voice'
+const FORUM_TEMPLATES: Array<{ id: ForumTemplateKey; title: string; description: string; categories: Array<{ name: string; channels: Array<{ name: string; type: ForumChannelType }> }> }> = [
+  { id: 'blank', title: 'Criar do zero', description: 'Comece com uma estrutura simples e personalize depois.', categories: [{ name: 'GERAL', channels: [{ name: 'geral', type: 'text' }] }] },
+  { id: 'games', title: 'Jogos', description: 'Conversa, clipes e canais de voz para jogar junto.', categories: [{ name: 'INÍCIO', channels: [{ name: 'boas-vindas', type: 'text' }, { name: 'regras', type: 'text' }] }, { name: 'CONVERSAS', channels: [{ name: 'geral', type: 'text' }, { name: 'clipes-e-destaques', type: 'text' }] }, { name: 'VOZ', channels: [{ name: 'Lobby', type: 'voice' }, { name: 'Jogos', type: 'voice' }] }] },
+  { id: 'friends', title: 'Amigos', description: 'Bate-papo descontraído e salas de voz para o grupo.', categories: [{ name: 'GERAL', channels: [{ name: 'geral', type: 'text' }, { name: 'memes', type: 'text' }] }, { name: 'VOZ', channels: [{ name: 'Resenha', type: 'voice' }, { name: 'Jogar', type: 'voice' }] }] },
+  { id: 'community', title: 'Clube ou comunidade', description: 'Organize informações, apresentações, conversas e encontros.', categories: [{ name: 'COMUNIDADE', channels: [{ name: 'avisos', type: 'text' }, { name: 'apresentações', type: 'text' }, { name: 'regras', type: 'text' }] }, { name: 'CONVERSAS', channels: [{ name: 'geral', type: 'text' }, { name: 'sugestões', type: 'text' }] }, { name: 'VOZ', channels: [{ name: 'Encontros', type: 'voice' }] }] },
+]
 
 // ── Constantes de upload ──────────────────────────────────────────────────────
 const ICON_MIMES   = ['image/jpeg', 'image/png', 'image/webp']
@@ -41,9 +49,10 @@ function readAsDataURL(file: File): Promise<string> {
 // ── Modal de criação de fórum ─────────────────────────────────────────────────
 interface CreateForumModalProps {
   onClose: () => void
+  onCreated: (forum: Forum) => void
 }
 
-const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
+const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose, onCreated }) => {
   const createForum      = useSocialStore((s) => s.createForum)
   const currentUserId    = useAuthStore((s) => s.user?.id ?? '')
   const addNotification  = useUIStore((s) => s.addNotification)
@@ -63,6 +72,10 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [templateId, setTemplateId] = useState<ForumTemplateKey | null>(null)
+  const [purpose, setPurpose] = useState<'club' | 'friends' | 'later'>('later')
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public')
 
   const iconInputRef   = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
@@ -106,6 +119,10 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
 
   // ── Submit ──────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
+    if (step === 1) {
+      if (templateId) setStep(2)
+      return
+    }
     const errs: Record<string, string> = {}
 
     const nameErr = validateForumName(name)
@@ -119,6 +136,10 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
 
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
+      return
+    }
+    if (step === 2) {
+      setStep(3)
       return
     }
 
@@ -142,16 +163,18 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
       return
     }
     try {
-      await createForum({
+      const createdForum = await createForum({
       name,
       description,
       iconImage: finalIcon,
       bannerImage: finalBanner,
       tags,
       ownerId: currentUserId,
+      visibility,
+      structure: { categories: FORUM_TEMPLATES.find((template) => template.id === templateId)!.categories },
       })
-      addNotification(`Forum "${name.trim()}" criado!`, 'success')
-      onClose()
+      addNotification(`Fórum "${name.trim()}" criado.`, 'success')
+      onCreated(createdForum)
     } catch (error) {
       addNotification(error instanceof Error ? error.message : 'Não foi possível criar o fórum.', 'error')
     } finally { setSubmitting(false) }
@@ -192,6 +215,24 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
 
           {/* Corpo com scroll */}
           <div className="overflow-y-auto flex-1 px-5 py-4 flex flex-col gap-5">
+
+            {step === 1 && (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-text-secondary">Escolha uma estrutura inicial para o seu fórum.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {FORUM_TEMPLATES.map((template) => (
+                    <button key={template.id} type="button" onClick={() => setTemplateId(template.id)}
+                      className={`text-left rounded-xl border p-3 transition-colors ${templateId === template.id ? 'border-accent bg-accent/10' : 'border-border hover:border-text-secondary'}`}>
+                      <span className="block text-sm font-semibold text-text-primary">{template.title}</span>
+                      <span className="block mt-1 text-xs text-text-secondary">{template.description}</span>
+                      <span className="block mt-2 text-[11px] text-text-secondary">{template.categories.length} categorias · {template.categories.reduce((total, category) => total + category.channels.length, 0)} canais</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 2 && <>
 
             {/* Banner */}
             <div className="flex flex-col gap-1.5">
@@ -358,13 +399,45 @@ const CreateForumModal: React.FC<CreateForumModalProps> = ({ onClose }) => {
                 </div>
               )}
             </div>
+            </>}
+
+            {step === 3 && templateId && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-text-primary">Revise a estrutura</h3>
+                  <p className="mt-1 text-xs text-text-secondary">Categorias e canais serão criados junto com o fórum.</p>
+                </div>
+                <div className="rounded-xl border border-border p-3 flex flex-col gap-3">
+                  {FORUM_TEMPLATES.find((template) => template.id === templateId)?.categories.map((category) => (
+                    <div key={category.name}>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{category.name}</p>
+                      <p className="mt-1 text-sm text-text-primary">{category.channels.map((channel) => `${channel.type === 'voice' ? '◖' : '#'} ${channel.name}`).join(' · ')}</p>
+                    </div>
+                  ))}
+                </div>
+                {templateId === 'blank' && <fieldset className="flex flex-col gap-2">
+                  <legend className="text-xs font-semibold text-text-primary">Para que você está criando o fórum?</legend>
+                  {([['club', 'Para uma comunidade ou clube'], ['friends', 'Para meus amigos e eu'], ['later', 'Decidir depois']] as const).map(([value, label]) => (
+                    <label key={value} className="flex items-center gap-2 text-sm text-text-secondary"><input type="radio" name="forum-purpose" checked={purpose === value} onChange={() => setPurpose(value)} />{label}</label>
+                  ))}
+                </fieldset>}
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="text-xs font-semibold text-text-primary">Quem pode encontrar este fórum?</legend>
+                  {([['public', 'Público — pode ser encontrado'], ['private', 'Privado — acesso por convite']] as const).map(([value, label]) => (
+                    <label key={value} className="flex items-center gap-2 text-sm text-text-secondary"><input type="radio" name="forum-visibility" checked={visibility === value} onChange={() => setVisibility(value)} />{label}</label>
+                  ))}
+                </fieldset>
+                <p className="text-xs text-text-secondary">A escolha de finalidade não altera permissões. Você poderá configurar o fórum depois.</p>
+              </div>
+            )}
           </div>
 
           {/* Rodapé */}
           <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
             <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
-            <Button variant="primary" size="sm" onClick={() => void handleSubmit()} loading={submitting}>
-              Criar fórum
+            {step > 1 && <Button variant="ghost" size="sm" onClick={() => setStep(step === 3 ? 2 : 1)}>Voltar</Button>}
+            <Button variant="primary" size="sm" onClick={() => void handleSubmit()} loading={submitting} disabled={step === 1 && !templateId}>
+              {step === 1 ? 'Continuar' : step === 2 ? 'Revisar' : 'Criar fórum'}
             </Button>
           </div>
         </div>
@@ -594,7 +667,7 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
       </div>
 
       {/* Modal de criação */}
-      {showCreate && <CreateForumModal onClose={() => setShowCreate(false)} />}
+      {showCreate && <CreateForumModal onClose={() => setShowCreate(false)} onCreated={(forum) => { setShowCreate(false); setDetailForum(forum) }} />}
 
       {/* Modal de detalhe */}
       {detailForum && (

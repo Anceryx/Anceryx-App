@@ -92,7 +92,7 @@ export const forumApi = {
   listForums: (query = '') => request<{ forums: ApiForum[] }>(`/forums${query ? `?q=${encodeURIComponent(query)}` : ''}`),
   profileForums: (userId: string, limit = 50, offset = 0) => request<{ forums: ApiForum[]; totalCount: number }>(`/users/${encodeURIComponent(userId)}/forums?limit=${limit}&offset=${offset}`),
   getForum: (forumId: string) => request<{ forum: ApiForum }>(`/forums/${forumId}`),
-  createForum: (input: { name: string; description: string; visibility: ForumVisibility; iconUrl?: string | null; bannerUrl?: string | null }) => request<{ forum: ApiForum }>('/forums', { method: 'POST', body: JSON.stringify(input) }),
+  createForum: (input: { name: string; description: string; visibility: ForumVisibility; iconUrl?: string | null; bannerUrl?: string | null; tags?: string[]; structure?: { categories: Array<{ name: string; channels: Array<{ name: string; type: 'text' | 'voice' }> }> } }) => request<{ forum: ApiForum }>('/forums', { method: 'POST', body: JSON.stringify(input) }),
   joinForum: (forumId: string) => request(`/forums/${forumId}/join`, { method: 'POST' }),
   leaveForum: (forumId: string) => request(`/forums/${forumId}/members/me`, { method: 'DELETE' }),
   listMembers: (forumId: string) =>
