@@ -23,4 +23,3 @@ for (const locale of locales) {
 assert.equal(translate('common.missing.key', 'en-US'), messages['en-US']['common.translationUnavailable'])
 
 console.log(`i18n catalog tests passed (${baseline.length} keys in each of ${locales.length} locales, interpolation, fallback and plural forms)`)
-
