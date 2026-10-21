@@ -2,6 +2,12 @@ name: Windows release artifacts
 
 on:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Branch, SHA de commit ou tag versionada (por exemplo, v0.15.0)
+        required: true
+        type: string
+        default: main
 
 permissions:
   contents: read
@@ -13,6 +19,43 @@ jobs:
     steps:
       - name: Checkout approved ref
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+
+      - name: Validate selected tag version
+        shell: pwsh
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          $sourceRef = $env:SOURCE_REF
+          $tag = $null
+          if ($sourceRef.StartsWith('refs/tags/')) {
+            $tag = $sourceRef.Substring('refs/tags/'.Length)
+          } else {
+            git show-ref --verify --quiet "refs/tags/$sourceRef"
+            if ($LASTEXITCODE -eq 0) {
+              $tag = $sourceRef
+            }
+          }
+
+          if ($tag) {
+            if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+              throw "Selected tag '$tag' is not a supported version tag (expected vMAJOR.MINOR.PATCH)."
+            }
+            $checkedOutTag = git describe --tags --exact-match HEAD
+            if ($LASTEXITCODE -ne 0 -or $checkedOutTag -ne $tag) {
+              throw "Selected tag '$tag' does not match the checked-out commit."
+            }
+
+            $tagVersion = $Matches.version
+            $packageVersion = node -p "require('./package.json').version"
+            if ($LASTEXITCODE -ne 0 -or $packageVersion -ne $tagVersion) {
+              throw "Tag '$tag' does not match package.json version '$packageVersion'."
+            }
+            Write-Host "Validated source tag $tag at package version $packageVersion."
+          } else {
+            Write-Host "Selected source ref: $sourceRef"
+          }
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -43,7 +86,12 @@ jobs:
           npm run test:electron-safe-storage
 
       - name: Build Windows NSIS without publishing
-        run: npm run electron:build -- --publish never
+        env:
+          # electron:build already invokes electron-builder with --publish never.
+          # Keep publisher credentials unavailable to this review-only build.
+          GH_TOKEN: ''
+          GITHUB_TOKEN: ''
+        run: npm run electron:build
 
       - name: Upload review artifacts
         uses: actions/upload-artifact@v4
@@ -58,6 +106,8 @@ jobs:
             dist/*.exe
             dist/*.blockmap
             dist/*.yml
+            dist/*.yaml
+            dist/*.json
 
 # This workflow only creates review artifacts when manually dispatched. Tags
 # do not build or upload installers automatically. It never creates a GitHub
