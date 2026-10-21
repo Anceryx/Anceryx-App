@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/index'
 import { useNavigate } from 'react-router-dom'
 import { ANCERYX_PRIVACY_URL, ANCERYX_TERMS_URL } from '@/lib/premium'
 import { realtimeClient } from '@/services/realtimeClient'
+import { useTranslation, type TranslationKey } from '@/i18n'
 
 export type SettingsSection =
   | 'conta'
@@ -25,31 +26,31 @@ export type SettingsSection =
   | 'sobre'
 
 interface NavGroup {
-  label: string
-  items: { id: SettingsSection; label: string; icon: React.ReactNode }[]
+  labelKey: TranslationKey
+  items: { id: SettingsSection; labelKey: TranslationKey; icon: React.ReactNode }[]
 }
 
 export const SETTINGS_NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Usuário',
+    labelKey: 'settings.group.user',
     items: [
-      { id: 'conta',             label: 'Conta',                icon: <User    size={16} /> },
-      { id: 'perfil',            label: 'Perfil',               icon: <User    size={16} /> },
-      { id: 'seguranca',         label: 'Segurança',            icon: <Shield  size={16} /> },
-      { id: 'conexoes-login',    label: 'Conexões de Login',    icon: <Link2   size={16} /> },
-      { id: 'sessoes-dispositivos', label: 'Sessões e dispositivos', icon: <Monitor size={16} /> },
-      { id: 'ultimos-logins',    label: 'Últimos logins',       icon: <History size={16} /> },
-      { id: 'dados-privacidade', label: 'Dados e privacidade',  icon: <Shield  size={16} /> },
-      { id: 'notificacoes',      label: 'Notificações',         icon: <Bell    size={16} /> },
-      { id: 'cobranca',          label: 'Cobrança',             icon: <CreditCard size={16} /> },
+      { id: 'conta', labelKey: 'settings.account', icon: <User size={16} /> },
+      { id: 'perfil', labelKey: 'settings.profile', icon: <User size={16} /> },
+      { id: 'seguranca', labelKey: 'settings.security', icon: <Shield size={16} /> },
+      { id: 'conexoes-login', labelKey: 'settings.loginConnections', icon: <Link2 size={16} /> },
+      { id: 'sessoes-dispositivos', labelKey: 'settings.sessions', icon: <Monitor size={16} /> },
+      { id: 'ultimos-logins', labelKey: 'settings.loginHistory', icon: <History size={16} /> },
+      { id: 'dados-privacidade', labelKey: 'settings.privacy', icon: <Shield size={16} /> },
+      { id: 'notificacoes', labelKey: 'settings.notifications', icon: <Bell size={16} /> },
+      { id: 'cobranca', labelKey: 'settings.billing', icon: <CreditCard size={16} /> },
     ],
   },
   {
-    label: 'App',
+    labelKey: 'settings.group.app',
     items: [
-      { id: 'experiencia', label: 'Experiência',        icon: <Sliders size={16} /> },
-      { id: 'voz',         label: 'Voz e Dispositivos', icon: <Mic     size={16} /> },
-      { id: 'sobre',       label: 'Sobre a Anceryx',     icon: <Info    size={16} /> },
+      { id: 'experiencia', labelKey: 'settings.experience', icon: <Sliders size={16} /> },
+      { id: 'voz', labelKey: 'settings.voice', icon: <Mic size={16} /> },
+      { id: 'sobre', labelKey: 'settings.about', icon: <Info size={16} /> },
     ],
   },
 ]
@@ -61,6 +62,7 @@ interface SettingsNavProps {
 }
 
 const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) => {
+  const t = useTranslation()
   const user        = useAuthStore((s) => s.user)
   const logout      = useAuthStore((s) => s.logout)
   const userProfile = useSocialStore((s) => s.userProfile)
@@ -105,9 +107,9 @@ const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) 
       {/* Nav groups */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-5">
         {SETTINGS_NAV_GROUPS.map((group) => (
-          <div key={group.label}>
+          <div key={group.labelKey}>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-text-secondary/70 px-2 mb-1">
-              {group.label}
+              {t(group.labelKey)}
             </p>
             <div className="flex flex-col gap-0.5">
               {group.items.map((item) => {
@@ -125,7 +127,7 @@ const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) 
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <span className="shrink-0">{item.icon}</span>
-                    {item.label}
+                    {t(item.labelKey)}
                   </button>
                 )
               })}

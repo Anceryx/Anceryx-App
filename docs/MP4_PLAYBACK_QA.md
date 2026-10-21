@@ -26,6 +26,19 @@ A CSP do Electron e a política HTML tinham `media-src 'self' blob:`. Elas bloqu
 
 `canPlayType` é apenas um indício do runtime. Os testes da API verificam cabeçalhos e Range, mas não contêm streams reais H.264/AAC e não comprovam decodificação. A CSP corrigida não equivale a comprovação de reprodução; a matriz precisa ser repetida no Electron Windows com as variantes reais.
 
+### Novos diagnósticos sanitizados do stream privado
+
+Na próxima QA, capture também os eventos estruturados da API:
+
+- `private_video_ticket_issued`: confirma emissão após autorização, com escopo, MIME e prazo; não contém usuário, asset ou ticket.
+- `private_video_http_response`: status e cabeçalhos que a API preparou, incluindo Range, `Content-Range` e `Content-Length`.
+- `private_blob_stream`: status, origem (somente origin, nunca caminho/query), MIME, `Content-Length`, `Content-Range`, Range pedido, bytes lidos da origem e encaminhados, duração, redirecionamento e código sanitizado.
+- `private_video_response_stream`: status HTTP, bytes enviados ao Electron, bytes esperados, duração e estado `complete`, `failed` ou `cancelled`.
+
+Interpretação: sem `private_video_ticket_issued`, investigue autorização ou emissão do ticket. Com ticket emitido, mas sem `private_video_http_response`, investigue se o Electron iniciou o GET. Se a API registrou a resposta mas não houver `private_blob_stream`, a requisição pode estar usando armazenamento local ou não ter iniciado a leitura. Em Range, compare o Range pedido, status `206`, `Content-Range`, `Content-Length`, `bytesReceived` e `bytesForwarded`; valores incompatíveis agora geram `SQUARECLOUD_BLOB_RANGE_UNSUPPORTED` ou `SQUARECLOUD_BLOB_RANGE_LENGTH_INVALID`. Se a origem entrega os bytes esperados e o Electron falha antes de `loadedmetadata`/`canplay`, compare `MediaError`, `readyState`, MIME recebido e a decodificação local/remota.
+
+Os eventos não registram IDs de usuário/asset, caminho, URL assinada, query, ticket, token nem conteúdo. Eles melhoram a próxima coleta, mas os cenários simulados não confirmam Range, redirecionamento ou integridade no serviço real SquareCloud Blob. A causa observada no Windows segue aberta até um teste com objeto privado de QA autorizado.
+
 ### Anexo privado em DM
 
 O retorno HTTP 200 de `POST /media/stream-ticket` confirma somente a emissão do ticket. Ele não comprova que o `<video>` recebeu a URL nem que o Electron iniciou o `GET` privado. O cliente resolve o caminho recebido contra a origem configurada da API, aceita apenas os escopos privados de DM/Fórum no host da API e não registra a URL assinada. Os logs `[media] requesting private video ticket` e `[media] private video ticket ready` registram apenas o escopo/origem e a validade; os eventos do elemento e do Electron devem indicar se houve `loadstart`, requisição GET, Range e resposta.

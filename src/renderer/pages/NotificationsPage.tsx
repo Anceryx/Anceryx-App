@@ -7,26 +7,31 @@ import { useSocialStore } from '@/store/socialStore'
 import { useUIStore } from '@/store/uiStore'
 import { realtimeClient } from '@/services/realtimeClient'
 import { UserProfileModal } from '@/components/social/index'
+import { formatDateTime } from '@/utils/formatters'
+import { translate } from '@/i18n'
 
 const PAGE_SIZE = 30
 
-function description(item: NotificationDto): string {
+function description(item: NotificationDto, locale: 'pt-BR' | 'en-US' | 'es-ES'): string {
   switch (item.type) {
-    case 'post.comment': return 'comentou em uma publicação sua.'
-    case 'post.reaction': return 'curtiu uma publicação sua.'
-    case 'post.created': return 'publicou algo novo.'
-    case 'follow.new': return 'começou a seguir você.'
-    case 'follow.request': return 'quer seguir você.'
-    case 'follow.accepted': return 'aceitou sua solicitação para seguir.'
-    case 'forum.event_reminder': return 'lembrou você de um evento de fórum.'
-    case 'badge.awarded': return 'concedeu uma nova conquista a você.'
-    default: return 'respondeu a um tópico de fórum.'
+    case 'post.comment': return translate('notifications.postComment', locale)
+    case 'post.reaction': return translate('notifications.postReaction', locale)
+    case 'post.created': return translate('notifications.postCreated', locale)
+    case 'follow.new': return translate('notifications.followNew', locale)
+    case 'follow.request': return translate('notifications.followRequest', locale)
+    case 'follow.accepted': return translate('notifications.followAccepted', locale)
+    case 'forum.event_reminder': return translate('notifications.forumReminder', locale)
+    case 'forum.moderation.case': return translate('notifications.forumModeration', locale)
+    case 'forum.appeal': return translate('notifications.forumAppeal', locale)
+    case 'badge.awarded': return translate('notifications.badgeAwarded', locale)
+    default: return translate('notifications.forumReply', locale)
   }
 }
 
 const NotificationsPage: React.FC = () => {
   const setActiveSection = useSocialStore((state) => state.setActiveSection)
   const openPost = useUIStore((state) => state.openPost)
+  const locale = useUIStore((state) => state.locale)
   const [items, setItems] = useState<NotificationDto[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [profileUsername, setProfileUsername] = useState<string | null>(null)
@@ -118,7 +123,7 @@ const NotificationsPage: React.FC = () => {
         {loading && items.length === 0 ? <p className="p-6 text-sm text-text-secondary">Carregando notificações…</p> : items.length === 0 ? <div className="p-10 text-center"><Bell size={28} className="mx-auto mb-3 text-text-secondary"/><p className="font-medium text-text-primary">Você ainda não tem notificações</p><p className="mt-1 text-sm text-text-secondary">Novas atividades aparecerão aqui.</p></div> : items.map((item) => <article key={item.id} className={`flex items-start gap-3 border-b border-border p-4 last:border-0 ${item.readAt ? '' : 'bg-accent/5'}`}>
           <button type="button" onClick={() => void openNotification(item)} className="flex min-w-0 flex-1 items-start gap-3 text-left hover:opacity-80">
             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-background-tertiary">{item.actor.avatarUrl ? <img src={mediaApi.resolvePublicUrl(item.actor.avatarUrl) || undefined} alt="" className="h-full w-full object-cover"/> : <span className="font-semibold text-text-secondary">{item.actor.displayName.slice(0, 1).toUpperCase()}</span>}</span>
-            <span className="min-w-0 flex-1"><span className="block text-sm text-text-primary"><b>{item.actor.displayName}</b> {description(item)}</span><time className="mt-1 block text-xs text-text-secondary" dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString('pt-BR')}</time></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm text-text-primary"><b>{item.actor.displayName}</b> {description(item, locale)}</span><time className="mt-1 block text-xs text-text-secondary" dateTime={item.createdAt}>{formatDateTime(new Date(item.createdAt))}</time></span>
           </button>
           {item.type === 'follow.request' ? <div className="flex shrink-0 flex-col gap-1"><button type="button" onClick={() => void respond(item, true)} className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white">Aceitar</button><button type="button" onClick={() => void respond(item, false)} className="rounded-md px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary">Recusar</button></div> : item.readAt ? <Check size={15} aria-label="Lida" className="mt-2 shrink-0 text-text-secondary"/> : <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Não lida"/>}
         </article>)}

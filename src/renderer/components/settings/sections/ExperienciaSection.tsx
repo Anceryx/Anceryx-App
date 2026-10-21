@@ -9,7 +9,7 @@ import { useTranslation } from '@/i18n'
 import { getKeyboardShortcuts } from '@/utils/keyboardShortcuts'
 import { communityVoiceClient } from '@/services/webrtc/communityVoiceClient'
 
-// ── helpers de layout ─────────────────────────────────────────────────────────
+// â”€â”€ helpers de layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h3 className="text-base font-semibold text-text-primary mt-8 mb-2 first:mt-0">{children}</h3>
@@ -84,21 +84,13 @@ const SelectRow: React.FC<SelectRowProps> = ({ label, description, value, option
   </div>
 )
 
-const SHORTCUT_LABEL_KEYS = {
-  settings: ['experience.shortcut.openSettings', 'experience.shortcut.settingsDescription'],
-  'shortcut-help': ['experience.shortcut.openShortcutHelp', 'experience.shortcut.helpDescription'],
-  'toggle-microphone': ['experience.shortcut.toggleMic', 'experience.shortcut.micDescription'],
-  'toggle-audio': ['experience.shortcut.toggleAudio', 'experience.shortcut.audioDescription'],
-} as const
-
 const ShortcutList: React.FC = () => {
   const t = useTranslation()
   const [query, setQuery] = useState('')
   const [voiceConnected, setVoiceConnected] = useState(communityVoiceClient.status === 'connected')
   React.useEffect(() => communityVoiceClient.subscribe(() => setVoiceConnected(communityVoiceClient.status === 'connected')), [])
   const shortcuts = getKeyboardShortcuts().map((shortcut) => {
-    const [labelKey, descriptionKey] = SHORTCUT_LABEL_KEYS[shortcut.id]
-    const labels = { label: t(labelKey), description: t(descriptionKey) }
+    const labels = { label: t(shortcut.labelKey), description: t(shortcut.descriptionKey) }
     const keys = ['Ctrl', ...(shortcut.shift ? ['Shift'] : []), shortcut.code.replace(/^Key/, '').replace('Comma', ',').replace('Slash', '/')]
     return { ...shortcut, ...labels, keys }
   }).filter((shortcut) => `${shortcut.label} ${shortcut.description} ${shortcut.keys.join(' ')} ${shortcut.category}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
@@ -126,10 +118,11 @@ const ShortcutList: React.FC = () => {
   </section>
 }
 
-// ── componente principal ──────────────────────────────────────────────────────
+// â”€â”€ componente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ExperienciaSection: React.FC = () => {
   const t = useTranslation()
+  const tFn = t
   const locale = useUIStore((s) => s.locale)
   const setLocale = useUIStore((s) => s.setLocale)
   const timeFormat = useUIStore((s) => s.timeFormat)
@@ -152,14 +145,12 @@ const ExperienciaSection: React.FC = () => {
   const [premiumNotice, setPremiumNotice] = useState(false)
   // Aviso inline para qualidade de stream bloqueada
   const [streamPremiumNotice, setStreamPremiumNotice] = useState(false)
-
-  // Voz e Áudio
+  // Audio settings
   const [mic,        setMic]        = useState('default')
   const [volMic,     setVolMic]     = useState(80)
   const [saida,      setSaida]      = useState('default')
   const [volSaida,   setVolSaida]   = useState(100)
-
-  // Transmissão e Chamadas
+  // Streaming and calls
   const [reducaoRuido, setReducaoRuido] = useState(true)
   const [ecoCancelado, setEcoCancelado] = useState(true)
   const [videoHD,      setVideoHD]      = useState(false)
@@ -170,18 +161,18 @@ const ExperienciaSection: React.FC = () => {
   const [sublinharLinks, setSublinharLinks] = useState(true)
   const [altoContraste,  setAltoContraste]  = useState(false)
 
-  const MIC_OPTIONS    = [{ value: 'default', label: 'Microfone padrão' }, { value: 'usb', label: 'Microfone USB' }, { value: 'webcam', label: 'Webcam' }]
-  const SAIDA_OPTIONS  = [{ value: 'default', label: 'Alto-falantes padrão' }, { value: 'fones', label: 'Fones de ouvido' }]
+  const MIC_OPTIONS    = [{ value: 'default', label: t('experience.microphoneDefault') }, { value: 'usb', label: t('experience.microphoneUsb') }, { value: 'webcam', label: t('experience.microphoneWebcam') }]
+  const SAIDA_OPTIONS  = [{ value: 'default', label: t('experience.speakersDefault') }, { value: 'fones', label: t('experience.headphones') }]
   const STREAM_OPTIONS = [
     { value: '720p',  label: '720p' },
     { value: '1080p', label: '1080p' },
-    { value: '1440p', label: isPremium ? '1440p' : '1440p (Anceryx+)' },
-    { value: '2160p', label: isPremium ? '2160p (4K)' : '2160p / 4K (Anceryx+)' },
+    { value: '1440p', label: isPremium ? '1440p' : t('experience.premiumResolution', { resolution: '1440p' }) },
+    { value: '2160p', label: isPremium ? '2160p (4K)' : t('experience.premiumResolution4k') },
   ]
 
   return (
     <div className="max-w-3xl space-y-5">
-      <nav className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-background-secondary p-1 sm:grid-cols-4" aria-label="Seções de Experiência">
+      <nav className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-background-secondary p-1 sm:grid-cols-4" aria-label={t('experience.sections')}>
         {([
           ['appearance', 'experience.appearance'],
           ['language-date-time', 'experience.languageDateTime'],
@@ -192,13 +183,13 @@ const ExperienciaSection: React.FC = () => {
 
       {experienceSection === 'appearance' && <>
 
-      <SectionTitle>Sidebar</SectionTitle>
+      <SectionTitle>{t('experience.sidebar')}</SectionTitle>
       <div className="bg-background-secondary rounded-lg px-5 border border-border">
         <SelectRow
-          label="Comportamento da sidebar"
-          description="No modo automático, a navegação compacta ao abrir Fóruns e retorna ao sair."
+          label={t('experience.sidebarBehavior')}
+          description={t('experience.sidebarDescription')}
           value={sidebarMode}
-          options={[{ value: 'automatic', label: 'Automática' }, { value: 'manual', label: 'Manual' }]}
+          options={[{ value: 'automatic', label: t('experience.automatic') }, { value: 'manual', label: t('experience.manual') }]}
           onChange={(value) => setSidebarMode(value === 'manual' ? 'manual' : 'automatic')}
         />
       </div>
@@ -218,22 +209,21 @@ const ExperienciaSection: React.FC = () => {
       {experienceSection === 'shortcuts' && <ShortcutList />}
 
       {experienceSection === 'preferences' && <>
-      {/* ── Voz e Áudio ── */}
-      <SectionTitle>Voz e Áudio</SectionTitle>
+      {/* â”€â”€ Voz e Ãudio â”€â”€ */}
+      <SectionTitle>{t('experience.audioHeading')}</SectionTitle>
       <div className="bg-background-secondary rounded-lg px-5 border border-border">
-        <SelectRow label="Microfone" value={mic} options={MIC_OPTIONS} onChange={setMic} />
-        <SliderRow label="Volume do microfone" value={volMic} onChange={setVolMic} />
-        <SelectRow label="Saída de áudio" value={saida} options={SAIDA_OPTIONS} onChange={setSaida} />
-        <SliderRow label="Volume de saída" value={volSaida} onChange={setVolSaida} />
+        <SelectRow label={t('experience.microphone')} value={mic} options={MIC_OPTIONS} onChange={setMic} />
+        <SliderRow label={t('experience.microphoneVolume')} value={volMic} onChange={setVolMic} />
+        <SelectRow label={t('experience.audioOutput')} value={saida} options={SAIDA_OPTIONS} onChange={setSaida} />
+        <SliderRow label={t('experience.outputVolume')} value={volSaida} onChange={setVolSaida} />
       </div>
-
-      {/* ── Transmissão e Chamadas ── */}
-      <SectionTitle>Transmissão e Chamadas</SectionTitle>
+      {/* Streaming and calls */}
+      <SectionTitle>{t('experience.callsHeading')}</SectionTitle>
       <div className="bg-background-secondary rounded-lg px-5 border border-border">
-        <ToggleRow label="Redução de ruído"      description="Filtra ruídos de fundo durante chamadas"  checked={reducaoRuido} onChange={setReducaoRuido} />
-        <ToggleRow label="Eco cancelado"          description="Evita eco durante chamadas de voz"        checked={ecoCancelado} onChange={setEcoCancelado} />
-        <ToggleRow label="Vídeo HD em chamadas"   description="Transmite vídeo em alta definição"        checked={videoHD}      onChange={setVideoHD} />
-        <SelectRow label="Qualidade de stream"    description="Resolução das transmissões ao vivo"       value={qualStream} options={STREAM_OPTIONS} onChange={(v) => {
+        <ToggleRow label={t('experience.noiseReduction')} description={t('experience.noiseDescription')}  checked={reducaoRuido} onChange={setReducaoRuido} />
+        <ToggleRow label={t('experience.echoCancellation')} description={t('experience.echoDescription')}        checked={ecoCancelado} onChange={setEcoCancelado} />
+        <ToggleRow label={t('experience.hdVideo')} description={t('experience.hdVideoDescription')}        checked={videoHD}      onChange={setVideoHD} />
+        <SelectRow label={t('experience.streamQuality')} description={t('experience.streamDescription')}       value={qualStream} options={STREAM_OPTIONS} onChange={(v) => {
           if ((v === '1440p' || v === '2160p') && !isPremium) {
             // Show inline feedback instead of silently ignoring the selection
             setStreamPremiumNotice(true)
@@ -251,20 +241,20 @@ const ExperienciaSection: React.FC = () => {
               background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
             }}
           >
-            Disponível com Anceryx+
+            {t('experience.premiumAvailable')}
           </div>
         )}
       </div>
       </>}
 
-      {/* ── Acessibilidade ── */}
+      {/* â”€â”€ Acessibilidade â”€â”€ */}
       {experienceSection === 'appearance' && <>
-      <SectionTitle>Acessibilidade</SectionTitle>
+      <SectionTitle>{t('experience.accessibility')}</SectionTitle>
       <div className="bg-background-secondary rounded-lg px-5 border border-border">
 
         {/* Tamanho do chat */}
         <div className="py-3.5 border-b border-border">
-          <p className="text-sm text-text-primary mb-3">Tamanho do chat</p>
+          <p className="text-sm text-text-primary mb-3">{t('experience.chatSize')}</p>
           <div className="flex gap-2">
             {(['sm', 'md', 'lg'] as const).map((t) => (
               <button
@@ -277,21 +267,20 @@ const ExperienciaSection: React.FC = () => {
                     : 'border-border bg-background-primary text-text-secondary hover:border-border-hover',
                 ].join(' ')}
               >
-                {t === 'sm' ? 'Pequeno' : t === 'md' ? 'Médio' : 'Grande'}
+                {t === 'sm' ? tFn('experience.small') : t === 'md' ? tFn('experience.medium') : tFn('experience.large')}
               </button>
             ))}
           </div>
         </div>
 
-        <ToggleRow label="Sublinhar links"           description="Adiciona sublinhado em links no chat"       checked={sublinharLinks} onChange={setSublinharLinks} />
-        <ToggleRow label="Reduzir movimento"          description="Desativa animações e transições do app"    checked={reduzirMotion}  onChange={setReduceMotion} />
-        <ToggleRow label="Alto contraste"             description="Aumenta o contraste dos elementos visuais" checked={altoContraste}  onChange={setAltoContraste} />
+        <ToggleRow label={t('experience.underlineLinks')} description={t('experience.underlineDescription')}       checked={sublinharLinks} onChange={setSublinharLinks} />
+        <ToggleRow label={t('experience.reduceMotion')} description={t('experience.reduceMotionDescription')}    checked={reduzirMotion}  onChange={setReduceMotion} />
+        <ToggleRow label={t('experience.highContrast')} description={t('experience.highContrastDescription')} checked={altoContraste}  onChange={setAltoContraste} />
       </div>
-
-      {/* ── Aparência e tema ── */}
+      {/* Appearance and theme */}
       <SectionTitle>{t('experience.appearance')}</SectionTitle>
       <div className="bg-background-secondary rounded-lg px-5 py-4 border border-border">
-        <p className="text-sm text-text-primary mb-4">Tema do aplicativo</p>
+        <p className="text-sm text-text-primary mb-4">{t('experience.theme')}</p>
 
         {/* Aviso inline para temas premium */}
         {premiumNotice && (
@@ -303,14 +292,14 @@ const ExperienciaSection: React.FC = () => {
               background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
             }}
           >
-            Disponível com Anceryx+
+            {t('experience.premiumAvailable')}
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          {THEME_OPTIONS.map((t) => {
-            const isActive  = theme === t.id
-            const isLocked  = t.premium && !isPremium
+          {THEME_OPTIONS.map((themeOption) => {
+            const isActive  = theme === themeOption.id
+            const isLocked  = themeOption.premium && !isPremium
 
             const handleClick = () => {
               if (isLocked) {
@@ -318,12 +307,12 @@ const ExperienciaSection: React.FC = () => {
                 setTimeout(() => setPremiumNotice(false), 3000)
                 return
               }
-              setTheme(t.id as Theme)
+              setTheme(themeOption.id as Theme)
             }
 
             return (
               <button
-                key={t.id}
+                key={themeOption.id}
                 onClick={handleClick}
                 className={[
                   'relative rounded-xl border-2 overflow-hidden transition-all text-left',
@@ -332,26 +321,26 @@ const ExperienciaSection: React.FC = () => {
                     : 'border-border hover:border-border-hover',
                 ].join(' ')}
                 aria-pressed={isActive}
-                aria-label={`Tema ${t.label}${t.premium ? ' (Anceryx+)' : ''}`}
+                aria-label={t('experience.theme.aria', { name: t(themeOption.labelKey), premium: themeOption.premium ? ' (Anceryx+)' : '' })}
               >
                 {/* Preview swatches */}
-                <div className="p-3" style={{ background: t.previewBg }}>
-                  <div className="flex h-[52px] gap-2 rounded-md p-2" style={{ background: t.panel }}>
-                    <div className="w-1/4 rounded-sm" style={{ background: t.surface }} />
+                <div className="p-3" style={{ background: themeOption.previewBg }}>
+                  <div className="flex h-[52px] gap-2 rounded-md p-2" style={{ background: themeOption.panel }}>
+                    <div className="w-1/4 rounded-sm" style={{ background: themeOption.surface }} />
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-                      <span className="text-[10px] font-semibold leading-none" style={{ color: t.text }}>Aa</span>
-                      <span className="h-1.5 w-4/5 rounded-full" style={{ background: t.text, opacity: 0.78 }} />
-                      <span className="h-1.5 w-1/2 rounded-full" style={{ background: t.accent }} />
+                      <span className="text-[10px] font-semibold leading-none" style={{ color: themeOption.text }}>Aa</span>
+                      <span className="h-1.5 w-4/5 rounded-full" style={{ background: themeOption.text, opacity: 0.78 }} />
+                      <span className="h-1.5 w-1/2 rounded-full" style={{ background: themeOption.accent }} />
                     </div>
                   </div>
                 </div>
 
-                <div className="py-2 text-center" style={{ background: t.labelBg }}>
+                <div className="py-2 text-center" style={{ background: themeOption.labelBg }}>
                   <span className={[
                     'text-xs font-medium',
                     isActive ? 'text-accent-secondary' : 'text-text-secondary',
                   ].join(' ')}>
-                    {t.label}
+                    {t(themeOption.labelKey)}
                   </span>
                 </div>
 
@@ -383,6 +372,7 @@ const ExperienciaSection: React.FC = () => {
 const THEME_OPTIONS = [
   {
     id: 'dark',
+    labelKey: 'experience.theme.dark',
     label: 'Escuro',
     premium: false,
     previewBg: '#0d0d0d',
@@ -394,6 +384,7 @@ const THEME_OPTIONS = [
   },
   {
     id: 'light',
+    labelKey: 'experience.theme.light',
     label: 'Claro',
     premium: false,
     previewBg: '#f4f4f5',
@@ -405,6 +396,7 @@ const THEME_OPTIONS = [
   },
   {
     id: 'autumn',
+    labelKey: 'experience.theme.autumn',
     label: 'Outono',
     premium: true,
     previewBg: 'hsl(349 28% 22%)',
@@ -416,6 +408,7 @@ const THEME_OPTIONS = [
   },
   {
     id: 'rose-moon',
+    labelKey: 'experience.theme.roseMoon',
     label: 'Rose Moon',
     premium: true,
     previewBg: 'hsl(246 24% 17%)',

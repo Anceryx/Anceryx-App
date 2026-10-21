@@ -1,49 +1,48 @@
 import type { ExperienceSection } from '@/store/uiStore'
 import { communityVoiceClient } from '@/services/webrtc/communityVoiceClient'
 import { useUIStore } from '@/store/uiStore'
+import { dispatchRegisteredShortcut, keyboardShortcutRegistry, type KeyboardShortcutId } from './keyboardShortcutsCore'
 
 export interface KeyboardShortcut {
-  id: 'settings' | 'shortcut-help' | 'toggle-microphone' | 'toggle-audio'
+  id: KeyboardShortcutId
   category: 'navigation' | 'voice'
   code: string
   ctrl: true
   shift: boolean
+  labelKey: typeof keyboardShortcutRegistry[number]['labelKey']
+  descriptionKey: typeof keyboardShortcutRegistry[number]['descriptionKey']
   action: () => void
 }
 
+const actions: Record<KeyboardShortcutId, () => void> = {
+  settings: () => useUIStore.getState().openSettings('experiencia'),
+  'shortcut-help': () => {
+    useUIStore.getState().setExperienceSection('shortcuts')
+    useUIStore.getState().openSettings('experiencia')
+  },
+  'toggle-microphone': () => {
+    if (communityVoiceClient.status === 'connected') void communityVoiceClient.setMuted(!communityVoiceClient.muted)
+  },
+  'toggle-audio': () => {
+    if (communityVoiceClient.status === 'connected') void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)
+  },
+}
+
 export function getKeyboardShortcuts(): KeyboardShortcut[] {
-  return [
-    { id: 'settings', category: 'navigation', code: 'Comma', ctrl: true, shift: false, action: () => useUIStore.getState().openSettings('experiencia') },
-    { id: 'shortcut-help', category: 'navigation', code: 'Slash', ctrl: true, shift: true, action: () => {
-      useUIStore.getState().setExperienceSection('shortcuts')
-      useUIStore.getState().openSettings('experiencia')
-    } },
-    { id: 'toggle-microphone', category: 'voice', code: 'KeyM', ctrl: true, shift: true, action: () => {
-      if (communityVoiceClient.status === 'connected') void communityVoiceClient.setMuted(!communityVoiceClient.muted)
-    } },
-    { id: 'toggle-audio', category: 'voice', code: 'KeyD', ctrl: true, shift: true, action: () => {
-      if (communityVoiceClient.status === 'connected') void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)
-    } },
-  ]
+  return keyboardShortcutRegistry.map((shortcut) => ({ ...shortcut, ctrl: true, action: actions[shortcut.id] }))
 }
 
-export function isShortcutTargetEditable(target: EventTarget | null): boolean {
-  if (typeof HTMLElement === 'undefined' || !(target instanceof HTMLElement)) return false
-  return target.isContentEditable || Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+function contextFor(event: KeyboardEvent) {
+  const target = event.target
+  const element = typeof HTMLElement !== 'undefined' && target instanceof HTMLElement ? target : null
+  return {
+    targetEditable: Boolean(element?.isContentEditable || element?.closest('input, textarea, select, [contenteditable="true"]')),
+    dialogScope: element?.closest('[role="dialog"][aria-modal="true"]')?.getAttribute('data-shortcut-scope') ?? (element?.closest('[role="dialog"][aria-modal="true"]') ? 'other' : null),
+  }
 }
 
-export function dispatchKeyboardShortcut(event: KeyboardEvent, shortcuts = getKeyboardShortcuts()): boolean {
-  if (event.defaultPrevented || event.isComposing || isShortcutTargetEditable(event.target)) return false
-  if (!event.ctrlKey || event.altKey || event.metaKey) return false
-  const shortcut = shortcuts.find((item) => item.code === event.code && item.shift === event.shiftKey)
-  if (!shortcut) return false
-  const dialog = typeof HTMLElement !== 'undefined' && event.target instanceof HTMLElement
-    ? event.target.closest('[role="dialog"][aria-modal="true"]')
-    : null
-  if (dialog && !(shortcut.id === 'shortcut-help' && dialog.getAttribute('aria-label') === 'Configurações')) return false
-  event.preventDefault()
-  shortcut.action()
-  return true
+export function dispatchKeyboardShortcut(event: KeyboardEvent): boolean {
+  return dispatchRegisteredShortcut(event, actions, contextFor(event))
 }
 
 export const shortcutSections = ['appearance', 'language-date-time', 'shortcuts', 'preferences'] as const satisfies readonly ExperienceSection[]

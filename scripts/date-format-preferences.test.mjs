@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import {
   formatDateSeparatorWithPreferences,
   formatDateWithPreferences,
@@ -19,5 +20,15 @@ assert.match(formatTimestampWithPreferences(now, base, now), /^hoje às /)
 assert.match(formatTimestampWithPreferences(fixed, base, now), /^ontem às /)
 assert.equal(formatDateSeparatorWithPreferences(now, base, now), 'Hoje')
 assert.equal(formatDateSeparatorWithPreferences(fixed, { ...base, locale: 'en-US' }, now), 'Yesterday')
+
+const uiStore = await readFile(new URL('../src/renderer/store/uiStore.ts', import.meta.url), 'utf8')
+const dashboard = await readFile(new URL('../src/renderer/pages/DashboardPage.tsx', import.meta.url), 'utf8')
+assert.match(uiStore, /locale: 'pt-BR'/)
+assert.match(uiStore, /timeFormat: 'auto'/)
+assert.match(uiStore, /dateFormat: 'auto'/)
+assert.match(uiStore, /partialize: \(state\) => \(\{ locale: state\.locale, timeFormat: state\.timeFormat, dateFormat: state\.dateFormat/)
+assert.match(dashboard, /useUIStore\(\(s\) => s\.locale\)/)
+assert.match(dashboard, /useUIStore\(\(s\) => s\.timeFormat\)/)
+assert.match(dashboard, /useUIStore\(\(s\) => s\.dateFormat\)/)
 
 console.log('date format preference tests passed (locale, date order, 12/24-hour clock and local relative days)')

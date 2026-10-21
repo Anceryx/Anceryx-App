@@ -14,21 +14,21 @@ import SessoesDispositivosSection from './sections/SessoesDispositivosSection'
 import UltimosLoginsSection      from './sections/UltimosLoginsSection'
 import SobreSection              from './sections/SobreSection'
 import { useUIStore } from '@/store/uiStore'
-import { translate } from '@/i18n'
+import { translate, type TranslationKey } from '@/i18n'
 
-const SECTION_TITLES: Record<SettingsSection, string> = {
-  'conta':             'Conta',
-  'perfil':            'Perfil',
-  'seguranca':         'Segurança',
-  'conexoes-login':    'Conexões de Login',
-  'sessoes-dispositivos': 'Sessões e dispositivos',
-  'ultimos-logins':    'Últimos logins',
-  'dados-privacidade': 'Dados e Privacidade',
-  'notificacoes':      'Notificações',
-  'cobranca':          'Cobrança',
-  'experiencia':       'Experiência',
-  'voz':               'Voz e Dispositivos',
-  'sobre':             'Sobre a Anceryx',
+const SECTION_TITLES: Record<SettingsSection, TranslationKey> = {
+  'conta': 'settings.account',
+  'perfil': 'settings.profile',
+  'seguranca': 'settings.security',
+  'conexoes-login': 'settings.loginConnections',
+  'sessoes-dispositivos': 'settings.sessions',
+  'ultimos-logins': 'settings.loginHistory',
+  'dados-privacidade': 'settings.privacy',
+  'notificacoes': 'settings.notifications',
+  'cobranca': 'settings.billing',
+  'experiencia': 'settings.experience',
+  'voz': 'settings.voice',
+  'sobre': 'settings.about',
 }
 
 export interface SettingsModalProps {
@@ -39,7 +39,7 @@ export interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialSection }) => {
   const locale = useUIStore((state) => state.locale)
-  const sectionTitle = (section: SettingsSection) => section === 'experiencia' ? translate('settings.experience', locale) : SECTION_TITLES[section]
+  const sectionTitle = (section: SettingsSection) => translate(SECTION_TITLES[section], locale)
   const [activeSection, setActiveSection] = useState<SettingsSection>('conta')
   const [mobileSection, setMobileSection] = useState<SettingsSection | null>(null)
 
@@ -84,7 +84,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
       className="motion-backdrop-in fixed inset-0 z-50 flex bg-black/70 p-0 md:p-4"
       aria-modal="true"
       role="dialog"
-      aria-label="Configurações"
+      data-shortcut-scope="settings"
+      aria-label={translate('settings.title', locale)}
     >
       {/* Modal container */}
       <div className="motion-surface-in mx-auto flex h-[100dvh] w-full max-w-[1160px] overflow-hidden border-border bg-background-primary shadow-2xl md:h-full md:rounded-2xl md:border">
@@ -96,13 +97,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
 
         <div key={mobileSection ? 'list-hidden' : 'list'} className={["motion-view-in min-w-0 flex-1 flex-col md:hidden", mobileSection ? 'hidden' : 'flex'].join(' ')}>
           <header className="safe-area-top flex min-h-16 shrink-0 items-center justify-between border-b border-border px-4">
-            <h2 className="text-xl font-bold text-text-primary">Configurações</h2>
-            <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label="Fechar configurações"><X size={21} /></button>
+            <h2 className="text-xl font-bold text-text-primary">{translate('settings.title', locale)}</h2>
+            <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label={translate('settings.close', locale)}><X size={21} /></button>
           </header>
           <div className="mobile-scroll flex-1 overflow-y-auto overflow-x-hidden pb-[max(1rem,env(safe-area-inset-bottom))]">
             {SETTINGS_NAV_GROUPS.map((group) => (
-              <section key={group.label} className="border-b border-border px-3 py-4 last:border-b-0">
-                <h3 className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-widest text-text-secondary/70">{group.label}</h3>
+              <section key={group.labelKey} className="border-b border-border px-3 py-4 last:border-b-0">
+                <h3 className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-widest text-text-secondary/70">{translate(group.labelKey, locale)}</h3>
                 <div className="flex flex-col gap-1">
                   {group.items.map((item) => (
                     <button
@@ -112,7 +113,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
                       className="motion-control flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-text-primary hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     >
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-background-tertiary text-text-secondary">{item.icon}</span>
-                      <span className="min-w-0 flex-1 break-words">{item.label}</span>
+                      <span className="min-w-0 flex-1 break-words">{translate(item.labelKey, locale)}</span>
                       <ChevronRight size={18} className="shrink-0 text-text-secondary/70" />
                     </button>
                   ))}

@@ -9,25 +9,28 @@ import { socialApi } from '@/services/socialApi'
 import { useAuthStore } from '@/store/authStore'
 import { communityApi } from '@/services/communityApi'
 import { UserProfileModal } from '@/components/social/index'
+import { formatDateTime } from '@/utils/formatters'
+import { translate } from '@/i18n'
 
-function describeNotification(notification: NotificationDto): string {
-  if (notification.type === 'post.comment') return 'comentou em uma publicação sua.'
-  if (notification.type === 'post.reaction') return 'curtiu uma publicação sua.'
-  if (notification.type === 'post.created') return 'publicou algo novo.'
-  if (notification.type === 'follow.new') return 'começou a seguir você.'
-  if (notification.type === 'follow.request') return 'quer seguir você.'
-  if (notification.type === 'follow.accepted') return 'aceitou sua solicitação para seguir.'
-  if (notification.type === 'forum.event_reminder') return 'lembrou você de um evento de fórum.'
-  if (notification.type === 'forum.moderation.case') return 'registrou uma ação de moderação sobre sua conta em um Fórum.'
-  if (notification.type === 'forum.appeal') return 'atualizou um recurso de moderação em um Fórum.'
-  if (notification.type === 'badge.awarded') return 'concedeu uma nova conquista a você.'
-  return 'respondeu a um tópico de fórum.'
+function describeNotification(notification: NotificationDto, locale: 'pt-BR' | 'en-US' | 'es-ES'): string {
+  if (notification.type === 'post.comment') return translate('notifications.postComment', locale)
+  if (notification.type === 'post.reaction') return translate('notifications.postReaction', locale)
+  if (notification.type === 'post.created') return translate('notifications.postCreated', locale)
+  if (notification.type === 'follow.new') return translate('notifications.followNew', locale)
+  if (notification.type === 'follow.request') return translate('notifications.followRequest', locale)
+  if (notification.type === 'follow.accepted') return translate('notifications.followAccepted', locale)
+  if (notification.type === 'forum.event_reminder') return translate('notifications.forumReminder', locale)
+  if (notification.type === 'forum.moderation.case') return translate('notifications.forumModeration', locale)
+  if (notification.type === 'forum.appeal') return translate('notifications.forumAppeal', locale)
+  if (notification.type === 'badge.awarded') return translate('notifications.badgeAwarded', locale)
+  return translate('notifications.forumReply', locale)
 }
 
 const NotificationCenter: React.FC = () => {
   const setActiveSection = useSocialStore((state) => state.setActiveSection)
   const currentUsername = useAuthStore((state) => state.user?.username)
   const openPost = useUIStore((state) => state.openPost)
+  const locale = useUIStore((state) => state.locale)
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<'all' | 'unread' | 'requests'>('all')
   const bellRef = useRef<HTMLButtonElement>(null)
@@ -168,7 +171,7 @@ const NotificationCenter: React.FC = () => {
         {loading && items.length === 0 ? <p className="p-4 text-sm text-text-secondary">Carregando…</p> : filteredItems.length === 0 ? <p className="p-4 text-sm text-text-secondary">{filter === 'requests' ? 'Você não tem solicitações.' : 'Você não tem notificações neste filtro.'}</p> : grouped.map((group) => <section key={group.title} aria-label={group.title}><h3 className="sticky top-0 border-b border-border bg-background-secondary/95 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{group.title}</h3>{group.rows.map((item) => <div key={item.id} className={`flex items-start gap-3 border-b border-border px-4 py-3 ${item.readAt ? '' : 'bg-accent/5'}`}>
           <button type="button" onClick={() => void openNotification(item)} className="flex min-w-0 flex-1 items-start gap-3 text-left hover:opacity-80">
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-background-tertiary">{item.actor.avatarUrl ? <img src={mediaApi.resolvePublicUrl(item.actor.avatarUrl) || undefined} alt="" className="h-full w-full object-cover" /> : <span className="text-xs font-semibold text-text-secondary">{item.actor.displayName.slice(0, 1).toUpperCase()}</span>}</span>
-            <span className="min-w-0 flex-1"><span className="block text-sm text-text-primary"><b>{item.actor.displayName}</b> {describeNotification(item)}</span><span className="mt-1 block text-xs text-text-secondary">{new Date(item.createdAt).toLocaleString('pt-BR')}</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm text-text-primary"><b>{item.actor.displayName}</b> {describeNotification(item, locale)}</span><span className="mt-1 block text-xs text-text-secondary">{formatDateTime(new Date(item.createdAt))}</span></span>
           </button>
           {item.type === 'follow.request' ? <div className="flex shrink-0 flex-col gap-1"><button type="button" onClick={() => void respondToFollowRequest(item, true)} className="rounded-md bg-accent px-2 py-1 text-[11px] font-semibold text-white">Aceitar</button><button type="button" onClick={() => void respondToFollowRequest(item, false)} className="rounded-md px-2 py-1 text-[11px] text-text-secondary hover:bg-background-tertiary">Rejeitar</button></div> : item.readAt ? <Check size={14} className="mt-1 shrink-0 text-text-secondary" /> : <button type="button" onClick={() => void markRead(item)} className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md text-accent hover:bg-accent/10" aria-label="Marcar como lida"><Check size={15} /></button>}
         </div>)}</section>)}

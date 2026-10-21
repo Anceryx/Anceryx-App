@@ -25,19 +25,20 @@ import type { Forum, SidebarSection } from '@/types/index'
 import CommunityWorkspaceModal from '@/components/social/CommunityWorkspaceModal'
 import { resolveAvatarName } from '@/utils/avatar'
 import { dispatchKeyboardShortcut } from '@/utils/keyboardShortcuts'
+import { useTranslation, type TranslationKey } from '@/i18n'
 
 interface NavItem {
   section: SidebarSection
-  label: string
+  labelKey: TranslationKey
   icon: React.ReactNode
-  ariaLabel: string
+  ariaLabelKey: TranslationKey
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { section: 'feed',      label: 'Home',      ariaLabel: 'Home - feed principal', icon: <Home size={18} /> },
-  { section: 'mensagens', label: 'Mensagens', ariaLabel: 'Mensagens e conversas', icon: <MessageCircle size={18} /> },
-  { section: 'explore', label: 'Explore', ariaLabel: 'Explorar conteúdo', icon: <Compass size={18} /> },
-  { section: 'foruns', label: 'Fóruns', ariaLabel: 'Fóruns', icon: <Users size={18} /> },
+  { section: 'feed', labelKey: 'nav.home', ariaLabelKey: 'nav.home.aria', icon: <Home size={18} /> },
+  { section: 'mensagens', labelKey: 'nav.messages', ariaLabelKey: 'nav.messages.aria', icon: <MessageCircle size={18} /> },
+  { section: 'explore', labelKey: 'nav.explore', ariaLabelKey: 'nav.explore.aria', icon: <Compass size={18} /> },
+  { section: 'foruns', labelKey: 'nav.forums', ariaLabelKey: 'nav.forums.aria', icon: <Users size={18} /> },
 ]
 
 const SIDEBAR_MIN = 208
@@ -45,6 +46,7 @@ const SIDEBAR_MAX = 280
 const SIDEBAR_COLLAPSED = 72
 
 const DashboardPage: React.FC = () => {
+  const t = useTranslation()
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => { dispatchKeyboardShortcut(event) }
     window.addEventListener('keydown', onKeyDown)
@@ -63,7 +65,9 @@ const DashboardPage: React.FC = () => {
 
   const { sidebarCollapsed, sidebarWidth, sidebarMode, setSidebarCollapsed, setSidebarWidth } = useUIStore((s) => ({ sidebarCollapsed: s.sidebarCollapsed, sidebarWidth: s.sidebarWidth, sidebarMode: s.sidebarMode, setSidebarCollapsed: s.setSidebarCollapsed, setSidebarWidth: s.setSidebarWidth }))
   const locale = useUIStore((s) => s.locale)
-  void locale
+  const timeFormat = useUIStore((s) => s.timeFormat)
+  const dateFormat = useUIStore((s) => s.dateFormat)
+  void locale; void timeFormat; void dateFormat
   const [forumSidebarOverride, setForumSidebarOverride] = useState<boolean | null>(null)
   const [workspaceForum, setWorkspaceForum] = useState<Forum | null>(null)
   useEffect(() => { if (activeSection !== 'foruns') setForumSidebarOverride(null) }, [activeSection])
@@ -188,11 +192,11 @@ const DashboardPage: React.FC = () => {
                       : 'text-text-secondary hover:bg-white/5 hover:text-text-primary',
                   ].join(' ')}
                   aria-current={isActive ? 'page' : undefined}
-                  aria-label={item.ariaLabel}
-                  title={item.ariaLabel}
+                  aria-label={t(item.ariaLabelKey)}
+                  title={t(item.ariaLabelKey)}
                 >
                   <span className="shrink-0">{item.icon}</span>
-                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  {!isCollapsed && <span className="truncate">{t(item.labelKey)}</span>}
                 </button>
               )
             })}
@@ -262,10 +266,10 @@ const DashboardPage: React.FC = () => {
               onClick={() => setActiveSection(item.section)}
               className={["motion-control flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 text-[11px] font-medium", isActive ? "text-accent-secondary" : "text-text-secondary"].join(' ')}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={item.ariaLabel}
+              aria-label={t(item.ariaLabelKey)}
             >
               <span className={["grid h-8 w-12 place-items-center rounded-xl", isActive ? "bg-accent/20" : ""].join(' ')}>{item.icon}</span>
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </button>
           )
         })}
