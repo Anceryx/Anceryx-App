@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { clampCropOffset, clampCropZoom, coverScale, cropDrawRect, getCropOutputSize } from '../src/renderer/utils/imageCropGeometry.ts'
-import { dataUrlToBlob, detachTracksFromPeer } from '../src/renderer/utils/media.ts'
+import { dataUrlToBlob, detachTracksFromPeer, resolvePrivatePlaybackUrl } from '../src/renderer/utils/media.ts'
 
 test('cover scale fits landscape, portrait, and square images without distortion', () => {
   assert.equal(coverScale(1600, 900, 220, 220), 220 / 900)
@@ -19,6 +19,17 @@ test('data URLs become blobs locally without a fetch request', async () => {
 test('rejects malformed or unsupported image data URLs', () => {
   assert.throws(() => dataUrlToBlob('data:text/html;base64,PHNjcmlwdD4='), /Imagem processada inválida/)
   assert.throws(() => dataUrlToBlob('data:image/png;base64,***'), /Imagem processada inválida/)
+})
+
+test('resolves private video tickets against the API and rejects foreign or malformed URLs', () => {
+  const base = 'https://admin-anceryx.site'
+  const resolved = resolvePrivatePlaybackUrl('/media/files/dm-image/video.mp4?ticket=signed-ticket', base)
+  assert.equal(new URL(resolved).origin, base)
+  assert.equal(new URL(resolved).pathname, '/media/files/dm-image/video.mp4')
+  assert.equal(new URL(resolved).searchParams.get('ticket'), 'signed-ticket')
+  assert.throws(() => resolvePrivatePlaybackUrl('https://evil.example/media/files/dm-image/video.mp4?ticket=x', base))
+  assert.throws(() => resolvePrivatePlaybackUrl('/media/files/post-image/video.mp4?ticket=x', base))
+  assert.throws(() => resolvePrivatePlaybackUrl('/media/files/dm-image/video.mp4', base))
 })
 
 test('stopping a shared stream detaches only its tracks and preserves camera video', async () => {

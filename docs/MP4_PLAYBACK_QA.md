@@ -26,6 +26,12 @@ A CSP do Electron e a política HTML tinham `media-src 'self' blob:`. Elas bloqu
 
 `canPlayType` é apenas um indício do runtime. Os testes da API verificam cabeçalhos e Range, mas não contêm streams reais H.264/AAC e não comprovam decodificação. A CSP corrigida não equivale a comprovação de reprodução; a matriz precisa ser repetida no Electron Windows com as variantes reais.
 
+### Anexo privado em DM
+
+O retorno HTTP 200 de `POST /media/stream-ticket` confirma somente a emissão do ticket. Ele não comprova que o `<video>` recebeu a URL nem que o Electron iniciou o `GET` privado. O cliente resolve o caminho recebido contra a origem configurada da API, aceita apenas os escopos privados de DM/Fórum no host da API e não registra a URL assinada. Os logs `[media] requesting private video ticket` e `[media] private video ticket ready` registram apenas o escopo/origem e a validade; os eventos do elemento e do Electron devem indicar se houve `loadstart`, requisição GET, Range e resposta.
+
+Na próxima QA, compare um único arquivo conhecido em Home e DM. Para a DM, confirme a sequência: ticket 200 → `private video ticket ready` → `[media] Video playback event` `loadstart` → GET para `/media/files/dm-image/...` com ticket (não copie nem compartilhe o valor do query) → 200/206 com `video/mp4` e bytes → `loadedmetadata` → `canplay`. Se o ticket for emitido sem `loadstart`, preserve a linha de console sanitizada e o `MediaError`; se houver `loadstart` sem GET no servidor, capture o erro de rede/CSP no Electron. A causa da falha observada em Windows ainda não está comprovada pelo código ou pelos logs atuais.
+
 ## SquareCloud Blob
 
 O SDK instalado `@squarecloud/blob` v4 documenta orçamento de 5 chamadas de API por minuto sem plano e 30 por minuto no menor plano pago; a assinatura efetiva desta conta não está disponível no checkout. Uploads simples têm limite de 1 por segundo abaixo de Pro (sem limite por operação em Pro/Enterprise), não oferecem `Retry-After` e uma resposta `RATE_LIMITED` também pode sinalizar bloqueio de conta por 30 minutos. Por isso, não há retry automático. A criação de Fórum espaça uploads simples consecutivos em 1,1 s e preserva a URL do ícone após sucesso para não enviá-lo novamente. Esse espaçamento só cobre essa sequência no mesmo cliente; não coordena usuários ou processos da API. Um 429 agora retorna `MEDIA_STORAGE_RATE_LIMITED` sem repetir o envio.

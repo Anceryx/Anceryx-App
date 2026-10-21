@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { apiRequest, apiStream, API_BASE_URL } from '@/services/apiClient'
+import { resolvePrivatePlaybackUrl } from '@/utils/media'
 
 type Props = { src: string; mimeType: string; alt: string; className?: string; privateMedia?: boolean; onError?: () => void; onClick?: (event: MouseEvent<HTMLElement>) => void }
 
@@ -10,6 +11,8 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
   const [failure, setFailure] = useState<string | null>(null)
   const [retry, setRetry] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
   useEffect(() => {
     let active = true
     let objectUrl = ''
@@ -19,16 +22,23 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
     try {
       const url = new URL(src, `${API_BASE_URL.replace(/\/$/, '')}/`)
       if (mimeType === 'video/mp4') {
-        void apiRequest<{ playbackUrl: string }>('/media/stream-ticket', {
+        console.info('[media] requesting private video ticket', { scope: url.pathname.split('/')[3] ?? null, mimeType })
+        void apiRequest<{ playbackUrl: string; expiresInSeconds?: number }>('/media/stream-ticket', {
           method: 'POST',
           body: JSON.stringify({ publicUrl: url.pathname }),
-        }).then(({ playbackUrl }) => {
-          if (active) setResolved(`${API_BASE_URL.replace(/\/$/, '')}${playbackUrl}`)
+        }).then(({ playbackUrl, expiresInSeconds }) => {
+          const resolvedPlaybackUrl = resolvePrivatePlaybackUrl(playbackUrl, API_BASE_URL)
+          if (active) {
+            console.info('[media] private video ticket ready', { origin: new URL(resolvedPlaybackUrl).origin, scope: url.pathname.split('/')[3] ?? null, expiresInSeconds: expiresInSeconds ?? null })
+            setResolved(resolvedPlaybackUrl)
+          }
         }).catch((error: unknown) => {
           if (!active) return
           const status = typeof error === 'object' && error !== null && 'status' in error ? Number((error as { status: unknown }).status) : 0
+          const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code: unknown }).code) : 'TICKET_RESPONSE_INVALID'
+          console.warn('[media] private video ticket failed', { status, code })
           setFailure(status === 401 || status === 403 || status === 404 ? 'Este arquivo não está disponível para sua conta.' : 'Não foi possível conectar ao serviço de mídia.')
-          onError?.()
+          onErrorRef.current?.()
         })
         return () => { active = false }
       }
@@ -40,14 +50,14 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
       }).catch(() => {
         if (!active) return
         setFailure('Não foi possível carregar esta imagem. Verifique a conexão e tente novamente.')
-        onError?.()
+        onErrorRef.current?.()
       })
     } catch {
       setFailure('O endereço desta mídia está inválido.')
-      onError?.()
+      onErrorRef.current?.()
     }
     return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [onError, privateMedia, retry, src])
+  }, [privateMedia, retry, src])
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
@@ -98,7 +108,7 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
   }
   const retryButton = <button type="button" className="mt-2 rounded-md border border-border px-3 py-1.5 text-xs text-text-primary hover:bg-background-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={(event) => { event.stopPropagation(); setFailure(null); setResolved(''); setRetry((value) => value + 1) }}>Tentar novamente</button>
   if (!resolved) return <div className={`${className ?? ''} grid min-h-20 place-items-center rounded-lg bg-background-tertiary p-3 text-center text-xs text-text-secondary`} role={failure ? 'status' : undefined}>{failure ? <div>{failure}{retryButton}</div> : 'Carregando mídia…'}</div>
-  if (mimeType === 'video/mp4') return <video ref={videoRef} data-media-attachment="true" src={resolved} controls preload="metadata" playsInline className={className} aria-label={alt} onError={handleVideoError} onLoadStart={(event) => logVideoState('loadstart', event.currentTarget)} onLoadedMetadata={(event) => logVideoState('loadedmetadata', event.currentTarget)} onLoadedData={(event) => logVideoState('loadeddata', event.currentTarget)} onCanPlay={(event) => logVideoState('canplay', event.currentTarget)} onStalled={(event) => logVideoState('stalled', event.currentTarget)} onWaiting={(event) => logVideoState('waiting', event.currentTarget)} onPlay={(event) => { document.querySelectorAll<HTMLVideoElement>('video[data-media-attachment="true"]').forEach((video) => { if (video !== event.currentTarget) video.pause() }) }} onClick={onClick} />
+  if (mimeType === 'video/mp4') return <video ref={videoRef} data-media-attachment="true" src={resolved} controls preload="metadata" playsInline className={className} style={{ maxWidth: '100%', maxHeight: 'min(60vh, 28rem)', objectFit: 'contain' }} aria-label={alt} onError={handleVideoError} onLoadStart={(event) => logVideoState('loadstart', event.currentTarget)} onLoadedMetadata={(event) => logVideoState('loadedmetadata', event.currentTarget)} onLoadedData={(event) => logVideoState('loadeddata', event.currentTarget)} onCanPlay={(event) => logVideoState('canplay', event.currentTarget)} onStalled={(event) => logVideoState('stalled', event.currentTarget)} onWaiting={(event) => logVideoState('waiting', event.currentTarget)} onPlay={(event) => { document.querySelectorAll<HTMLVideoElement>('video[data-media-attachment="true"]').forEach((video) => { if (video !== event.currentTarget) video.pause() }) }} onClick={onClick} />
   if (!mimeType.startsWith('image/')) return <span className="text-xs text-text-secondary">Formato de mídia indisponível.</span>
   return <img src={resolved} alt={alt} className={className} loading="lazy" draggable={false} onError={() => { console.warn('[media] Image attachment failed to load', { mimeType }); setFailure('Não foi possível carregar esta imagem.'); setResolved(''); onError?.() }} onClick={onClick} />
 }
