@@ -1,6 +1,7 @@
 {
   "name": "anceryx",
   "version": "0.15.0",
+  "license": "Apache-2.0",
   "author": "Anceryx",
   "description": "Plataforma social Anceryx",
   "main": "out/main/main.js",
