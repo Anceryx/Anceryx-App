@@ -20,6 +20,9 @@ export interface CommunityChannelDto {
   isPrivate: boolean
   isAnnouncement: boolean
   viewerCanView?: boolean
+  viewerCanReadHistory?: boolean
+  viewerCanSendMessages?: boolean
+  viewerCanAttachFiles?: boolean
   position: number
   ageRestricted: boolean
   slowmodeSeconds: number

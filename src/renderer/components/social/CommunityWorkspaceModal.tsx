@@ -194,6 +194,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const [communityReportsError, setCommunityReportsError] = useState<string | null>(null)
   const [reportDecisionNotes, setReportDecisionNotes] = useState<Record<string, string>>({})
   const [messageDraft, setMessageDraft] = useState('')
+  const [voiceChatOpen, setVoiceChatOpen] = useState(false)
   const [messageFile, setMessageFile] = useState<File | null>(null)
   const [messageFilePreview, setMessageFilePreview] = useState<string | null>(null)
   const [messageUploadProgress, setMessageUploadProgress] = useState(0)
@@ -270,6 +271,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const [voiceTick, setVoiceTick] = useState(0)
   const [mobileView, setMobileView] = useState<'channels' | 'content' | 'members'>('channels')
   const [selectedMember, setSelectedMember] = useState<CommunityMemberDto | null>(null)
+  const [voiceProfileTarget, setVoiceProfileTarget] = useState<{ userId: string; x: number; y: number } | null>(null)
+  const [voiceProfileUsername, setVoiceProfileUsername] = useState<string | null>(null)
   const [membersOpen, setMembersOpen] = useState(true)
   const [managementOpen, setManagementOpen] = useState(false)
   const [forumMenuOpen, setForumMenuOpen] = useState(false)
@@ -330,7 +333,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
       document.removeEventListener('keydown', closeOnEscape)
     }
   }, [forumMenuOpen])
-  const openCommunityManagement = (section = 'community') => {
+  const openCommunityManagement = (section = 'forum') => {
     setForumMenuOpen(false)
     setManagementSection(section)
     setManagementOpen(true)
@@ -859,7 +862,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   }, [activeAuditFilters, auditLoaded, canViewAuditLog, communityId, selectedChannelId])
 
   useEffect(() => {
-    if (!selectedChannel || selectedChannel.type !== 'text') {
+    if (!selectedChannel || (selectedChannel.type !== 'text' && selectedChannel.type !== 'voice')) {
       setMessages([])
       return
     }
@@ -873,9 +876,19 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
       .catch((err) => setError(err instanceof Error ? err.message : 'Não foi possível carregar as mensagens.'))
   }, [communityId, selectedChannel, canViewSelectedChannel])
 
+  useEffect(() => {
+    setVoiceChatOpen(false)
+    setReplyTarget(null)
+    setMessages([])
+    messageUploadControllerRef.current?.abort()
+    if (messageFilePreview) URL.revokeObjectURL(messageFilePreview)
+    setMessageFile(null)
+    setMessageFilePreview(null)
+  }, [communityId, selectedChannelId])
+
   const createMessage = async (input?: { contentType: 'gif' | 'sticker'; stickerKey?: KaoliStickerKey; gif?: KlipyGif }) => {
     const content = input?.contentType === 'sticker' ? input.stickerKey ?? '' : input?.contentType === 'gif' ? input.gif?.title || input.gif?.slug || '' : messageDraft.trim() || (messageFile ? 'Mídia' : '')
-    if (!content || !selectedChannel || selectedChannel.type !== 'text' || busy === 'message') return
+    if (!content || !selectedChannel || (selectedChannel.type !== 'text' && selectedChannel.type !== 'voice') || busy === 'message') return
     setBusy('message')
     setMessageUploadProgress(0)
     try {
@@ -1243,7 +1256,15 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
     return groups
   }, [state])
 
+  const sidebarCategories = useMemo(() => {
+    const categories = state?.categories ?? []
+    return groupedChannels.get('uncategorized')?.length
+      ? [...categories, { id: 'uncategorized', name: 'Sem categoria', communityId, position: 999 }]
+      : categories
+  }, [communityId, groupedChannels, state?.categories])
+
   const voiceStatus = communityVoiceClient.status
+  const voiceStatusLabel = ({ idle: 'Desconectado', connected: 'Conectado', disconnected: 'Desconectado', connecting: 'Conectando', reconnecting: 'Reconectando', 'permission-denied': 'Permissão do microfone negada' } as const)[voiceStatus]
   void voiceTick
 
   const managementSections = useMemo<CommunityManagementSection[]>(() => [
@@ -1261,8 +1282,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
     ...(canOpenManagement && (canCreateModerationActions || canManageBans || canViewModerationCases || canManageReports) ? [{ id: 'moderation', label: 'Moderação' }] : []),
     ...(canOpenManagement ? [{ id: 'appeals', label: 'Recursos' }] : []),
     ...(canViewAuditLog ? [{ id: 'audit', label: 'Auditoria' }] : []),
-    ...(canOpenManagement ? [{ id: 'community', label: 'Comunidade' }] : []),
-  ], [canManageLegacyForum, forum, canOpenManagement, canCreateModerationActions, canManageBans, canViewModerationCases, canViewModerationSummary, canViewAuditLog, canManageChannels, canManageRoles, canManageInvites])
+    ...(isCommunityOwner ? [{ id: 'forum', label: 'Fórum' }] : []),
+  ], [canManageLegacyForum, forum, canOpenManagement, canCreateModerationActions, canManageBans, canViewModerationCases, canViewModerationSummary, canViewAuditLog, canManageChannels, canManageRoles, canManageInvites, isCommunityOwner])
   const moderationSummaryCards = [
     { label: 'Denúncias pendentes', value: moderationSummary?.reports.pending, onClick: canManageReports || forum && canManageLegacyForum ? () => setManagementSection('reports') : undefined },
     { label: 'Denúncias em análise', value: moderationSummary?.reports.reviewing, onClick: canManageReports || forum && canManageLegacyForum ? () => setManagementSection('reports') : undefined },
@@ -1273,7 +1294,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   ]
   useEffect(() => {
     if (managementOpen && !managementSections.some((section) => section.id === managementSection)) {
-      setManagementSection(managementSections[0]?.id ?? 'community')
+      setManagementSection(managementSections[0]?.id ?? 'forum')
     }
   }, [managementOpen, managementSection, managementSections])
   const communityManagementContent = <>
@@ -1320,13 +1341,13 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               {appealQueue.every((appeal) => appeal.status !== 'pending' && appeal.status !== 'reviewing') && <p className="text-xs text-text-secondary">Nenhum recurso aguardando análise.</p>}
             </div>
           </details>}
-          {['community', 'organization', 'roles', 'invites'].includes(managementSection) && canOpenManagement && (
-            <details open={managementSection !== 'community'} className="border-t border-border p-3">
-              <summary className="cursor-pointer list-none text-xs font-semibold uppercase text-text-secondary hover:text-text-primary">{managementSection === 'organization' ? 'Organização' : managementSection === 'roles' ? 'Cargos e permissões' : managementSection === 'invites' ? 'Convites' : 'Gerenciar comunidade'}</summary>
+          {['forum', 'organization', 'roles', 'invites'].includes(managementSection) && canOpenManagement && (
+            <div className="space-y-4 border-t border-border p-3">
+              <h3 className="text-sm font-semibold text-text-primary">{managementSection === 'organization' ? 'Organização' : managementSection === 'roles' ? 'Cargos e permissões' : managementSection === 'invites' ? 'Convites' : 'Gerenciar Fórum'}</h3>
               <div className="mt-3 space-y-4">
-              {managementSection === 'community' && state?.community.ownerUserId === currentUserId && <section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Cargos autorizados a revisar recursos</h3>{state.roles.length === 0 ? <p className="text-xs text-text-secondary">Crie cargos antes de configurar revisores.</p> : state.roles.map((role) => <label key={role.id} className="flex items-center gap-2 text-xs text-text-primary"><input type="checkbox" checked={reviewerRoleIds.includes(role.id)} disabled={busy === 'appeal-reviewer-roles'} onChange={(event) => void toggleAppealReviewerRole(role.id, event.target.checked)} />{role.name}</label>)}</section>}
-              {managementSection === 'community' && state?.community.ownerUserId === currentUserId && <section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Lista de membros</h3><label className="sr-only" htmlFor="community-member-list-mode">Modo de exibição</label><select id="community-member-list-mode" value={state.community.memberListMode} onChange={(event) => void updateMemberListMode(event.target.value as 'simple' | 'grouped_roles')} disabled={busy === 'member-list-mode'} className="w-full rounded-md border border-border bg-background-secondary px-2 py-1.5 text-xs text-text-primary"><option value="simple">Lista simples</option><option value="grouped_roles">Agrupada por cargos</option></select></section>}
-              {canManageChannels && ['community', 'organization'].includes(managementSection) && <section className="space-y-2">
+              {managementSection === 'forum' && state?.community.ownerUserId === currentUserId && <section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Cargos autorizados a revisar recursos</h3>{state.roles.length === 0 ? <p className="text-xs text-text-secondary">Crie cargos antes de configurar revisores.</p> : state.roles.map((role) => <label key={role.id} className="flex items-center gap-2 text-xs text-text-primary"><input type="checkbox" checked={reviewerRoleIds.includes(role.id)} disabled={busy === 'appeal-reviewer-roles'} onChange={(event) => void toggleAppealReviewerRole(role.id, event.target.checked)} />{role.name}</label>)}</section>}
+              {managementSection === 'forum' && state?.community.ownerUserId === currentUserId && <section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Lista de membros</h3><label className="sr-only" htmlFor="community-member-list-mode">Modo de exibição</label><select id="community-member-list-mode" value={state.community.memberListMode} onChange={(event) => void updateMemberListMode(event.target.value as 'simple' | 'grouped_roles')} disabled={busy === 'member-list-mode'} className="w-full rounded-md border border-border bg-background-secondary px-2 py-1.5 text-xs text-text-primary"><option value="simple">Lista simples</option><option value="grouped_roles">Agrupada por cargos</option></select></section>}
+              {canManageChannels && managementSection === 'organization' && <section className="space-y-2">
                 <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-text-secondary"><Plus size={13} /> Canais</h3>
                 <Input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Categoria" />
                 <Button size="sm" variant="secondary" loading={busy === 'category'} onClick={() => void createCategory()}>Criar categoria</Button>
@@ -1361,7 +1382,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                   <Button size="sm" variant="secondary" loading={busy === `access:${channel.id}`} onClick={() => void setPrivateChannelAccess(channel)}>Aplicar permissão</Button>
                 </div>)}
               </section>}
-              {canManageRoles && ['community', 'roles'].includes(managementSection) && <section className="space-y-2">
+              {canManageRoles && managementSection === 'roles' && <section className="space-y-2">
                 <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-text-secondary"><Shield size={13} /> Cargos</h3>
                 <Input value={newRoleName} onChange={(event) => setNewRoleName(event.target.value)} placeholder="Cargo" />
                 <label className="block text-xs text-text-secondary">Posi o <input type="number" value={newRolePosition} onChange={(event) => setNewRolePosition(event.target.value)} className="mt-1 w-full rounded-md border border-border bg-background-secondary px-2 py-1.5 text-text-primary" /></label>
@@ -1392,7 +1413,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                   {state?.members.filter((member) => member.userId !== state.community.ownerUserId && member.roles.length > 0).map((member) => <div key={member.userId} className="space-y-1 rounded-md bg-background-secondary p-2"><p className="truncate text-xs text-text-primary">{member.user.displayName}</p>{member.roles.map((role) => <div key={role.id} className="flex items-center justify-between gap-2"><span className="truncate text-[11px] text-text-secondary">{role.name}</span><button type="button" disabled={busy === `member-role:${member.userId}:${role.id}`} onClick={() => void changeMemberRole(member.userId, role.id, true)} className="text-[11px] text-red-300 disabled:opacity-50">Remover</button></div>)}</div>)}
                 </div>
               </section>}
-              {canManageInvites && ['community', 'invites'].includes(managementSection) && <section className="space-y-2">
+              {canManageInvites && managementSection === 'invites' && <section className="space-y-2">
                 <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-text-secondary"><Smile size={13} /> Convites</h3>
                 <label className="block text-xs text-text-secondary">Validade <select value={inviteExpiryDays} onChange={(event) => setInviteExpiryDays(event.target.value)} className="mt-1 w-full rounded-md border border-border bg-background-secondary px-2 py-1.5 text-text-primary"><option value="1">1 dia</option><option value="7">7 dias</option><option value="30">30 dias</option><option value="">Sem validade</option></select></label>
                 <label className="block text-xs text-text-secondary">Limite de usos <input type="number" min={1} max={10000} value={inviteMaxUses} onChange={(event) => setInviteMaxUses(event.target.value)} placeholder="Ilimitado" className="mt-1 w-full rounded-md border border-border bg-background-secondary px-2 py-1.5 text-text-primary" /></label>
@@ -1405,7 +1426,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               {canViewModerationCases && moderationCasesSection}
               {canViewAuditLog && auditLogSection}
               </div>
-            </details>
+            </div>
           )}
           {canShowModerationPanel && !canOpenManagement && <details className="border-t border-border p-3"><summary className="cursor-pointer list-none text-xs font-semibold uppercase text-text-secondary hover:text-text-primary">{canCreateModerationActions ? 'Moderação' : 'Auditoria'}</summary><div className="mt-3 space-y-4">{canManageBans && bannedMembersSection}{canCreateModerationActions && moderationActionForm}{canViewModerationCases && moderationCasesSection}{canViewAuditLog && !canCreateModerationActions && auditLogSection}</div></details>}
 
@@ -1431,7 +1452,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
           </div>
         </nav>}
         <aside className={["flex min-h-0 flex-col overflow-hidden border-border bg-background-tertiary/45 md:flex md:border-r", mobileView === 'channels' ? 'flex' : 'hidden md:flex'].join(' ')}>
-          <div className="relative h-28 shrink-0 bg-background-tertiary">
+          <div className="relative h-16 shrink-0 bg-background-tertiary sm:h-24">
             {state?.community.bannerUrl && !bannerFailed && <img src={mediaApi.resolvePublicUrl(state.community.bannerUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" onError={() => { console.warn('[media] Community banner failed to load'); setBannerFailed(true) }} />}
             <button onClick={onClose} className="absolute right-2 top-2 rounded-md bg-black/50 p-1.5 text-white" aria-label="Fechar">
               <X size={16} />
@@ -1444,7 +1465,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               </button>
               {forumMenuOpen && <div role="menu" aria-label="Ações do Fórum" className="absolute left-0 top-full z-[80] mt-1 max-h-[65vh] w-full min-w-52 overflow-y-auto rounded-xl border border-border bg-background-secondary p-1.5 shadow-2xl">
                 {canManageInvites && <button role="menuitem" type="button" onClick={() => openCommunityManagement('invites')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Users size={15} />Convidar membros</button>}
-                {(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || isCommunityOwner) && <button role="menuitem" type="button" onClick={() => openCommunityManagement(canManageLegacyForum ? 'settings' : canManageChannels ? 'organization' : canManageRoles ? 'roles' : canManageInvites ? 'invites' : 'community')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Settings size={15} />Configurações do Fórum</button>}
+                {(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || isCommunityOwner) && <button role="menuitem" type="button" onClick={() => openCommunityManagement(canManageLegacyForum ? 'settings' : canManageChannels ? 'organization' : canManageRoles ? 'roles' : canManageInvites ? 'invites' : 'forum')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Settings size={15} />Configurações do Fórum</button>}
                 {canManageChannels && <>
                   <button role="menuitem" type="button" onClick={() => openCommunityManagement('organization')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Plus size={15} />Criar canal</button>
                   <button role="menuitem" type="button" onClick={() => { setNewCategoryName(''); openCommunityManagement('organization') }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Plus size={15} />Criar categoria</button>
@@ -1455,7 +1476,6 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 {state && state.community.ownerUserId !== currentUserId && <><div className="my-1 border-t border-border" /><button role="menuitem" type="button" onClick={() => void leaveForum()} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-red-300 hover:bg-background-tertiary"><LogOut size={15} />Sair do Fórum</button></>}
               </div>}
             </div>
-            <p className="mt-1 line-clamp-2 text-xs text-text-secondary">{state?.community.description}</p>
             {state && <button type="button" onClick={() => { setMembersOpen(true); setMobileView('members') }} className="mt-3 flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background-secondary px-3 text-sm text-text-primary hover:bg-white/5 md:hidden" aria-label="Abrir membros e configurações do Fórum"><Users size={15} />Membros e configurações</button>}
           </div>
           {loading ? (
@@ -1464,9 +1484,9 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2 text-sm text-accent-red">{error}</div>
           ) : (
             <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 anceryx-scroll">
-              {[...(state?.categories ?? []), { id: 'uncategorized', name: 'Geral', communityId, position: 999 }].map((category) => {
+              {sidebarCategories.map((category) => {
                 const channels = groupedChannels.get(category.id) ?? []
-                if (channels.length === 0 && category.id !== 'uncategorized') return null
+                if (channels.length === 0) return null
                 return (
                   <section key={category.id} className="mb-3">
                     <div className="mb-1 flex items-center gap-1">
@@ -1499,7 +1519,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               {!state?.channels.some((channel) => channel.type === 'forum') && <button type="button" onClick={() => { setSelectedChannelId(null); setShowCommunityPosts(true); setMobileView('content') }} className={`mt-2 flex min-h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm ${showCommunityPosts ? 'bg-accent text-white' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}><MessageSquare size={14} /><span>Publicações</span></button>}
             </nav>
           )}
-          {viewerVoiceState && <section className="sticky bottom-0 border-t border-border bg-background-primary p-3 shadow-[0_-8px_20px_rgba(0,0,0,0.15)]" aria-label="Controles persistentes de voz"><div className="mb-2 flex items-center justify-between gap-2"><button type="button" onClick={() => { setSelectedChannelId(viewerVoiceState.channelId); setShowCommunityPosts(false); setShowEvents(false); setMobileView('content') }} className="min-w-0 text-left"><span className="block text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Conectado à voz</span><span className="block truncate text-sm font-semibold text-text-primary">{viewerVoiceChannel?.name ?? 'Canal de voz'}</span></button><span className="shrink-0 text-[10px] text-text-secondary">{voiceStatus}</span></div><CommunityVoiceActionButtons muted={communityVoiceClient.muted} deafened={communityVoiceClient.deafened} sharingScreen={communityVoiceClient.isScreenSharing} screenPickerLoading={screenPickerLoading} leaving={busy === 'voice:leave'} onToggleMuted={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} onToggleDeafened={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} onToggleScreenShare={() => void toggleVoiceScreenShare()} onLeave={() => void leaveVoice()} /></section>}
+          {viewerVoiceState && <section className="sticky bottom-0 border-t border-border bg-background-primary p-3 shadow-[0_-8px_20px_rgba(0,0,0,0.15)]" aria-label="Controles persistentes de voz"><div className="mb-2 flex items-center justify-between gap-2"><button type="button" onClick={() => { setSelectedChannelId(viewerVoiceState.channelId); setShowCommunityPosts(false); setShowEvents(false); setMobileView('content') }} className="min-w-0 text-left"><span className="block text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Conectado à voz</span><span className="block truncate text-sm font-semibold text-text-primary">{viewerVoiceChannel?.name ?? 'Canal de voz'}</span></button><span className="shrink-0 text-[10px] text-text-secondary">{voiceStatusLabel}</span></div><CommunityVoiceActionButtons muted={communityVoiceClient.muted} deafened={communityVoiceClient.deafened} sharingScreen={communityVoiceClient.isScreenSharing} screenPickerLoading={screenPickerLoading} leaving={busy === 'voice:leave'} onToggleMuted={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} onToggleDeafened={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} onToggleScreenShare={() => void toggleVoiceScreenShare()} onLeave={() => void leaveVoice()} /></section>}
         </aside>
 
         <main className={["motion-view-forward min-h-0 min-w-0 flex-col overflow-hidden md:motion-view-in", mobileView === 'content' ? 'flex' : 'hidden md:flex'].join(' ')}>
@@ -1511,9 +1531,9 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 <h3 className="truncate text-sm font-semibold text-text-primary">{showCommunityPosts ? 'Publicações' : selectedChannel?.name ?? 'Selecione um canal'}</h3>
                 {selectedChannel?.description && <p className="truncate text-xs text-text-secondary">{selectedChannel.description}</p>}
               </div>
-              {canOpenManagement && <Button size="sm" variant="ghost" onClick={() => { setManagementSection('community'); setManagementOpen(true) }} leftIcon={<Settings size={15} />}>Gerenciar comunidade</Button>}
             </div>
             <div className="flex shrink-0 items-center gap-1">
+              {selectedChannel?.type === 'voice' && canViewSelectedChannel && <Button variant={voiceChatOpen ? 'secondary' : 'ghost'} size="sm" onClick={() => setVoiceChatOpen((open) => !open)} leftIcon={<MessageCircle size={14} />} aria-pressed={voiceChatOpen}>Chat</Button>}
               <button type="button" onClick={() => { setMembersOpen(true); setMobileView('members') }} className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-white/10 xl:hidden" aria-label="Mostrar membros" title="Mostrar membros"><Users size={16} /></button>
               <Button variant="ghost" size="sm" onClick={() => void refresh()} leftIcon={<RefreshCw size={14} />}>Atualizar</Button>
               <Button variant={showEvents ? 'secondary' : 'ghost'} size="sm" onClick={() => { setShowEvents((value) => !value); if (!showEvents) void refreshEvents() }} leftIcon={<CalendarDays size={14} />}>Eventos</Button>
@@ -1543,29 +1563,33 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
           ) : selectedChannel?.isPrivate && !canViewSelectedChannel ? (
             <section className="flex flex-1 items-center justify-center p-6 text-center text-sm text-text-secondary">Este canal é privado. Peça acesso a um administrador do fórum.</section>
           ) : selectedChannel?.type === 'voice' ? (
-            <section className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+            <section className="flex min-h-0 min-w-0 flex-1 gap-3 p-3">
+            <div className={`${voiceChatOpen ? 'hidden md:flex' : 'flex'} min-h-0 min-w-0 flex-1 flex-col items-center gap-4 overflow-y-auto p-2 text-center`}>
               <Volume2 size={36} className="text-accent" />
               <div>
                 <h4 className="text-lg font-semibold text-text-primary">{selectedChannel.name}</h4>
                 <p className="text-sm text-text-secondary">{voiceParticipants.length} conectado(s)</p>
               </div>
-              <div className="grid w-full max-w-3xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Participantes no canal de voz">
+              <div className="grid w-full flex-1 content-start grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Participantes no canal de voz">
                 {voiceParticipants.map((participant) => {
                   const isSelf = participant.userId === currentUserId
                   const isSharing = isSelf ? communityVoiceClient.isScreenSharing : communityVoiceClient.getRemoteScreenShares().some((share) => share.userId === participant.userId)
-                  return <article key={participant.userId} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background-primary p-3 text-left">
-                    <div className="flex min-w-0 items-center gap-3"><Avatar src={participant.user.avatarUrl} name={participant.user.displayName} size="sm" /><div className="min-w-0"><p className="truncate text-sm font-medium text-text-primary">{participant.user.displayName}{isSelf ? ' (você)' : ''}</p><p className="text-[11px] text-text-secondary">{participant.selfDeafened || participant.serverDeafened ? 'Áudio desativado' : participant.selfMuted || participant.serverMuted ? 'Microfone mudo' : 'Microfone ativo'}</p></div></div>
-                    {isSharing && <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-semibold text-red-200">AO VIVO</span>}
-                  </article>
+                  const speaking = isSelf ? communityVoiceClient.isLocallySpeaking : false
+                  return <button key={participant.userId} type="button" onClick={(event) => { const rect = event.currentTarget.getBoundingClientRect(); setVoiceProfileTarget({ userId: participant.userId, x: rect.left, y: rect.bottom }) }} className={`flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-background-primary p-4 text-left transition ${speaking ? 'border-emerald-400 ring-2 ring-emerald-400/30' : 'border-border hover:border-accent/50'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`} aria-label={`Abrir perfil de ${participant.user.displayName}`}>
+                    <div className="flex min-w-0 items-center gap-3"><Avatar src={participant.user.avatarUrl} name={participant.user.displayName} size="md" /><div className="min-w-0"><p className="truncate text-sm font-semibold text-text-primary">{participant.user.displayName}{isSelf ? ' (você)' : ''}</p><p className="truncate text-[11px] text-text-secondary">{participant.selfDeafened || participant.serverDeafened ? 'Áudio desativado' : participant.selfMuted || participant.serverMuted ? 'Microfone mudo' : 'Microfone ativo'}{speaking ? ' · Falando' : ''}</p></div></div>
+                    {isSharing && <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-semibold text-red-200">Transmitindo</span>}
+                  </button>
                 })}
                 {voiceParticipants.length === 0 && <p className="col-span-full rounded-xl border border-dashed border-border p-5 text-sm text-text-secondary">Ninguém está conectado a este canal. Entre para iniciar a conversa.</p>}
               </div>
               {!viewerInSelectedVoice && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => void joinVoice(selectedChannel)} loading={busy === `voice:${selectedChannel.id}`} leftIcon={<Mic size={15} />}>Entrar no canal</Button></div>}
+              {communityVoiceClient.isScreenSharing && communityVoiceClient.getLocalScreenShare() && <figure className="w-full max-w-5xl overflow-hidden rounded-xl border border-accent/40 bg-background-secondary text-left"><figcaption className="border-b border-border px-3 py-2 text-xs font-semibold text-text-primary">Sua transmissão</figcaption><video ref={(element) => { const stream = communityVoiceClient.getLocalScreenShare(); if (element && stream && element.srcObject !== stream) element.srcObject = stream }} autoPlay muted playsInline className="max-h-[60vh] w-full bg-black object-contain" aria-label="Prévia da sua transmissão de tela" /></figure>}
               {communityVoiceClient.getRemoteScreenShares().filter((share) => voiceParticipants.some((participant) => participant.userId === share.userId)).map((share) => <figure key={share.userId} className="w-full max-w-3xl overflow-hidden rounded-lg border border-border bg-background-secondary text-left">
                 <figcaption className="border-b border-border px-3 py-2 text-xs font-medium text-text-primary">Tela compartilhada por {voiceParticipants.find((participant) => participant.userId === share.userId)?.user.displayName ?? 'participante'}</figcaption>
                 <video ref={(element) => { if (element && element.srcObject !== share.stream) element.srcObject = share.stream }} autoPlay playsInline className="max-h-[60vh] w-full bg-black object-contain" aria-label={`Tela compartilhada por ${voiceParticipants.find((participant) => participant.userId === share.userId)?.user.displayName ?? 'participante'}`} />
               </figure>)}
-              <span className="rounded-full border border-border px-3 py-1 text-xs text-text-secondary">{voiceStatus}</span>
+            </div>
+            {voiceChatOpen && <aside className="flex min-h-0 w-full min-w-0 flex-col border-l border-border bg-background-primary/60 p-3 md:max-w-sm md:w-80" aria-label={`Chat do canal ${selectedChannel.name}`}><header className="mb-2 flex items-center justify-between border-b border-border pb-2"><div><h4 className="text-sm font-semibold text-text-primary">Chat de voz</h4><p className="text-[11px] text-text-secondary">{selectedChannel.name}</p></div><button type="button" onClick={() => setVoiceChatOpen(false)} className="rounded p-1 text-text-secondary hover:bg-background-tertiary" aria-label="Fechar chat"><X size={15} /></button></header>{selectedChannel.viewerCanReadHistory === false ? <p className="py-6 text-center text-xs text-text-secondary">Você não tem permissão para ler o histórico deste canal.</p> : <><div className="min-h-0 flex-1 space-y-3 overflow-y-auto py-2">{messages.length ? messages.map((message) => <article key={message.id} className="min-w-0"><div className="flex items-baseline gap-2"><strong className="truncate text-xs text-text-primary">{message.author.displayName}</strong><time className="shrink-0 text-[10px] text-text-secondary">{formatTimestamp(new Date(message.createdAt))}</time><button type="button" onClick={() => setReplyTarget(message)} className="rounded p-1 text-text-secondary hover:bg-background-tertiary" aria-label="Responder mensagem"><Reply size={12} /></button>{message.author.id !== currentUserId && <button type="button" onClick={() => { setMessageReportTarget(message); setMessageReportChannelId(selectedChannel.id); setMessageReportReason('spam'); setMessageReportDetails('') }} className="rounded p-1 text-text-secondary hover:bg-background-tertiary" aria-label="Denunciar mensagem"><Flag size={12} /></button>}</div>{message.replyTo && <p className="mt-1 truncate border-l-2 border-accent pl-2 text-[10px] text-text-secondary">{message.replyTo.author?.displayName ?? 'Membro'}: {message.replyTo.excerpt ?? ''}</p>}{message.contentType === 'sticker' ? <img src={getKaoliSticker(message.stickerKey)?.asset} alt="Figurinha" className="mt-1 h-24 w-24 object-contain" /> : <><p className="whitespace-pre-wrap break-words text-xs text-text-secondary">{renderAnceryxText(message.content)}</p>{message.mediaUrl && <MediaAttachment src={message.mediaUrl} mimeType={message.mediaMimeType ?? (message.mediaUrl.toLowerCase().split('?')[0].endsWith('.mp4') ? 'video/mp4' : 'image/gif')} privateMedia alt="Mídia do chat de voz" className="mt-1 block h-auto max-h-48 max-w-full rounded-lg" />}</>}</article>) : <p className="py-6 text-center text-xs text-text-secondary">Ainda não há mensagens neste canal.</p>}</div>{replyTarget && <div className="border-t border-border py-2 text-[11px] text-text-secondary">Respondendo a {replyTarget.author.displayName}<button type="button" className="ml-2 underline" onClick={() => setReplyTarget(null)}>Cancelar</button></div>}{selectedChannel.viewerCanSendMessages === false ? <p className="border-t border-border pt-2 text-xs text-text-secondary">Você pode ler o histórico, mas não enviar mensagens.</p> : <MessageComposer value={messageDraft} onChange={setMessageDraft} onSend={() => void createMessage()} disabled={busy === 'message' || loading} imagePreview={messageFile && messageFilePreview ? { url: messageFilePreview, previewUrl: messageFilePreview, mimeType: messageFile.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'video/mp4', sizeBytes: messageFile.size, name: messageFile.name } : null} imageLoading={busy === 'message' && Boolean(messageFile)} imageProgress={messageUploadProgress} onCancelUpload={() => messageUploadControllerRef.current?.abort()} onPickImage={async (file) => { if (!file || !selectedChannel) return; if (selectedChannel.viewerCanAttachFiles === false) { addNotification('Você não tem permissão para anexar arquivos neste canal.', 'error'); return } if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4'].includes(file.type)) { addNotification('Escolha JPEG, PNG, GIF, WEBP ou MP4.', 'error'); return } try { const max = await mediaApi.getUploadLimit('community-message', { communityId, channelId: selectedChannel.id }); if (file.size > max) { addNotification('O arquivo ultrapassa o limite de ' + Math.floor(max / 1_000_000) + ' MB da sua conta.', 'error'); return } if (messageFilePreview) URL.revokeObjectURL(messageFilePreview); setMessageFile(file); setMessageFilePreview(URL.createObjectURL(file)) } catch (error) { addNotification(error instanceof Error ? error.message : 'Não foi possível verificar o limite de envio.', 'error') } }} onRemoveImage={() => { messageUploadControllerRef.current?.abort(); if (messageFilePreview) URL.revokeObjectURL(messageFilePreview); setMessageFile(null); setMessageFilePreview(null) }} onPickGif={(gif) => void createMessage({ contentType: 'gif', gif })} onPickSticker={(stickerKey) => void createMessage({ contentType: 'sticker', stickerKey })} />}</>}</aside>}
             </section>
           ) : selectedChannel?.type === 'forum' ? (
             <CommunityForumChannel forumId={communityId} currentUserId={currentUserId} canCreateTopics={hasCommunityPermission('createTopics')} />
@@ -1622,7 +1646,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               />}
             </section>
           )}
-          {viewerVoiceState && <section className="sticky bottom-0 z-20 border-t border-border bg-background-primary/95 p-2 backdrop-blur md:hidden" aria-label="Controles de voz"><div className="mb-1 flex items-center justify-between gap-2"><span className="truncate text-xs font-semibold text-text-primary">Voz · {viewerVoiceChannel?.name ?? 'Conectado'}</span><span className="text-[10px] text-text-secondary">{voiceStatus}</span></div><CommunityVoiceActionButtons compact muted={communityVoiceClient.muted} deafened={communityVoiceClient.deafened} sharingScreen={communityVoiceClient.isScreenSharing} screenPickerLoading={screenPickerLoading} leaving={busy === 'voice:leave'} onToggleMuted={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} onToggleDeafened={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} onToggleScreenShare={() => void toggleVoiceScreenShare()} onLeave={() => void leaveVoice()} /></section>}
+          {viewerVoiceState && <section className="sticky bottom-0 z-20 border-t border-border bg-background-primary/95 p-2 backdrop-blur md:hidden" aria-label="Controles de voz"><div className="mb-1 flex items-center justify-between gap-2"><span className="truncate text-xs font-semibold text-text-primary">Voz · {viewerVoiceChannel?.name ?? 'Conectado'}</span><span className="text-[10px] text-text-secondary">{voiceStatusLabel}</span></div><CommunityVoiceActionButtons compact muted={communityVoiceClient.muted} deafened={communityVoiceClient.deafened} sharingScreen={communityVoiceClient.isScreenSharing} screenPickerLoading={screenPickerLoading} leaving={busy === 'voice:leave'} onToggleMuted={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} onToggleDeafened={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} onToggleScreenShare={() => void toggleVoiceScreenShare()} onLeave={() => void leaveVoice()} /></section>}
         </main>
 
         <aside className={`${membersPanelClassName} overflow-y-auto`}>
@@ -1663,13 +1687,22 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
           <div><h2 className="text-xl font-semibold text-text-primary">Recursos</h2><p className="mt-1 text-sm text-text-secondary">Acompanhe recursos próprios e revise as solicitações de forma independente.</p></div>
           {communityManagementContent}
         </div> : managementSection === 'audit' ? <div className="space-y-4"><h2 className="text-xl font-semibold text-text-primary">Registro de auditoria</h2>{auditLogSection}</div> : <div className="space-y-4">
-          <div><h2 className="text-xl font-semibold text-text-primary">Gestão da comunidade</h2><p className="mt-1 text-sm text-text-secondary">Canais, cargos, convites, membros e moderação em um único painel.</p></div>
+          <div><h2 className="text-xl font-semibold text-text-primary">Gestão do Fórum</h2><p className="mt-1 text-sm text-text-secondary">Canais, cargos, convites, membros e moderação em um único painel.</p></div>
           {communityManagementContent}
         </div>}
       </CommunityManagementModal>}
       {messageReportTarget && <div className="fixed inset-x-0 bottom-0 top-9 z-[85] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="community-message-report-title" onKeyDown={(event) => { if (event.key === 'Escape' && busy !== 'message-report:create') setMessageReportTarget(null) }}><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5" onSubmit={(event) => { event.preventDefault(); void submitMessageReport() }}><div><h2 id="community-message-report-title" className="font-semibold text-text-primary">Denunciar mensagem</h2><p className="mt-1 line-clamp-3 break-words text-xs text-text-secondary">{messageReportTarget.content || (messageReportTarget.contentType === 'sticker' ? 'Figurinha' : 'Anexo')}</p></div><label className="block text-xs text-text-secondary">Motivo<select value={messageReportReason} onChange={(event) => setMessageReportReason(event.target.value)} className="mt-1 w-full rounded-md border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="spam">Spam</option><option value="harassment">Assédio</option><option value="inappropriate_content">Conteúdo inadequado</option><option value="scam_or_fraud">Golpe ou fraude</option><option value="violence_or_threat">Violência ou ameaça</option><option value="personal_information">Exposição de dados pessoais</option><option value="other">Outro</option></select></label><label className="block text-xs text-text-secondary">Detalhes {messageReportReason === 'other' ? '(obrigatórios)' : '(opcionais)'}<textarea value={messageReportDetails} onChange={(event) => setMessageReportDetails(event.target.value.slice(0, 1000))} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border border-border bg-background-primary p-2 text-sm text-text-primary" /></label><div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={busy === 'message-report:create'} onClick={() => setMessageReportTarget(null)}>Cancelar</Button><Button type="submit" loading={busy === 'message-report:create'} disabled={!messageReportChannelId || messageReportReason === 'other' && !messageReportDetails.trim()}>Enviar denúncia</Button></div></form></div>}
       {confirmDelete && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/70 p-4" role="alertdialog" aria-modal="true" aria-label="Confirmar exclusão"><div className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-background-secondary p-5"><h2 className="font-semibold text-text-primary">Excluir {confirmDelete.type === 'category' ? 'categoria' : 'canal'}?</h2><p className="text-sm text-text-secondary">{confirmDelete.name}</p><div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancelar</Button><Button variant="danger" loading={busy === `${confirmDelete.type}:${confirmDelete.id}`} onClick={() => void (confirmDelete.type === 'category' ? deleteCategory(confirmDelete.id) : deleteChannel(confirmDelete.id))}>Excluir</Button></div></div></div>}
+      {voiceProfileTarget && (() => {
+        const participant = voiceParticipants.find((item) => item.userId === voiceProfileTarget.userId)
+        if (!participant) return null
+        const member = state?.members.find((item) => item.userId === participant.userId)
+        const left = Math.max(8, Math.min(voiceProfileTarget.x, window.innerWidth - 296))
+        const top = Math.max(8, Math.min(voiceProfileTarget.y, window.innerHeight - 220))
+        return <div className="fixed inset-0 z-[70]" role="presentation" onMouseDown={() => setVoiceProfileTarget(null)} onKeyDown={(event) => { if (event.key === 'Escape') setVoiceProfileTarget(null) }}><section role="dialog" aria-label={`Perfil de ${participant.user.displayName}`} className="absolute w-72 rounded-2xl border border-border bg-background-secondary p-4 text-left shadow-2xl" style={{ left, top }} onMouseDown={(event) => event.stopPropagation()}><div className="flex items-center gap-3"><Avatar src={participant.user.avatarUrl} name={participant.user.displayName} size="lg" /><div className="min-w-0"><h3 className="truncate text-sm font-semibold text-text-primary">{participant.user.displayName}</h3><p className="truncate text-xs text-text-secondary">@{participant.user.username}</p></div></div><div className="mt-3 flex flex-wrap gap-1">{member?.roles.map((role) => <span key={role.id} className="rounded-full border border-border px-2 py-0.5 text-[10px] text-text-secondary">{role.name}</span>)}{member && <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-text-secondary">{member.role === 'owner' ? 'Proprietário' : member.role === 'moderator' ? 'Moderador' : 'Membro'}</span>}</div><button type="button" onClick={() => { setVoiceProfileUsername(participant.user.username); setVoiceProfileTarget(null) }} className="mt-4 min-h-9 w-full rounded-lg bg-accent px-3 text-sm font-medium text-white hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Abrir perfil completo</button></section></div>
+      })()}
       {selectedMember && state && <UserProfileModal username={selectedMember.user.username} communityContext={{ forumName: state.community.name, joinedAt: selectedMember.joinedAt, memberRole: selectedMember.role, roles: selectedMember.roles }} isOpen onClose={() => setSelectedMember(null)} />}
+      {voiceProfileUsername && <UserProfileModal username={voiceProfileUsername} isOpen onClose={() => setVoiceProfileUsername(null)} />}
     </div>
   )
 }

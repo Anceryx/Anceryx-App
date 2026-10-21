@@ -35,6 +35,14 @@ class CommunityVoiceClient {
     return [...this.remoteScreenStreams.entries()].map(([userId, stream]) => ({ userId, stream }))
   }
 
+  getLocalScreenShare(): MediaStream | null {
+    return this.screenStream
+  }
+
+  get isLocallySpeaking(): boolean {
+    return this.speakingUserIds.has('me')
+  }
+
   removePeer(userId: string): void {
     const peer = this.peers.get(userId)
     peer?.close()
