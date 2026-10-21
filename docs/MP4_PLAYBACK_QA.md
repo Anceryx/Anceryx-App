@@ -16,7 +16,7 @@ O harness verifica o recorte básico por pixels; zoom e arraste ainda precisam s
 
 As três variantes abaixo já foram testadas pelo usuário no aplicativo Windows instalado e todas falharam: original H.264 High + HE-AACv2, mesmo H.264 + AAC-LC e mesmo H.264 sem áudio. Isso afasta a hipótese de falha exclusiva do HE-AACv2.
 
-A CSP do Electron e a política HTML tinham `media-src 'self' blob:`. Elas bloqueavam as URLs HTTPS usadas pelo endpoint de mídia privada e pelo CDN público. As políticas agora permitem fontes HTTPS. A resposta de mídia ainda precisa ser validada com os arquivos reais.
+A CSP do Electron e a política HTML tinham `media-src 'self' blob:`. Elas bloqueavam as URLs HTTPS usadas pelo endpoint de mídia privada e pelo CDN público. As políticas agora permitem somente o endpoint de produção `admin-anceryx.site` e os CDNs `blob.squarecloud.dev` e `public-blob.squarecloud.dev`; `localhost:3000` só é permitido em desenvolvimento. A resposta de mídia ainda precisa ser validada com os arquivos reais.
 
 1. Execute `npm run dev` e abra as ferramentas do Electron com `Ctrl+Shift+I`.
 2. Para comparar mídia local e remota, selecione cada variante no compositor de DM sem enviar e reproduza a prévia local. Depois envie uma vez e reproduza o anexo persistido. Não repita uploads que já criaram um anexo.

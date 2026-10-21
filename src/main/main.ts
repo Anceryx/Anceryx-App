@@ -260,7 +260,7 @@ function createWindow(): void {
             `img-src 'self' data: blob: https:${isDev ? ' http://localhost:3000' : ''}`,
             `font-src 'self' data:`,
             `connect-src 'self' https: wss:${isDev ? ' http://localhost:3000 ws://localhost:3000' : ''}`,
-            `media-src 'self' blob: https:`,
+            `media-src 'self' blob: https://admin-anceryx.site https://blob.squarecloud.dev https://public-blob.squarecloud.dev${isDev ? ' http://localhost:3000' : ''}`,
             `object-src 'none'`,
             `base-uri 'self'`,
             `form-action 'self'`,

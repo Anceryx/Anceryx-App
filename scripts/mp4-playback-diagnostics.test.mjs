@@ -8,8 +8,11 @@ const crop = await readFile(new URL('../src/renderer/components/ui/ImageCropModa
 const cropHarness = await readFile(new URL('../src/renderer/image-crop-visual-test.tsx', import.meta.url), 'utf8')
 const qa = await readFile(new URL('../docs/MP4_PLAYBACK_QA.md', import.meta.url), 'utf8')
 
-assert.match(main, /media-src 'self' blob: https:/)
-assert.match(html, /media-src 'self' blob: https:/)
+for (const host of ['admin-anceryx.site', 'blob.squarecloud.dev', 'public-blob.squarecloud.dev']) {
+  assert.ok(main.includes(`https://${host}`), `Electron media CSP must allow ${host}`)
+  assert.ok(html.includes(`https://${host}`), `HTML media CSP must allow ${host}`)
+}
+assert.match(main, /media-src 'self' blob: https:\/\/admin-anceryx\.site/)
 for (const header of ['content-type', 'content-length', 'content-disposition', 'accept-ranges', 'content-range']) assert.ok(main.includes(`readHeader('${header}')`), `Electron media response diagnostics must include ${header}`)
 assert.match(main, /onBeforeSendHeaders/)
 assert.match(main, /rangeRequested: mediaRanges\.get\(details\.id\)/)

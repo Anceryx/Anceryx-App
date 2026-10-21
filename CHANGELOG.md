@@ -11,7 +11,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ## [0.15.1] — preparação local (não publicada)
 - O recorte de banners usa as dimensões do elemento carregado, mantém o quadro visível em telas menores e impede aplicar antes de validar a imagem e a exportação.
-- A política de mídia do Electron permite HTTPS, e o diagnóstico registra eventos do player, status, MIME, tamanho, disposição, Range e falhas de rede sem guardar URLs ou tickets. Reprodução MP4 real no Windows continua pendente de QA.
+- A política de mídia do Electron permite somente a API e os CDNs autorizados, e o diagnóstico registra eventos do player, status, MIME, tamanho, disposição, Range e falhas de rede sem guardar URLs ou tickets. Reprodução MP4 real no Windows continua pendente de QA.
 - A criação de Fórum aguarda 1,1 s entre uploads simples consecutivos e mantém uploads já concluídos para evitar reenvio; respostas 429 do Blob não são repetidas automaticamente.
 - Fóruns participados abrem em uma área integrada ao aplicativo, restauram o último canal acessível e preservam a sessão de voz ao alternar entre módulos. O painel separa organização, cargos/permissões e convites.
 - A criação de Fórum mantém uploads bem-sucedidos para evitar reenvio e oferece continuar sem a imagem opcional cujo envio falhou. O player registra estado de rede e decodificação para distinguir melhor falhas de reprodução.
