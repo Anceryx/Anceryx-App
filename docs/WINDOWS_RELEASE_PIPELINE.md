@@ -2,20 +2,22 @@
 
 ## Builds de revisão
 
-O workflow `.github/workflows/windows-release.yml` valida o cliente e produz artefatos temporários de revisão. Ele compila o aplicativo e o instalador NSIS com `--publish never`; não cria Releases nem envia arquivos ao servidor. Os artifacts de revisão expiram em três dias. O relatório de auditoria de licenças também tem retenção de três dias. Isso vale para novos uploads e não remove artifacts antigos já existentes no GitHub.
+O workflow `.github/workflows/windows-release.yml` aceita execução manual com uma referência de origem explícita e produz artifacts temporários. Ele compila o instalador NSIS sem certificado Authenticode e usa `--publish never`; não cria Releases nem envia arquivos ao servidor. Os artifacts expiram em três dias. Essa build serve para revisão e teste, não como distribuição oficial.
 
-A identidade do aplicativo é `Anceryx.exe`, com `appId: io.anceryx.app`. O nome do instalador é `Anceryx-Setup-<versão>.exe`. O script local `electron:build` também usa `--publish never`.
+A identidade do aplicativo é `Anceryx.exe`, com `appId: io.anceryx.app`. O instalador se chama `Anceryx-Setup-<versão>.exe`. O script local `electron:build` já contém `--publish never`; execute `npm run electron:build` sem repetir o argumento.
 
 ## Publicação controlada
 
-`.github/workflows/publish-windows-release.yml` aceita somente execução manual com tag explícita e frase de confirmação. O workflow permanece inativo enquanto `ANCERYX_PUBLIC_RELEASE_ENABLED` não for `true`. Antes de habilitá-lo, uma revisão humana deve configurar o repositório público, o secret `WIN_CSC_LINK`, o secret `WIN_CSC_KEY_PASSWORD`, a variável `ANCERYX_WINDOWS_PUBLISHER_SUBJECT` e os ambientes protegidos `windows-signing` e `public-release` com revisores obrigatórios. As configurações/credenciais não fazem parte deste commit.
+`.github/workflows/publish-windows-release.yml` requer execução manual, tag revisada, frase de confirmação exata, variável `ANCERYX_PUBLIC_RELEASE_ENABLED=true` e ambiente protegido `public-release`. Ele exige que a tag esteja em `main`, corresponda à versão em `package.json` e ainda não tenha uma Release publicada para ela.
 
-O build valida tag SemVer, correspondência com `package.json`, ancestralidade em `main`, testes, auditoria de licenças e auditorias npm da árvore completa e de produção. Exige assinatura Authenticode válida cujo subject corresponda à variável protegida e confere manifesto, instalador, tamanho, SHA-512 e blockmap. Apenas o job final recebe `contents:write`; verifica visibilidade pública e ausência de Release duplicada antes de anexar os artefatos à tag existente. A tag precisa conter notas revisadas. Stable publica como latest; beta e RC como prerelease.
+A publicação falha fechada até haver versões estáveis compatíveis de `electron-builder` 27.x e `electron-updater` 7.x e o secret protegido `ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY`. O workflow então deve assinar o manifest Ed25519, confirmar que o cliente embute a chave pública correspondente e verificar versão, instalador, tamanho, SHA-512, blockmap e assinatura do manifest. O executável continua sem assinatura Authenticode. Somente o job final recebe `contents:write` e publica os assets verificados; stable fica como latest e beta/RC como prerelease.
 
-Assets indispensáveis: instalador NSIS, manifesto do canal (`latest.yml`, `beta.yml` ou `rc.yml`) e blockmap correspondente. Não publicar somente o executável. Para o feed do app, stable usa `latest.yml` e beta usa `beta.yml`. RC permanece um canal de QA manual e não é descoberto pelo cliente beta atual.
+O cliente atualmente mantém o atualizador integrado desativado. A publicação de binários não o habilitará automaticamente: a verificação de assinatura precisa ser implementada e habilitada no cliente, com testes e QA Windows. Não publicar enquanto isso não estiver concluído.
 
-## Assinatura e validação
+Assets esperados: instalador NSIS, manifest do canal (`latest.yml`, `beta.yml` ou `rc.yml`), blockmap correspondente, `SHA256SUMS.txt` e metadado do canal. A Release `v0.15.0` existente não deve ser alterada por este fluxo; tags e Releases antigas permanecem intactas.
 
-O certificado não pode ser inventado nem colocado no repositório. A publicação depende de certificado válido, segredo protegido, cadeia confiável, verificação de assinatura no Windows, instalação sobre a versão anterior, atualização real, preservação dos dados locais, desinstalação e rollback testados. A execução de CI não comprova esses testes manuais nem a disponibilidade do serviço.
+## QA e distribuição sem certificado
 
-A versão `0.15.0` aponta para o feed anterior. Não há migração automática: a primeira instalação na nova origem será manual. Consulte [instruções de instalação](INSTALLATION.md) e [checklist de QA](UPDATE_QA_CHECKLIST.md).
+O instalador de revisão é unsigned. O SmartScreen pode exibir um aviso; não instrua usuários a ignorar avisos nem apresente esse arquivo como uma versão confiável para distribuição ampla. Teste instalação, atualização manual sobre uma versão anterior, SafeStorage, sessões, preferências, anexos, desinstalação e rollback em ambiente Windows isolado. A CI não comprova esses testes nem a disponibilidade da API.
+
+Consulte as [instruções de instalação](INSTALLATION.md) e o [checklist de QA](UPDATE_QA_CHECKLIST.md).

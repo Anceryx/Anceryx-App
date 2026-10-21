@@ -20,7 +20,7 @@ O workflow CI usa Node.js 22. O `build` gera os bundles Electron/React e os avis
 ## Instalador Windows
 
 ```text
-npm run electron:build -- --publish never
+npm run electron:build
 ```
 
 O workflow Windows cria artefatos para revisão e não publica Releases. Uma compilação local não comprova assinatura, instalação, atualização nem QA funcional do instalador.

@@ -3,6 +3,13 @@ import type { UpdateChannel } from '../../shared/updateTypes'
 export const UPDATE_GITHUB_OWNER = 'Anceryx'
 export const UPDATE_GITHUB_REPOSITORY = 'Anceryx-App'
 
+// electron-builder 26.17.0 / electron-updater 6.8.9 verify the downloaded
+// file's SHA-512, but do not authenticate the update manifest with Ed25519.
+// Keep automatic updates fail-closed until a stable signed-manifest verifier
+// and its trusted public key are shipped in the client.
+export const UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED = false
+export const UPDATE_MANUAL_INSTALL_MESSAGE = 'Atualizações automáticas estão pausadas até que a assinatura criptográfica dos manifests seja verificada. Instale manualmente apenas versões publicadas nas Releases oficiais da Anceryx.'
+
 interface ParsedVersion {
   core: [number, number, number]
   prerelease: string[]

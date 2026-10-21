@@ -16,23 +16,20 @@ permissions:
   contents: read
 
 jobs:
-  build-signed:
+  build-release:
     if: vars.ANCERYX_PUBLIC_RELEASE_ENABLED == 'true' && inputs.confirmation == 'PUBLISH ANCERYX WINDOWS RELEASE'
-    environment: windows-signing
     runs-on: windows-latest
     timeout-minutes: 45
     permissions:
       contents: read
     steps:
-      - name: Require a public repository and signing configuration
+      - name: Validate release tag and repository visibility
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          PUBLISHER: ${{ vars.ANCERYX_WINDOWS_PUBLISHER_SUBJECT }}
           TAG: ${{ inputs.tag }}
         run: |
           if (-not ($env:TAG -match '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(beta|rc)\.(0|[1-9]\d*))?$')) { throw 'Tag must be a stable, beta, or rc SemVer tag.' }
-          if ([string]::IsNullOrWhiteSpace($env:PUBLISHER)) { throw 'Protected Windows publisher subject is not configured.' }
           $visibility = gh api "repos/$env:GITHUB_REPOSITORY" --jq .visibility
           if ($visibility -ne 'public') { throw 'Repository must be public before release publication is enabled.' }
           gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:TAG" | Out-Null
@@ -60,6 +57,17 @@ jobs:
           $packageVersion = node -p "require('./package.json').version"
           if ($tagVersion -ne $packageVersion) { throw "Tag version $tagVersion does not match package.json $packageVersion." }
       - run: npm ci
+      - name: Require stable signed-manifest support and protected key
+        shell: pwsh
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY }}
+        run: |
+          $builderVersion = node -p "require('./node_modules/electron-builder/package.json').version"
+          $updaterVersion = node -p "require('./node_modules/electron-updater/package.json').version"
+          if ($builderVersion -notmatch '^27\.\d+\.\d+$' -or $updaterVersion -notmatch '^7\.\d+\.\d+$') {
+            throw "Signed Ed25519 update manifests require stable electron-builder 27.x and electron-updater 7.x; found $builderVersion / $updaterVersion."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:UPDATE_SIGNING_KEY)) { throw 'Protected Ed25519 update-manifest signing key is not configured.' }
       - name: Install the Windows Electron runtime
         run: node node_modules/electron/install.js
       - name: Validate source and dependency policies
@@ -74,32 +82,32 @@ jobs:
           npm run test:electron-safe-storage
           npm audit --audit-level=moderate
           npm audit --omit=dev --audit-level=moderate
-      - name: Build signed NSIS installer
+      - name: Build unsigned NSIS installer and sign update manifest
         shell: pwsh
         env:
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          PUBLISHER: ${{ vars.ANCERYX_WINDOWS_PUBLISHER_SUBJECT }}
+          ELECTRON_BUILDER_UPDATE_SIGN_KEY: ${{ secrets.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) -or [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) { throw 'Windows signing secrets are unavailable.' }
-          npx electron-builder --win nsis --publish never --config.forceCodeSigning=true --config.win.publisherName="$env:PUBLISHER"
+          npx electron-builder --win nsis --publish never --config.win.verifyUpdateCodeSignature=false
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify signed installer and update metadata
+      - name: Verify unsigned installer and signed update metadata
         shell: pwsh
         env:
           TAG: ${{ inputs.tag }}
-          PUBLISHER: ${{ vars.ANCERYX_WINDOWS_PUBLISHER_SUBJECT }}
         run: |
           $version = $env:TAG.Substring(1)
           $installer = Get-Item "dist/Anceryx-Setup-$version.exe"
           $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
-          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -ne $env:PUBLISHER) { throw 'Installer signature or publisher subject is invalid.' }
+          if ($signature.Status -ne 'NotSigned') { throw "Expected an unsigned installer; signature status is $($signature.Status)." }
           if ($version -match '-beta\.') { $channel = 'beta' } elseif ($version -match '-rc\.') { $channel = 'rc' } else { $channel = 'latest' }
           $manifest = Get-Content "dist/$channel.yml" -Raw
           if ($manifest -notmatch ('(?m)^version:\s*' + [regex]::Escape($version) + '\s*$')) { throw 'Update manifest version does not match tag.' }
           if ($manifest -notmatch ('(?m)^\s+url:\s*' + [regex]::Escape($installer.Name) + '\s*$')) { throw 'Manifest installer path is missing.' }
           if ($manifest -notmatch "(?m)^\s+size:\s*$($installer.Length)\s*$") { throw 'Manifest installer size is invalid.' }
           if ($manifest -notmatch '(?m)^\s+sha512:\s*[A-Za-z0-9+/]{86}==$') { throw 'Manifest SHA-512 is missing or malformed.' }
+          if ($manifest -notmatch '(?m)^signature:\s*[A-Za-z0-9+/]{86}==$') { throw 'Ed25519 manifest signature is missing or malformed.' }
+          if ($manifest -notmatch '(?m)^signatures:\s*$') { throw 'Ed25519 manifest signature list is missing.' }
+          $appUpdateConfig = Get-Content 'dist/win-unpacked/resources/app-update.yml' -Raw
+          if ($appUpdateConfig -notmatch '(?m)^updateManifestPublicKey:\s*\S+') { throw 'The client does not embed the update-manifest trust key.' }
           $actualHash = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData([IO.File]::ReadAllBytes($installer.FullName)))
           $manifestHash = [regex]::Match($manifest, '(?m)^\s+sha512:\s*([A-Za-z0-9+/]{86}==)$').Groups[1].Value
           if ($manifestHash -ne $actualHash) { throw 'Manifest SHA-512 does not match installer.' }
@@ -108,17 +116,23 @@ jobs:
           Copy-Item $installer.FullName release-assets/
           Copy-Item "dist/$($installer.Name).blockmap" release-assets/
           Copy-Item "dist/$channel.yml" release-assets/
+          $checksumFiles = @($installer.FullName, "dist/$($installer.Name).blockmap", "dist/$channel.yml")
+          $checksumLines = foreach ($file in $checksumFiles) {
+            $hash = Get-FileHash -LiteralPath $file -Algorithm SHA256
+            "$($hash.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($file))"
+          }
+          $checksumLines | Set-Content -LiteralPath 'release-assets/SHA256SUMS.txt' -Encoding ascii
           "Verified release channel: $channel" | Out-File -FilePath release-assets/release-channel.txt -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
-          name: signed-release-${{ inputs.tag }}
+          name: unsigned-release-${{ inputs.tag }}
           retention-days: 3
           if-no-files-found: error
           path: release-assets/*
 
   publish-release:
-    needs: build-signed
-    if: needs.build-signed.result == 'success'
+    needs: build-release
+    if: needs.build-release.result == 'success'
     environment: public-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -128,7 +142,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: signed-release-${{ inputs.tag }}
+          name: unsigned-release-${{ inputs.tag }}
           path: release-files
       - name: Ensure tag has no existing release, then publish exact artifacts
         env:
@@ -140,8 +154,8 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY" --jq .visibility | grep -qx public
           channel=$(cat release-files/release-channel.txt)
           test -n "$channel"
-          mapfile -t assets < <(find release-files -maxdepth 1 -type f \( -name '*.exe' -o -name '*.blockmap' -o -name 'latest.yml' -o -name 'beta.yml' -o -name 'rc.yml' \) | sort)
-          test "${#assets[@]}" -ge 3
+          mapfile -t assets < <(find release-files -maxdepth 1 -type f \( -name '*.exe' -o -name '*.blockmap' -o -name 'latest.yml' -o -name 'beta.yml' -o -name 'rc.yml' -o -name 'SHA256SUMS.txt' \) | sort)
+          test "${#assets[@]}" -ge 4
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null | grep -qx true; then
             gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
             if [[ "$channel" == 'Verified release channel: latest' ]]; then

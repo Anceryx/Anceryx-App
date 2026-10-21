@@ -71,7 +71,7 @@ npm run test:encoding
 
 ## Installation and updates
 
-This repository is being prepared for distribution; this workflow has not published an official installer. See [Windows installation and updates](docs/INSTALLATION.en.md). Review builds are not Releases. Existing `0.15.0` installations still point to the old feed and will need a manual installation of the first release published in `Anceryx/Anceryx-App`; NSIS installation will be validated to preserve local data before that transition.
+This repository is being prepared for distribution; the `v0.15.0` Release has no installer. See [Windows installation and updates](docs/INSTALLATION.en.md). Review builds are temporary artifacts, not Releases. The in-app updater is paused until the client can verify Ed25519-signed manifests; updates are manual in the meantime. Migration of older installations requires downloading an approved version from Releases and installing it over the current version, after QA confirms local data is preserved.
 
 ## Contributing
 

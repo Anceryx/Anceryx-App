@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, isSafeUpdateInfo, releaseNotesToLines, resolveUpdateChannel } from '../src/main/updater/updateUtils.ts'
+import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, UPDATE_MANUAL_INSTALL_MESSAGE, isSafeUpdateInfo, releaseNotesToLines, resolveUpdateChannel } from '../src/main/updater/updateUtils.ts'
 
 assert.equal(UPDATE_GITHUB_OWNER, 'Anceryx')
 assert.equal(UPDATE_GITHUB_REPOSITORY, 'Anceryx-App')
+assert.equal(UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, false)
+assert.match(UPDATE_MANUAL_INSTALL_MESSAGE, /assinatura criptográfica/)
 assert.equal(resolveUpdateChannel('beta', false), 'stable')
 assert.equal(resolveUpdateChannel('beta', true, '0.15.0'), 'stable')
 assert.equal(resolveUpdateChannel(undefined, false, '0.15.1-beta.1'), 'beta')
@@ -45,6 +47,8 @@ assert.match(manager, /autoUpdater\.allowDowngrade = false/)
 assert.match(manager, /this\.snapshot\.state !== 'available'/)
 assert.match(manager, /this\.snapshot\.state !== 'downloaded'/)
 assert.match(manager, /autoUpdater\.quitAndInstall\(false, true\)/)
+assert.match(manager, /UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED/)
+assert.match(manager, /if \(!this\.snapshot\.configured \|\| this\.listenersRegistered\) return/)
 assert.equal(packageJson.scripts['electron:build'].includes('--publish never'), true)
 assert.equal(/process\.env\[['"](?:GH_TOKEN|GITHUB_TOKEN|ANCERYX_UPDATE_TOKEN)/.test(manager), false)
 console.log('update security smoke: PASS (policy, manifests, consent gates, bounded notes, no publication token)')

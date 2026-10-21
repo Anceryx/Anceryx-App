@@ -1,20 +1,21 @@
 # Modelo de segurança do atualizador
 
-## Proteções
+## Estado atual
 
-- Builds de desenvolvimento não contatam o updater.
-- Builds Windows empacotados usam o feed público fixo `Anceryx/Anceryx-App`.
-- O renderer não fornece URL de feed nem chama operações privilegiadas.
-- Consultas simultâneas são agrupadas; download e instalação exigem consentimento explícito.
-- Downgrades são desativados depois da configuração do canal, pois o setter de canal do `electron-updater` reativa essa opção.
-- SemVer, canal, nome/tamanho/hash do instalador NSIS são validados antes de liberar o download pela interface.
-- Erros de atualização não bloqueiam o uso normal; notas são limitadas e sanitizadas.
-- Tokens de publicação e credenciais de assinatura não ficam no cliente.
+- O atualizador integrado está desativado no cliente empacotado. A consulta, o download e a instalação automáticos ficam bloqueados até o aplicativo verificar criptograficamente o manifest de atualização com uma chave pública confiável.
+- O cliente instalado atualmente usa `electron-builder` 26.x e `electron-updater` 6.x. Nessas versões, o hash SHA-512 protege a integridade do arquivo em relação ao manifest recebido, mas não autentica a origem do próprio manifest.
+- Builds sem certificado Authenticode são permitidos para revisão. O app não exige assinatura de código para verificar o executável; essa configuração não substitui a verificação criptográfica do manifest.
+- O renderer não fornece URL de feed nem chama operações privilegiadas. Tokens de publicação e a chave privada de assinatura não ficam no cliente.
+- A mensagem no aplicativo instrui a instalação manual apenas de versões publicadas nas Releases oficiais da Anceryx.
 
-Clientes estáveis acompanham releases estáveis. Clientes `beta` acompanham betas compatíveis e uma versão estável mais nova; não recebem `alpha` ou `rc`. `rc` é um fluxo de QA manual. A publicação depende de workflow manual, ambiente protegido, aprovação humana e assinatura Authenticode verificada.
+## Requisitos para reativar o atualizador
 
-## Limitações e requisitos de publicação
+Antes de habilitá-lo, o projeto precisa adotar versões estáveis compatíveis do builder e do updater com assinatura Ed25519 de manifests, incorporar uma chave pública confiável ao aplicativo, manter a chave privada somente em secret protegido e validar a assinatura antes de aceitar qualquer metadado. A ativação também exige testes de regressão para assinatura ausente, inválida e válida, além de QA da instalação e atualização em Windows.
 
-O hash SHA-512 do manifesto e o blockmap detectam corrupção, mas não substituem assinatura de código. O Electron Updater verifica por padrão a assinatura do executável de atualização NSIS em Windows; o build de publicação exige assinatura e valida o subject configurado. O certificado e sua cadeia ainda precisam ser revisados e testados num Windows real. Não declarar o atualizador confiável em produção antes dessa validação.
+O workflow de publicação falha fechado enquanto as versões estáveis exigidas e o secret `ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY` não estiverem disponíveis. Não use versões alpha nem gere ou invente uma chave para contornar esse bloqueio. Mesmo após essas condições, o flag de execução do atualizador deve ser alterado explicitamente no cliente e validado antes de publicar uma versão.
 
-Instalação e atualização não removem `app.getPath('userData')` nem mudam os locais atuais. O armazenamento SafeStorage, sessões e preferências precisam ser confirmados em QA de instalação sobre versão existente. A `0.15.0` usa um feed anterior sem redirecionamento; a primeira instalação na nova origem é manual.
+## Integridade e preservação de dados
+
+SemVer, canal, nome, tamanho e SHA-512 do instalador são verificações adicionais de integridade, não autenticação da origem. O blockmap auxilia atualizações diferenciais e também não autentica a origem. Não habilite o atualizador com base somente nesses campos.
+
+A instalação não deve remover `app.getPath('userData')` nem alterar os caminhos atuais. SafeStorage, sessões, preferências, anexos, instalação sobre uma versão anterior, recuperação e desinstalação ainda precisam de QA em Windows real. A transição de instalações antigas para o feed atual é manual; o histórico de builds antigos não está integralmente disponível neste repositório.

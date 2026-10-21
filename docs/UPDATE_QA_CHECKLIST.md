@@ -1,26 +1,17 @@
-﻿# Windows updater QA checklist
+# Checklist de QA do instalador e atualizador Windows
 
-This checklist is intentionally manual for operations that cannot be proven by
-the renderer build.
+O cliente atual mantém o atualizador integrado desativado até verificar manifests Ed25519 assinados. Execute estes testes em ambiente isolado, sem dados pessoais ou contas de produção.
 
-- [ ] Install signed stable `0.15.0` and confirm it points at the retired feed.
-- [ ] Install the signed transition build over `0.15.0`; verify `%APPDATA%`, sessions, preferences, and local attachments remain available.
-- [ ] Install an older signed Windows NSIS build in an isolated test profile.
-- [ ] Confirm the app starts with the update server unavailable.
-- [ ] Keep publication tests in a disposable repository/test account until the public repository, signing subject, and protected environments are independently reviewed.
-- [ ] Confirm startup and manual checks show stable `latest` or beta `beta.yml` as appropriate.
-- [ ] Confirm no-update and connection-error states are non-blocking.
-- [ ] Confirm real download percentage and interrupted-download recovery.
-- [ ] Confirm notes are plain text and no arbitrary URL opens.
-- [ ] Confirm restart/install requires user consent.
-- [ ] Confirm the new version starts after installation and local attachments,
-      sessions, and preferences remain available.
-- [ ] Confirm equal/older versions, malformed versions/manifests, missing installer/hash/blockmap, and wrong-channel artifacts are rejected.
-- [ ] Confirm signature, certificate chain, SmartScreen reputation, installer,
-      uninstaller, and rollback behavior.
-- [ ] Repeat with a stable client and a beta client to verify channel selection.
-- [ ] Record artifact hashes, update metadata, logs without secrets, and the
-      exact source tag.
-- [ ] Confirm RC builds are manual QA only and are not presented as in-app beta updates.
+- [ ] Gerar uma build de revisão manual a partir da tag selecionada e confirmar versão e SHA do código-fonte.
+- [ ] Confirmar que o instalador é unsigned e que o processo não tenta publicar uma Release.
+- [ ] Instalar e iniciar o NSIS em um perfil de teste; confirmar que o SmartScreen é apresentado normalmente e que nenhuma instrução orienta ignorá-lo.
+- [ ] Instalar sobre uma versão anterior em ambiente isolado e confirmar que `%APPDATA%`, SafeStorage, sessões, preferências e anexos permanecem acessíveis.
+- [ ] Confirmar que o app inicia e funciona sem conexão ao feed de atualização.
+- [ ] Confirmar que consultas, download e instalação pelo atualizador integrado ficam desativados no cliente atual.
+- [ ] Antes de habilitar assinatura Ed25519: testar manifest válido, ausente, adulterado e assinado por chave não confiável; somente o válido deve ser aceito.
+- [ ] Depois da implementação do verificador: validar seleção de canal stable/beta e rejeição de downgrade, versão igual, SemVer inválido e canal incompatível.
+- [ ] Testar recuperação após interrupção, consentimento explícito para reinício/instalação, notas como texto simples e bloqueio de URLs arbitrárias.
+- [ ] Testar instalação, desinstalação e rollback; preservar dados locais em todos os casos.
+- [ ] Registrar hashes dos artifacts, tag e resultado sem incluir segredos ou dados pessoais.
 
-Do not use production accounts, private keys, or personal data for this QA.
+Não publique a Release `v0.15.0` nem altere sua tag durante estes testes. A Release existente não contém instalador. Builds de revisão são temporárias e não devem ser distribuídas como versões oficiais.

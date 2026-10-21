@@ -10,6 +10,12 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ## Próxima versão
 
+### Distribuição Windows
+
+- Builds de revisão permanecem sem assinatura Authenticode e são armazenadas como artifacts temporários, sem publicação de Release.
+- O atualizador integrado fica pausado até a verificação de manifests Ed25519 estar disponível e habilitada no cliente.
+- O workflow de publicação falha fechado sem versões estáveis compatíveis e o secret protegido da chave de assinatura do manifest.
+
 ### Licenciamento
 
 - O código-fonte do cliente passa a ser licenciado sob Apache License 2.0 (`Apache-2.0`) nos commits desta mudança. A tag `v0.15.0` permanece como snapshot anterior à alteração.

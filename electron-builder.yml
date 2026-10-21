@@ -17,6 +17,9 @@ files:
 win:
   target: nsis
   icon: resources/icon.png
+  # The installer remains unsigned until Authenticode is available. Do not
+  # treat publisher-name verification as the update trust mechanism.
+  verifyUpdateCodeSignature: false
 
 nsis:
   artifactName: Anceryx-Setup-${version}.${ext}

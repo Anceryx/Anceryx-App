@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import type { UpdateSnapshot } from '../../shared/updateTypes'
-import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, isSafeUpdateInfo, releaseNotesToLines, resolveUpdateChannel, safeUpdaterError } from './updateUtils'
+import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, UPDATE_MANUAL_INSTALL_MESSAGE, isSafeUpdateInfo, releaseNotesToLines, resolveUpdateChannel, safeUpdaterError } from './updateUtils'
 
 const STARTUP_DELAY_MS = 10_000
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
@@ -13,7 +13,7 @@ export class UpdateManager {
     currentVersion: app.getVersion(),
     latestVersion: null,
     channel: this.channel,
-    configured: app.isPackaged && process.platform === 'win32',
+    configured: app.isPackaged && process.platform === 'win32' && UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED,
     lastCheckedAt: null,
     progress: null,
     releaseNotes: [],
@@ -27,6 +27,7 @@ export class UpdateManager {
   constructor() {
     if (!app.isPackaged) this.snapshot.message = 'Atualizações ficam desativadas em desenvolvimento.'
     else if (process.platform !== 'win32') this.snapshot.message = 'Atualizações automáticas estão disponíveis apenas para Windows.'
+    else if (!UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED) this.snapshot.message = UPDATE_MANUAL_INSTALL_MESSAGE
   }
 
   start(): void {
