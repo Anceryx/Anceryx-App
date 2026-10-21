@@ -31,7 +31,6 @@ function renderContent(text: string): React.ReactNode {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onOpen, onSavedChange, onPinnedChange }) => {
-  const [mediaFailed, setMediaFailed] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [authorProfileOpen, setAuthorProfileOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -45,7 +44,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onOpen, onSave
   const [pinning, setPinning] = useState(false)
   useEffect(() => { setPinned(Boolean(post.isPinnedToProfile)) }, [post.id, post.isPinnedToProfile])
   useEffect(() => { setSaved(Boolean(post.viewerHasSaved)) }, [post.id, post.viewerHasSaved])
-  useEffect(() => { setMediaFailed(false) }, [post.id, post.mediaUrl])
   const { toggleLike, deleteRealtimePost, setPinnedProfilePost, profiles } = useSocialStore((s) => ({ toggleLike: s.toggleLike, deleteRealtimePost: s.deleteRealtimePost, setPinnedProfilePost: s.setPinnedProfilePost, profiles: s.profiles }))
   const addNotification = useUIStore((s) => s.addNotification)
 
@@ -153,21 +151,18 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onOpen, onSave
         {renderContent(post.content)}
       </p>
 
-      {post.mediaUrl && !mediaFailed && (
+      {post.mediaUrl && (
         <MediaAttachment
           src={mediaApi.resolvePublicUrl(post.mediaUrl)}
           mimeType={post.mediaType === 'video' ? 'video/mp4' : post.mediaType === 'gif' ? 'image/gif' : 'image/jpeg'}
           alt="Mídia do post"
           className="mb-2 mt-1 max-h-72 w-full rounded-lg border border-border object-contain"
-          onError={() => { console.warn('[media] Post image failed to load'); setMediaFailed(true) }}
           onClick={post.mediaType === 'video' ? undefined : (event) => {
             event.stopPropagation()
             openPost('media')
           }}
         />
       )}
-      {post.mediaUrl && mediaFailed && <div className="mb-2 mt-1 grid min-h-20 place-items-center rounded-lg border border-border bg-background-tertiary text-xs text-text-secondary">Esta mídia está indisponível.</div>}
-
       <div className="flex items-center gap-4">
         <button
           type="button"

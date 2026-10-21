@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { apiRequest, apiStream, API_BASE_URL } from '@/services/apiClient'
 
@@ -7,10 +7,14 @@ type Props = { src: string; mimeType: string; alt: string; className?: string; p
 /** Shared renderer for persisted image and MP4 attachments. */
 export function MediaAttachment({ src, mimeType, alt, className, privateMedia, onError, onClick }: Props) {
   const [resolved, setResolved] = useState('')
+  const [failure, setFailure] = useState<string | null>(null)
+  const [retry, setRetry] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     let active = true
     let objectUrl = ''
     setResolved('')
+    setFailure(null)
     if (!privateMedia) { setResolved(src); return () => { active = false } }
     try {
       const url = new URL(src, `${API_BASE_URL.replace(/\/$/, '')}/`)
@@ -20,7 +24,12 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
           body: JSON.stringify({ publicUrl: url.pathname }),
         }).then(({ playbackUrl }) => {
           if (active) setResolved(`${API_BASE_URL.replace(/\/$/, '')}${playbackUrl}`)
-        }).catch(() => { if (active) setResolved('') })
+        }).catch((error: unknown) => {
+          if (!active) return
+          const status = typeof error === 'object' && error !== null && 'status' in error ? Number((error as { status: unknown }).status) : 0
+          setFailure(status === 401 || status === 403 || status === 404 ? 'Este arquivo não está disponível para sua conta.' : 'Não foi possível conectar ao serviço de mídia.')
+          onError?.()
+        })
         return () => { active = false }
       }
       void apiStream(`${url.pathname}${url.search}`).then(async (response) => {
@@ -28,13 +37,41 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
         if (!active) return
         objectUrl = URL.createObjectURL(blob)
         setResolved(objectUrl)
-      }).catch(() => { if (active) setResolved('') })
-    } catch { setResolved('') }
+      }).catch(() => {
+        if (!active) return
+        setFailure('Não foi possível carregar esta imagem. Verifique a conexão e tente novamente.')
+        onError?.()
+      })
+    } catch {
+      setFailure('O endereço desta mídia está inválido.')
+      onError?.()
+    }
     return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [privateMedia, src])
-  const handleMediaError = () => { setResolved(''); onError?.() }
-  if (!resolved) return <div className={`${className ?? ''} grid min-h-16 place-items-center rounded-lg bg-background-tertiary text-xs text-text-secondary`}>Mídia indisponível</div>
-  if (mimeType === 'video/mp4') return <video src={resolved} controls preload="metadata" playsInline className={className} aria-label={alt} onError={handleMediaError} onClick={onClick} />
+  }, [onError, privateMedia, retry, src])
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    const observer = new IntersectionObserver(([entry]) => { if (!entry.isIntersecting) video.pause() }, { threshold: 0.05 })
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [resolved, retry])
+  const handleVideoError = () => {
+    const code = videoRef.current?.error?.code ?? 0
+    const message = code === 2
+      ? 'A conexão foi interrompida durante o carregamento.'
+      : code === 3
+        ? 'O arquivo foi recebido, mas o vídeo não pôde ser decodificado.'
+        : code === 4
+          ? 'Este MP4 usa um formato de vídeo incompatível com este aplicativo.'
+          : 'Não foi possível reproduzir este vídeo.'
+    console.warn('[media] Video playback failed', { errorCode: code, mimeType })
+    setFailure(message)
+    setResolved('')
+    onError?.()
+  }
+  const retryButton = <button type="button" className="mt-2 rounded-md border border-border px-3 py-1.5 text-xs text-text-primary hover:bg-background-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={(event) => { event.stopPropagation(); setFailure(null); setResolved(''); setRetry((value) => value + 1) }}>Tentar novamente</button>
+  if (!resolved) return <div className={`${className ?? ''} grid min-h-20 place-items-center rounded-lg bg-background-tertiary p-3 text-center text-xs text-text-secondary`} role={failure ? 'status' : undefined}>{failure ? <div>{failure}{retryButton}</div> : 'Carregando mídia…'}</div>
+  if (mimeType === 'video/mp4') return <video ref={videoRef} data-media-attachment="true" src={resolved} controls preload="metadata" playsInline className={className} aria-label={alt} onError={handleVideoError} onPlay={(event) => { document.querySelectorAll<HTMLVideoElement>('video[data-media-attachment="true"]').forEach((video) => { if (video !== event.currentTarget) video.pause() }) }} onClick={onClick} />
   if (!mimeType.startsWith('image/')) return <span className="text-xs text-text-secondary">Formato de mídia indisponível.</span>
-  return <img src={resolved} alt={alt} className={className} loading="lazy" draggable={false} onError={handleMediaError} onClick={onClick} />
+  return <img src={resolved} alt={alt} className={className} loading="lazy" draggable={false} onError={() => { console.warn('[media] Image attachment failed to load', { mimeType }); setFailure('Não foi possível carregar esta imagem.'); setResolved(''); onError?.() }} onClick={onClick} />
 }

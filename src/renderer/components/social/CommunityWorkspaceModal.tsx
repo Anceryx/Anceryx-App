@@ -29,6 +29,10 @@ import {
   Settings,
   Check,
   Flag,
+  ChevronDown,
+  LogOut,
+  CalendarPlus,
+  Copy as CopyIcon,
 } from 'lucide-react'
 import { Button, Input } from '@/components/ui/index'
 import { Avatar } from '@/components/ui/index'
@@ -76,6 +80,7 @@ import ForumManagementModal, { type ForumManagementTab } from './ForumManagement
 import CommunityForumChannel from './CommunityForumChannel'
 import CommunityManagementModal, { type CommunityManagementSection } from './CommunityManagementModal'
 import { communityPermissionLabel, getEffectiveCommunityPermissions } from '@/utils/communityPermissions'
+import { forumApi } from '@/services/forumApi'
 
 interface CommunityWorkspaceModalProps {
   communityId: string
@@ -261,6 +266,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const [selectedMember, setSelectedMember] = useState<CommunityMemberDto | null>(null)
   const [membersOpen, setMembersOpen] = useState(true)
   const [managementOpen, setManagementOpen] = useState(false)
+  const [forumMenuOpen, setForumMenuOpen] = useState(false)
+  const forumMenuRef = useRef<HTMLDivElement>(null)
   const [screenSources, setScreenSources] = useState<Array<{ id: string; name: string; thumbnail: string | null }>>([])
   const [screenPickerOpen, setScreenPickerOpen] = useState(false)
   const [screenPickerLoading, setScreenPickerLoading] = useState(false)
@@ -302,6 +309,36 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const canPostAnnouncement = hasCommunityPermission('manageMessages')
   const canOpenManagement = Boolean(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || canManageBans || canCreateModerationActions || canViewAuditLog || canManageReports || isCommunityOwner || ownModerationCases.length > 0 || ownAppeals.length > 0)
   const canViewSelectedChannel = selectedChannel?.viewerCanView ?? true
+  useEffect(() => {
+    if (!forumMenuOpen) return
+    const closeOnOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !forumMenuRef.current?.contains(event.target)) setForumMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setForumMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [forumMenuOpen])
+  const openCommunityManagement = (section = 'community') => {
+    setForumMenuOpen(false)
+    setManagementSection(section)
+    setManagementOpen(true)
+  }
+  const leaveForum = async () => {
+    setForumMenuOpen(false)
+    try {
+      await forumApi.leaveForum(communityId)
+      addNotification('Você saiu do Fórum.', 'success')
+      onClose()
+    } catch (reason) {
+      addNotification(reason instanceof Error ? reason.message : 'Não foi possível sair do Fórum.', 'error')
+    }
+  }
   const voiceParticipants = state?.voiceStates.filter((item) => item.channelId === selectedChannelId) ?? []
   const viewerInSelectedVoice = voiceParticipants.some((participant) => participant.userId === currentUserId)
   const viewerVoiceState = state?.voiceStates.find((participant) => participant.userId === currentUserId) ?? null
@@ -1319,7 +1356,23 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
             </button>
           </div>
           <div className="px-3 py-3">
-            <h2 className="text-base font-bold text-text-primary leading-tight">{state?.community.name ?? 'Comunidade'}</h2>
+            <div ref={forumMenuRef} className="relative">
+              <button type="button" aria-haspopup="menu" aria-expanded={forumMenuOpen} onClick={() => setForumMenuOpen((open) => !open)} className="flex min-h-10 w-full items-center justify-between gap-2 rounded-lg px-2 text-left text-base font-bold leading-tight text-text-primary hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <span className="min-w-0 truncate">{state?.community.name ?? 'Fórum'}</span><ChevronDown size={16} className={`shrink-0 transition-transform ${forumMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
+              {forumMenuOpen && <div role="menu" aria-label="Ações do Fórum" className="absolute left-0 top-full z-[80] mt-1 max-h-[65vh] w-full min-w-52 overflow-y-auto rounded-xl border border-border bg-background-secondary p-1.5 shadow-2xl">
+                {canManageInvites && <button role="menuitem" type="button" onClick={() => openCommunityManagement('community')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Users size={15} />Convidar membros</button>}
+                {(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || isCommunityOwner) && <button role="menuitem" type="button" onClick={() => openCommunityManagement(canManageLegacyForum ? 'settings' : 'community')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Settings size={15} />Configurações do Fórum</button>}
+                {canManageChannels && <>
+                  <button role="menuitem" type="button" onClick={() => openCommunityManagement('community')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Plus size={15} />Criar canal</button>
+                  <button role="menuitem" type="button" onClick={() => { setNewCategoryName(''); openCommunityManagement('community') }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Plus size={15} />Criar categoria</button>
+                </>}
+                {hasCommunityPermission('createTopics') && <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); setSelectedChannelId(null); setShowCommunityPosts(true); setShowEvents(false); setMobileView('content') }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><MessageSquare size={15} />Criar publicação</button>}
+                {canManageEvents && <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); setShowEvents(true); setShowCommunityPosts(false); void refreshEvents() }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><CalendarPlus size={15} />Criar evento</button>}
+                <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); void navigator.clipboard.writeText(communityId).then(() => addNotification('ID do Fórum copiado.', 'success')).catch(() => addNotification('Não foi possível copiar o ID do Fórum.', 'error')) }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><CopyIcon size={15} />Copiar ID do Fórum</button>
+                {state && state.community.ownerUserId !== currentUserId && <><div className="my-1 border-t border-border" /><button role="menuitem" type="button" onClick={() => void leaveForum()} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-red-300 hover:bg-background-tertiary"><LogOut size={15} />Sair do Fórum</button></>}
+              </div>}
+            </div>
             <p className="mt-1 line-clamp-2 text-xs text-text-secondary">{state?.community.description}</p>
             {state && <button type="button" onClick={() => { setMembersOpen(true); setMobileView('members') }} className="mt-3 flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background-secondary px-3 text-sm text-text-primary hover:bg-white/5 md:hidden" aria-label="Abrir membros e configurações do Fórum"><Users size={15} />Membros e configurações</button>}
           </div>
@@ -1334,7 +1387,10 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 if (channels.length === 0 && category.id !== 'uncategorized') return null
                 return (
                   <section key={category.id} className="mb-3">
-                    <button type="button" aria-expanded={!collapsedCategories.has(category.id)} onClick={() => setCollapsedCategories((current) => { const next = new Set(current); if (next.has(category.id)) next.delete(category.id); else next.add(category.id); return next })} className="mb-1 flex w-full items-center justify-between px-2 text-left text-[11px] font-semibold uppercase text-text-secondary hover:text-text-primary"><span className="truncate">{category.name}</span><span>{collapsedCategories.has(category.id) ? '+' : '−'}</span></button>
+                    <div className="mb-1 flex items-center gap-1">
+                      <button type="button" aria-expanded={!collapsedCategories.has(category.id)} onClick={() => setCollapsedCategories((current) => { const next = new Set(current); if (next.has(category.id)) next.delete(category.id); else next.add(category.id); return next })} className="flex min-h-8 min-w-0 flex-1 items-center justify-between gap-2 rounded px-2 text-left text-[11px] font-semibold uppercase text-text-secondary hover:text-text-primary"><span className="truncate">{category.name}</span><span aria-hidden="true">{collapsedCategories.has(category.id) ? '+' : '−'}</span></button>
+                      {canManageChannels && <button type="button" title={`Criar canal em ${category.name}`} aria-label={`Criar canal em ${category.name}`} onClick={() => { setNewChannelCategoryId(category.id === 'uncategorized' ? '' : category.id); openCommunityManagement('community') }} className="grid h-8 w-8 shrink-0 place-items-center rounded text-text-secondary hover:bg-background-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><Plus size={14} /></button>}
+                    </div>
                     {!collapsedCategories.has(category.id) && <div className="flex flex-col gap-1">
                       {channels.map((channel) => (
                         <React.Fragment key={channel.id}><button

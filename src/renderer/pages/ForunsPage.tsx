@@ -467,18 +467,18 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
     <>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-3 sm:px-4">
+        <div className="flex min-h-14 shrink-0 items-center gap-2 border-b border-border px-3 sm:gap-3 sm:px-4">
           <Search size={16} className="text-text-secondary shrink-0" aria-hidden="true" />
           <input
             type="text"
-            className="flex-1 text-sm bg-background-tertiary border border-border rounded-md px-3 py-1.5 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
+            className="min-w-0 flex-1 text-sm bg-background-tertiary border border-border rounded-md px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
             placeholder="Procurar fóruns..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             aria-label="Procurar fóruns"
           />
           <button
-            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onClick={() => setShowCreate(true)}
             aria-label="Criar fórum"
             title="Criar fórum"
