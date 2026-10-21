@@ -13,6 +13,8 @@ import ConexoesLoginSection      from './sections/ConexoesLoginSection'
 import SessoesDispositivosSection from './sections/SessoesDispositivosSection'
 import UltimosLoginsSection      from './sections/UltimosLoginsSection'
 import SobreSection              from './sections/SobreSection'
+import { useUIStore } from '@/store/uiStore'
+import { translate } from '@/i18n'
 
 const SECTION_TITLES: Record<SettingsSection, string> = {
   'conta':             'Conta',
@@ -36,6 +38,8 @@ export interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialSection }) => {
+  const locale = useUIStore((state) => state.locale)
+  const sectionTitle = (section: SettingsSection) => section === 'experiencia' ? translate('settings.experience', locale) : SECTION_TITLES[section]
   const [activeSection, setActiveSection] = useState<SettingsSection>('conta')
   const [mobileSection, setMobileSection] = useState<SettingsSection | null>(null)
 
@@ -124,7 +128,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
           {/* Header da seção */}
           <div className="flex items-center justify-between px-7 py-5 border-b border-border shrink-0">
             <h2 className="text-xl font-bold text-text-primary">
-              {SECTION_TITLES[activeSection]}
+              {sectionTitle(activeSection)}
             </h2>
             <button
               onClick={onClose}
@@ -145,7 +149,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
         <div key={mobileSection ?? 'section-hidden'} className={["motion-view-forward min-w-0 flex-1 flex-col overflow-hidden md:hidden", mobileSection ? 'flex' : 'hidden'].join(' ')}>
           <header className="safe-area-top flex min-h-16 shrink-0 items-center gap-2 border-b border-border px-3">
             <button type="button" onClick={() => setMobileSection(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label="Voltar para categorias de configurações"><ChevronLeft size={22} /></button>
-            <h2 className="min-w-0 flex-1 break-words text-lg font-bold text-text-primary">{mobileSection ? SECTION_TITLES[mobileSection] : 'Configurações'}</h2>
+            <h2 className="min-w-0 flex-1 break-words text-lg font-bold text-text-primary">{mobileSection ? sectionTitle(mobileSection) : 'Configurações'}</h2>
             <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label="Fechar configurações"><X size={21} /></button>
           </header>
           <div className="mobile-scroll flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-5">

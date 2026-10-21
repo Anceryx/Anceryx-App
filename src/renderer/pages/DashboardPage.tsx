@@ -24,6 +24,7 @@ import SavedPostsPage from '@/pages/SavedPostsPage'
 import type { Forum, SidebarSection } from '@/types/index'
 import CommunityWorkspaceModal from '@/components/social/CommunityWorkspaceModal'
 import { resolveAvatarName } from '@/utils/avatar'
+import { dispatchKeyboardShortcut } from '@/utils/keyboardShortcuts'
 
 interface NavItem {
   section: SidebarSection
@@ -44,6 +45,12 @@ const SIDEBAR_MAX = 280
 const SIDEBAR_COLLAPSED = 72
 
 const DashboardPage: React.FC = () => {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { dispatchKeyboardShortcut(event) }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   const { activeSection, setActiveSection, userProfile } = useSocialStore((s) => ({
     activeSection: s.activeSection,
     setActiveSection: s.setActiveSection,
@@ -55,6 +62,8 @@ const DashboardPage: React.FC = () => {
   const isExpanded = useCallStore((s) => s.isExpanded)
 
   const { sidebarCollapsed, sidebarWidth, sidebarMode, setSidebarCollapsed, setSidebarWidth } = useUIStore((s) => ({ sidebarCollapsed: s.sidebarCollapsed, sidebarWidth: s.sidebarWidth, sidebarMode: s.sidebarMode, setSidebarCollapsed: s.setSidebarCollapsed, setSidebarWidth: s.setSidebarWidth }))
+  const locale = useUIStore((s) => s.locale)
+  void locale
   const [forumSidebarOverride, setForumSidebarOverride] = useState<boolean | null>(null)
   const [workspaceForum, setWorkspaceForum] = useState<Forum | null>(null)
   useEffect(() => { if (activeSection !== 'foruns') setForumSidebarOverride(null) }, [activeSection])

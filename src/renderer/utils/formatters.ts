@@ -2,6 +2,11 @@
  * Formatting utilities for dates, names, and avatars.
  */
 
+import { useUIStore } from '@/store/uiStore'
+import { formatDateSeparatorWithPreferences, formatDateTimeWithPreferences, formatDateWithPreferences, formatTimeWithPreferences, formatTimestampWithPreferences, type DateTimePreferences } from '@/utils/dateTime'
+
+export type { DateTimePreferences } from '@/utils/dateTime'
+
 const AVATAR_COLORS = [
   '#7C3AED', // violet-600
   '#DC2626', // red-600
@@ -13,65 +18,16 @@ const AVATAR_COLORS = [
   '#65A30D'  // lime-600
 ]
 
-/**
- * Returns a timestamp string:
- * - "hoje às HH:MM" for today
- * - "ontem às HH:MM" for yesterday
- * - "DD/MM/YYYY HH:MM" for older dates
- */
-export function formatTimestamp(date: Date): string {
-  const d = new Date(date)
-  const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const yesterdayStart = new Date(todayStart)
-  yesterdayStart.setDate(yesterdayStart.getDate() - 1)
-  const msgStart = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-
-  const hhmm = new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(d)
-
-  if (msgStart.getTime() === todayStart.getTime()) {
-    return `hoje às ${hhmm}`
-  }
-  if (msgStart.getTime() === yesterdayStart.getTime()) {
-    return `ontem às ${hhmm}`
-  }
-
-  const ddmmyyyy = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(d)
-
-  return `${ddmmyyyy} ${hhmm}`
+function preferences(): DateTimePreferences {
+  const { locale, timeFormat, dateFormat } = useUIStore.getState()
+  return { locale, timeFormat, dateFormat }
 }
 
-/**
- * Returns a date separator label:
- * - "Hoje" for today
- * - "Ontem" for yesterday
- * - "DD de MÊS de YYYY" for older dates
- */
-export function formatDateSeparator(date: Date): string {
-  const d = new Date(date)
-  const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const yesterdayStart = new Date(todayStart)
-  yesterdayStart.setDate(yesterdayStart.getDate() - 1)
-  const msgStart = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-
-  if (msgStart.getTime() === todayStart.getTime()) return 'Hoje'
-  if (msgStart.getTime() === yesterdayStart.getTime()) return 'Ontem'
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  }).format(d)
-}
-
+export function formatDate(date: Date, prefs = preferences()): string { return formatDateWithPreferences(date, prefs) }
+export function formatTime(date: Date, prefs = preferences()): string { return formatTimeWithPreferences(date, prefs) }
+export function formatDateTime(date: Date, prefs = preferences()): string { return formatDateTimeWithPreferences(date, prefs) }
+export function formatTimestamp(date: Date, prefs = preferences()): string { return formatTimestampWithPreferences(new Date(date), prefs) }
+export function formatDateSeparator(date: Date, prefs = preferences()): string { return formatDateSeparatorWithPreferences(new Date(date), prefs) }
 /**
  * Returns initials from a name:
  * - First letter of the first word + first letter of the second word (if present).

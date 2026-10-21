@@ -4,6 +4,7 @@ import CallHistoryMessage from './CallHistoryMessage'
 import { renderAnceryxText, isOnlyAnceryxEmojis } from '@/lib/anceryxEmojis'
 import { getKaoliSticker } from '@/lib/kaoliStickers'
 import { isSafeKlipyMediaUrl } from '@/services/klipyApi'
+import { formatTime as formatAppTime } from '@/utils/formatters'
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -16,13 +17,8 @@ interface MessageBubbleProps {
   onOpenImage?: (image: TextMessage['image']) => void
 }
 
-/** Formats a Date to HH:MM */
-function fmtHHMM(d: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(d))
-}
-
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, showMeta, senderName, isNew = false, onEntryAnimationEnd, onOpenImage }) => {
-  // Call history entry — renders as a centered event, not a bubble
+// Hist?rico de chamadas, exibido como evento centralizado.
   if (message.type === 'call') {
     return <div className={isNew ? 'motion-message-new' : ''} onAnimationEnd={onEntryAnimationEnd}><CallHistoryMessage entry={message.callEntry} /></div>
   }
@@ -35,7 +31,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, showMeta
   if (sticker) {
     return <div onAnimationEnd={onEntryAnimationEnd} className={['flex flex-col gap-0.5', isMine ? 'items-end' : 'items-start', isNew ? 'motion-message-new' : ''].join(' ')}>
       {showMeta && !isMine && <span className="mb-0.5 ml-1 text-[11px] text-text-secondary">{senderName}</span>}
-      <div className="flex items-end gap-1.5"><img src={sticker.asset} alt={sticker.name} className="h-32 w-32 object-contain" draggable={false} /><span className="mb-0.5 shrink-0 text-[10px] text-text-secondary">{fmtHHMM(message.createdAt)}</span></div>
+      <div className="flex items-end gap-1.5"><img src={sticker.asset} alt={sticker.name} className="h-32 w-32 object-contain" draggable={false} /><span className="mb-0.5 shrink-0 text-[10px] text-text-secondary">{formatAppTime(new Date(message.createdAt))}</span></div>
     </div>
   }
   const onlyEmojis = isOnlyAnceryxEmojis(_exhaustive.content)
@@ -79,7 +75,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, showMeta
           )}
         </div>
         <span className="text-[10px] text-text-secondary shrink-0 mb-0.5">
-          {fmtHHMM(message.createdAt)}
+          {formatAppTime(new Date(message.createdAt))}
         </span>
       </div>
     </div>

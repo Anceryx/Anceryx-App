@@ -8,6 +8,7 @@
 import React from 'react'
 import { Phone, Video } from 'lucide-react'
 import type { CallHistoryEntry } from '@/types/calls'
+import { formatTime } from '@/utils/formatters'
 
 export interface CallHistoryMessageProps {
   entry: CallHistoryEntry
@@ -26,17 +27,10 @@ function formatCallDuration(secs: number): string {
   return `${m}:${s}`
 }
 
-function formatTime(ts: number): string {
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour:   '2-digit',
-    minute: '2-digit',
-  }).format(new Date(ts))
-}
-
 const CallHistoryMessage: React.FC<CallHistoryMessageProps> = ({ entry }) => {
   const Icon = entry.callType === 'video' ? Video : Phone
   const typeLabel = entry.callType === 'video' ? 'vídeo' : 'voz'
-  const time = formatTime(entry.startedAt)
+  const time = formatTime(new Date(entry.startedAt))
 
   let label: string
   switch (entry.status) {

@@ -28,6 +28,7 @@
     "test:community-moderation-permissions": "node --experimental-strip-types scripts/community-moderation-permissions.test.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
     "test:encoding": "node scripts/check-text-encoding.mjs",
+    "test:date-format-preferences": "node --experimental-strip-types scripts/date-format-preferences.test.mjs",
     "test:community-permissions": "node --experimental-strip-types scripts/community-permissions.test.mjs",
     "test:community-posts": "node scripts/community-posts.test.mjs",
     "test:community-workspace-layout": "node --experimental-strip-types scripts/community-workspace-layout.test.mjs",

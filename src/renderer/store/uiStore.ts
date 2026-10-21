@@ -3,7 +3,12 @@ import { persist } from 'zustand/middleware'
 import type { Theme, NotificationItem } from '@/types/index'
 import type { SettingsSection } from '@/components/settings/SettingsNav'
 
+export type ExperienceSection = 'appearance' | 'language-date-time' | 'shortcuts' | 'preferences'
+
 interface UIState {
+  locale: 'pt-BR' | 'en-US' | 'es-ES'
+  timeFormat: 'auto' | '12h' | '24h'
+  dateFormat: 'auto' | 'dmy' | 'mdy' | 'ymd'
   theme: Theme
   sidebarOpen: boolean
   sidebarCollapsed: boolean
@@ -13,10 +18,14 @@ interface UIState {
   notifications: NotificationItem[]
   /** Non-persisted: which settings section to open via deep-link (e.g. 'voz') */
   settingsSection: SettingsSection | null
+  experienceSection: ExperienceSection
   pendingDmUser: { id: string; username: string } | null
   pendingPostId: string | null
   toggleTheme: () => void
   setTheme: (theme: Theme) => void
+  setLocale: (locale: UIState['locale']) => void
+  setTimeFormat: (format: UIState['timeFormat']) => void
+  setDateFormat: (format: UIState['dateFormat']) => void
   setSidebarOpen: (v: boolean) => void
   setSidebarCollapsed: (v: boolean) => void
   setSidebarWidth: (v: number) => void
@@ -26,6 +35,7 @@ interface UIState {
   dismissNotification: (id: string) => void
   /** Open the SettingsModal and optionally jump to a specific section */
   openSettings: (section?: SettingsSection) => void
+  setExperienceSection: (section: ExperienceSection) => void
   closeSettings: () => void
   openDm: (user: { id: string; username: string }) => void
   consumePendingDm: () => { id: string; username: string } | null
@@ -36,6 +46,9 @@ interface UIState {
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
+      locale: 'pt-BR',
+      timeFormat: 'auto',
+      dateFormat: 'auto',
       theme: 'dark',
       sidebarOpen: true,
       sidebarCollapsed: false,
@@ -44,6 +57,7 @@ export const useUIStore = create<UIState>()(
       reduceMotion: false,
       notifications: [],
       settingsSection: null,
+      experienceSection: 'appearance',
       pendingDmUser: null,
       pendingPostId: null,
 
@@ -61,6 +75,9 @@ export const useUIStore = create<UIState>()(
         }),
 
       setTheme: (theme: Theme) => set({ theme }),
+      setLocale: (locale) => set({ locale }),
+      setTimeFormat: (timeFormat) => set({ timeFormat }),
+      setDateFormat: (dateFormat) => set({ dateFormat }),
 
       setSidebarOpen: (v: boolean) => set({ sidebarOpen: v }),
       setSidebarCollapsed: (v: boolean) => set({ sidebarCollapsed: v }),
@@ -86,6 +103,8 @@ export const useUIStore = create<UIState>()(
       openSettings: (section?: SettingsSection) =>
         set({ settingsSection: section ?? null }),
 
+      setExperienceSection: (experienceSection) => set({ experienceSection }),
+
       closeSettings: () =>
         set({ settingsSection: null }),
 
@@ -105,7 +124,7 @@ export const useUIStore = create<UIState>()(
     {
       name: 'anceryx-ui',
       // Persist layout preferences; transient dialogs and notifications stay local.
-      partialize: (state) => ({ theme: state.theme, sidebarCollapsed: state.sidebarCollapsed, sidebarWidth: state.sidebarWidth, sidebarMode: state.sidebarMode, reduceMotion: state.reduceMotion })
+      partialize: (state) => ({ locale: state.locale, timeFormat: state.timeFormat, dateFormat: state.dateFormat, theme: state.theme, sidebarCollapsed: state.sidebarCollapsed, sidebarWidth: state.sidebarWidth, sidebarMode: state.sidebarMode, reduceMotion: state.reduceMotion })
     }
   )
 )
