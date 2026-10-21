@@ -16,7 +16,7 @@ This repository contains the Anceryx client application, built with Electron, Re
 
 - Social feed, Explore, and profiles
 - Direct messaging and call interfaces
-- Forums and community spaces
+- Forums with an integrated community workspace and organized channels
 - Themes, premium experiences, badges, and achievements
 - A desktop application built with Electron
 
@@ -66,6 +66,7 @@ npm run build
 npm run test:api-config
 npm run test:connection-config
 npm run test:update-security
+npm run test:community-workspace-layout
 npm run test:encoding
 ```
 

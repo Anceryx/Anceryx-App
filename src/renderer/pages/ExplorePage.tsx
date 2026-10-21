@@ -4,12 +4,13 @@ import { Avatar } from '@/components/ui/index'
 import { PostCard, PostDetailModal, UserProfileModal, ForumDetailModal } from '@/components/social/index'
 import { useAuthStore } from '@/store/authStore'
 import { apiForumToLocal, useSocialStore } from '@/store/socialStore'
+import type { Forum } from '@/types/index'
 import { socialApi, type PublicProfileDto } from '@/services/socialApi'
 import { forumApi, type ApiForum } from '@/services/forumApi'
 
 type Tab = 'posts' | 'pessoas' | 'foruns'
 
-const ExplorePage: React.FC = () => {
+const ExplorePage: React.FC<{ onOpenWorkspace?: (forum: Forum) => void }> = ({ onOpenWorkspace }) => {
   const user = useAuthStore((state) => state.user)
   const { posts, localForums, hydrateSocial } = useSocialStore((state) => ({ posts: state.posts, localForums: state.forums, hydrateSocial: state.hydrateSocial }))
   const [tab, setTab] = useState<Tab>('posts')
@@ -48,11 +49,11 @@ const ExplorePage: React.FC = () => {
       {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
       {tab === 'posts' && (filteredPosts.length ? filteredPosts.map((post) => <PostCard key={post.id} post={post} currentUserId={user.id} onOpen={() => setSelectedPost(post.id)} />) : <Empty text="Nenhum post encontrado." />)}
       {tab === 'pessoas' && (users.length ? users.map((profile) => <button key={profile.id} onClick={() => setSelectedUser(profile.username)} className="anceryx-card flex w-full items-center gap-3 p-4 text-left"><Avatar src={profile.avatarUrl} name={profile.displayName} size="sm" /><span><strong className="block text-sm text-text-primary">{profile.displayName}</strong><small className="text-text-secondary">@{profile.username}</small></span></button>) : <Empty text={query.length < 2 ? 'Digite ao menos 2 caracteres para buscar pessoas.' : 'Nenhuma pessoa encontrada.'} />)}
-      {tab === 'foruns' && (forums.length ? forums.map((forum) => <button type="button" key={forum.id} onClick={() => { setSelectedForumFallback(apiForumToLocal(forum)); setSelectedForumId(forum.id) }} className="anceryx-card w-full p-4 text-left transition hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><div className="flex items-center gap-3"><MessageCircle size={18} className="text-accent" /><div className="min-w-0 flex-1"><strong className="block truncate text-sm text-text-primary">{forum.name}</strong><p className="line-clamp-2 text-xs text-text-secondary">{forum.description}</p></div><span className="flex shrink-0 items-center gap-1 text-xs text-text-secondary"><Users size={13} />{forum.memberCount}</span></div><span className="sr-only">Abrir detalhes e opções de participação</span></button>) : <Empty text="Nenhum fórum encontrado." />)}
+      {tab === 'foruns' && (forums.length ? forums.map((forum) => <button type="button" key={forum.id} onClick={() => { const localForum = apiForumToLocal(forum); if (localForum.isJoined && onOpenWorkspace) onOpenWorkspace(localForum); else { setSelectedForumFallback(localForum); setSelectedForumId(forum.id) } }} className="anceryx-card w-full p-4 text-left transition hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><div className="flex items-center gap-3"><MessageCircle size={18} className="text-accent" /><div className="min-w-0 flex-1"><strong className="block truncate text-sm text-text-primary">{forum.name}</strong><p className="line-clamp-2 text-xs text-text-secondary">{forum.description}</p></div><span className="flex shrink-0 items-center gap-1 text-xs text-text-secondary"><Users size={13} />{forum.memberCount}</span></div><span className="sr-only">Abrir detalhes e opções de participação</span></button>) : <Empty text="Nenhum fórum encontrado." />)}
     </div></div>
     {selectedPost && <PostDetailModal postId={selectedPost} initialMode="detail" onClose={() => setSelectedPost(null)} />}
     {selectedUser && <UserProfileModal username={selectedUser} isOpen onClose={() => setSelectedUser(null)} />}
-    {selectedForum && <ForumDetailModal forum={selectedForum} onClose={() => { setSelectedForumId(null); setSelectedForumFallback(null) }} />}
+    {selectedForum && <ForumDetailModal forum={selectedForum} onOpenWorkspace={onOpenWorkspace} onClose={() => { setSelectedForumId(null); setSelectedForumFallback(null) }} />}
   </div>
 }
 

@@ -1,0 +1,49 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { getCommunityVoiceControlLabels } from '../src/renderer/utils/communityVoiceControls.ts'
+
+const dashboard = await readFile(new URL('../src/renderer/pages/DashboardPage.tsx', import.meta.url), 'utf8')
+const workspace = await readFile(new URL('../src/renderer/components/social/CommunityWorkspaceModal.tsx', import.meta.url), 'utf8')
+const forums = await readFile(new URL('../src/renderer/pages/ForunsPage.tsx', import.meta.url), 'utf8')
+const forumCreation = await readFile(new URL('../src/renderer/components/social/CreateForumModal.tsx', import.meta.url), 'utf8')
+const explore = await readFile(new URL('../src/renderer/pages/ExplorePage.tsx', import.meta.url), 'utf8')
+const voiceControls = await readFile(new URL('../src/renderer/components/social/CommunityVoiceActionButtons.tsx', import.meta.url), 'utf8')
+const mediaAttachment = await readFile(new URL('../src/renderer/components/ui/MediaAttachment.tsx', import.meta.url), 'utf8')
+
+assert.match(dashboard, /workspaceForum && <div className=\{`\$\{activeSection === 'foruns' \? 'block' : 'hidden'\}/)
+assert.match(dashboard, /<CommunityWorkspaceModal presentation="embedded"/)
+assert.match(workspace, /presentation === 'embedded' \? 'h-full min-h-0 w-full min-w-0'/)
+assert.match(workspace, /min-h-0 flex-1 overflow-y-auto px-2 pb-4 anceryx-scroll/)
+assert.match(workspace, /aria-label="Controles persistentes de voz"/)
+assert.match(workspace, /anceryx:forum-channel:\$\{communityId\}/)
+assert.match(workspace, /min-h-0 min-w-0 flex-col overflow-hidden/)
+assert.match(workspace, /id: 'organization', label: 'Organização'/)
+assert.match(workspace, /id: 'roles', label: 'Cargos e permissões'/)
+assert.match(workspace, /id: 'invites', label: 'Convites'/)
+assert.match(workspace, /openCommunityManagement\('invites'\)/)
+assert.match(workspace, /openCommunityManagement\('organization'\)/)
+assert.match(workspace, /<MessageComposer/)
+assert.match(workspace, /onPickGif=\{\(gif\) => void createMessage\(\{ contentType: 'gif', gif \}\)\}/)
+assert.match(workspace, /<CommunityVoiceActionButtons compact/)
+assert.match(workspace, /aria-label="Controles persistentes de voz"/)
+assert.match(voiceControls, /onToggleMuted/)
+assert.match(voiceControls, /onToggleDeafened/)
+assert.match(voiceControls, /onToggleScreenShare/)
+assert.match(voiceControls, /onLeave/)
+assert.match(mediaAttachment, /canPlayHeAacV2/)
+assert.match(mediaAttachment, /canPlayAacLc/)
+assert.deepEqual(getCommunityVoiceControlLabels({ muted: false, deafened: false, sharingScreen: false }), {
+  microphone: { ariaLabel: 'Silenciar microfone', text: 'Silenciar' },
+  audio: { ariaLabel: 'Desativar áudio', text: 'Desativar áudio' },
+  screen: { ariaLabel: 'Compartilhar tela', text: 'Compartilhar tela', compactText: 'Compartilhar' },
+})
+assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).microphone.ariaLabel, 'Ativar microfone')
+assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).audio.ariaLabel, 'Ativar áudio')
+assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).screen.compactText, 'Parar live')
+assert.match(forums, /onOpenWorkspace\(forum\)/)
+assert.match(forumCreation, /Criar sem \{failedOptionalImage === 'banner' \? 'o banner' : 'o ícone'\}/)
+assert.match(forumCreation, /uploadedIconUrl \?\? iconDataUrl/)
+assert.match(forums, /CreateForumModal from '@\/components\/social\/CreateForumModal'/)
+assert.match(explore, /localForum\.isJoined && onOpenWorkspace/)
+
+console.log('community workspace smoke: PASS (integrated layout, chat/GIF wiring, management sections, retry-safe images and voice control states)')

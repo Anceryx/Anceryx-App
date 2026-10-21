@@ -16,7 +16,7 @@ Este repositório contém o aplicativo cliente da Anceryx, desenvolvido com Elec
 
 - Feed social, Explorar e perfis
 - Mensagens diretas e interfaces de chamadas
-- Fóruns e espaços de comunidade
+- Fóruns com espaço de comunidade integrado e canais organizados
 - Temas, experiências premium, insígnias e conquistas
 - Aplicativo desktop construído com Electron
 
@@ -66,6 +66,7 @@ npm run build
 npm run test:api-config
 npm run test:connection-config
 npm run test:update-security
+npm run test:community-workspace-layout
 npm run test:encoding
 ```
 

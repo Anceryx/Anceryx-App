@@ -15,10 +15,11 @@ import type { SidebarSection } from '@/types/index'
 interface ForumDetailModalProps {
   forum: Forum
   onClose: () => void
+  onOpenWorkspace?: (forum: Forum) => void
   onNavigateGlobal?: (section: SidebarSection) => void
 }
 
-const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onNavigateGlobal }) => {
+const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onOpenWorkspace, onNavigateGlobal }) => {
   const toggleForumJoin = useSocialStore((s) => s.toggleForumJoin)
   const liveForum = useSocialStore((s) => s.forums.find((item) => item.id === forum.id) ?? forum)
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
@@ -81,6 +82,7 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onN
             <Button variant="primary" size="sm" className="shrink-0" onClick={async () => {
               try {
                 if (!liveForum.isJoined) await toggleForumJoin(liveForum.id)
+                if (onOpenWorkspace) { onOpenWorkspace(liveForum); onClose(); return }
                 setWorkspaceOpen(true)
               } catch (error) {
                 addNotification(error instanceof Error ? error.message : 'Não foi possível entrar nesta comunidade.', 'error')

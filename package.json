@@ -29,6 +29,7 @@
     "test:encoding": "node scripts/check-text-encoding.mjs",
     "test:community-permissions": "node --experimental-strip-types scripts/community-permissions.test.mjs",
     "test:community-posts": "node scripts/community-posts.test.mjs",
+    "test:community-workspace-layout": "node --experimental-strip-types scripts/community-workspace-layout.test.mjs",
     "test:community-screen-share": "node scripts/community-screen-share.test.mjs",
     "test:settings-license-ui": "node scripts/settings-license-ui.test.mjs",
     "test:updater-ui-state": "node scripts/updater-ui-state.test.mjs"

@@ -21,7 +21,8 @@ import ExplorePage from '@/pages/ExplorePage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import CobrancaPage from '@/pages/CobrancaPage'
 import SavedPostsPage from '@/pages/SavedPostsPage'
-import type { SidebarSection } from '@/types/index'
+import type { Forum, SidebarSection } from '@/types/index'
+import CommunityWorkspaceModal from '@/components/social/CommunityWorkspaceModal'
 import { resolveAvatarName } from '@/utils/avatar'
 
 interface NavItem {
@@ -55,6 +56,7 @@ const DashboardPage: React.FC = () => {
 
   const { sidebarCollapsed, sidebarWidth, sidebarMode, setSidebarCollapsed, setSidebarWidth } = useUIStore((s) => ({ sidebarCollapsed: s.sidebarCollapsed, sidebarWidth: s.sidebarWidth, sidebarMode: s.sidebarMode, setSidebarCollapsed: s.setSidebarCollapsed, setSidebarWidth: s.setSidebarWidth }))
   const [forumSidebarOverride, setForumSidebarOverride] = useState<boolean | null>(null)
+  const [workspaceForum, setWorkspaceForum] = useState<Forum | null>(null)
   useEffect(() => { if (activeSection !== 'foruns') setForumSidebarOverride(null) }, [activeSection])
   const isCollapsed = forumSidebarOverride ?? (sidebarCollapsed || (sidebarMode === 'automatic' && activeSection === 'foruns'))
   const sidebarW = isCollapsed ? SIDEBAR_COLLAPSED : sidebarWidth
@@ -105,8 +107,8 @@ const DashboardPage: React.FC = () => {
       case 'perfil': return <PerfilPage />
       case 'amigos': return <AmigosPage />
       case 'mensagens': return <MensagensPage />
-      case 'foruns': return <ForunsPage onNavigateGlobal={setActiveSection} />
-      case 'explore': return <ExplorePage />
+      case 'foruns': return <ForunsPage onNavigateGlobal={setActiveSection} onOpenWorkspace={setWorkspaceForum} />
+      case 'explore': return <ExplorePage onOpenWorkspace={setWorkspaceForum} />
       case 'notificacoes': return <NotificationsPage />
       case 'cobranca': return <CobrancaPage />
       default: return <FeedPage />
@@ -232,9 +234,12 @@ const DashboardPage: React.FC = () => {
         </aside>
 
         <main className="min-w-0 flex-1 overflow-hidden rounded-none border-0 bg-background-primary shadow-none md:rounded-[20px] md:border md:border-border md:shadow-panel">
-          <div key={activeSection} className="motion-view-in h-full min-h-0">
+          <div key={activeSection} className={`${activeSection === 'foruns' && workspaceForum ? 'hidden' : 'motion-view-in'} h-full min-h-0`}>
             {renderPage()}
           </div>
+          {workspaceForum && <div className={`${activeSection === 'foruns' ? 'block' : 'hidden'} h-full min-h-0`}>
+            <CommunityWorkspaceModal presentation="embedded" forum={workspaceForum} communityId={workspaceForum.id} onClose={() => setWorkspaceForum(null)} onForumDeleted={() => setWorkspaceForum(null)} onNavigateGlobal={setActiveSection} />
+          </div>}
         </main>
       </div>
 

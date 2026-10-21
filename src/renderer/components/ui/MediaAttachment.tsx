@@ -57,14 +57,23 @@ export function MediaAttachment({ src, mimeType, alt, className, privateMedia, o
   }, [resolved, retry])
   const handleVideoError = () => {
     const code = videoRef.current?.error?.code ?? 0
+    const codecProbe = document.createElement('video')
     const message = code === 2
       ? 'A conexão foi interrompida durante o carregamento.'
       : code === 3
         ? 'O arquivo foi recebido, mas o vídeo não pôde ser decodificado.'
         : code === 4
-          ? 'Este MP4 usa um formato de vídeo incompatível com este aplicativo.'
+          ? 'O aplicativo não reconheceu a origem ou o formato deste vídeo. Verifique a resposta de mídia e os codecs do arquivo.'
           : 'Não foi possível reproduzir este vídeo.'
-    console.warn('[media] Video playback failed', { errorCode: code, mimeType })
+    console.warn('[media] Video playback failed', {
+      errorCode: code,
+      networkState: videoRef.current?.networkState,
+      readyState: videoRef.current?.readyState,
+      mimeType,
+      canPlayMp4: codecProbe.canPlayType('video/mp4'),
+      canPlayAacLc: codecProbe.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
+      canPlayHeAacV2: codecProbe.canPlayType('audio/mp4; codecs="mp4a.40.29"'),
+    })
     setFailure(message)
     setResolved('')
     onError?.()
