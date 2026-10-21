@@ -970,6 +970,33 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
     } finally { setBusy(null) }
   }
 
+  const syncChannelPermissionsFromCategory = async (channel: CommunityChannelDto) => {
+    if (!channel.categoryId) return
+    const overrides = (state?.overrides ?? []).filter((override) => override.channelId === channel.id && (override.allow.length > 0 || override.deny.length > 0))
+    if (!overrides.length) {
+      addNotification('Este canal já herda as permissões da categoria.', 'success')
+      return
+    }
+    if (!window.confirm(`Limpar ${overrides.length} sobrescrita(s) deste canal e voltar a herdar as permissões da categoria?`)) return
+    setBusy(`channel-permissions:${channel.id}`)
+    try {
+      for (const override of overrides) {
+        await communityApi.upsertOverride(communityId, {
+          channelId: channel.id,
+          subjectType: override.subjectType,
+          subjectId: override.subjectId,
+          allow: [],
+          deny: [],
+        })
+      }
+      await refresh()
+      addNotification('Permissões sincronizadas com a categoria.', 'success')
+    } catch (reason) {
+      await refresh()
+      addNotification(reason instanceof Error ? reason.message : 'Não foi possível sincronizar as permissões.', 'error')
+    } finally { setBusy(null) }
+  }
+
   const deleteCategory = async (categoryId: string) => {
     setBusy(`category:${categoryId}`)
     try {
@@ -1310,8 +1337,9 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 {state?.channels.map((channel) => {
                   const siblings = state.channels.filter((item) => item.categoryId === channel.categoryId).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
                   const channelIndex = siblings.findIndex((item) => item.id === channel.id)
+                  const hasChannelOverrides = state.overrides.some((override) => override.channelId === channel.id && (override.allow.length > 0 || override.deny.length > 0))
                   return <div key={channel.id} className="flex items-center gap-2 rounded-md border border-border p-2">
-                  {editingChannel?.id === channel.id ? <div className="grid flex-1 gap-2"><Input aria-label="Nome do canal" value={editingChannel.name} onChange={(event) => setEditingChannel({ ...editingChannel, name: event.target.value })} /><label className="block text-xs text-text-secondary">Tipo <select value={editingChannel.type} onChange={(event) => setEditingChannel({ ...editingChannel, type: event.target.value as CommunityChannelType })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="text">Texto</option><option value="forum">Fórum</option><option value="voice">Voz</option></select></label><label className="block text-xs text-text-secondary">Categoria <select value={editingChannel.categoryId ?? ''} onChange={(event) => setEditingChannel({ ...editingChannel, categoryId: event.target.value || null })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="">Sem categoria</option>{state?.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isPrivate} onChange={(event) => setEditingChannel({ ...editingChannel, isPrivate: event.target.checked })} />Canal privado</label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isAnnouncement} onChange={(event) => setEditingChannel({ ...editingChannel, isAnnouncement: event.target.checked })} />Canal de avisos</label><div className="flex gap-2"><Button size="sm" loading={busy === `channel:${channel.id}`} onClick={() => void saveChannel()} leftIcon={<Check size={13} />}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setEditingChannel(null)}>Cancelar</Button></div></div> : <><span className="min-w-0 flex-1 truncate text-xs text-text-primary">#{channel.name}</span><button type="button" aria-label={`Mover canal ${channel.name} para cima`} disabled={channelIndex === 0 || Boolean(busy)} onClick={() => void moveChannel(channel.id, -1)} className="text-text-secondary disabled:opacity-40"><ArrowUp size={13} /></button><button type="button" aria-label={`Mover canal ${channel.name} para baixo`} disabled={channelIndex === siblings.length - 1 || Boolean(busy)} onClick={() => void moveChannel(channel.id, 1)} className="text-text-secondary disabled:opacity-40"><ArrowDown size={13} /></button><button type="button" aria-label={`Editar canal ${channel.name}`} onClick={() => setEditingChannel({ ...channel })} className="text-text-secondary"><Pencil size={13} /></button><button type="button" aria-label={`Excluir canal ${channel.name}`} onClick={() => setConfirmDelete({ type: 'channel', id: channel.id, name: channel.name })} className="text-red-300"><Trash2 size={13} /></button></>}
+                  {editingChannel?.id === channel.id ? <div className="grid flex-1 gap-2"><Input aria-label="Nome do canal" value={editingChannel.name} onChange={(event) => setEditingChannel({ ...editingChannel, name: event.target.value })} /><label className="block text-xs text-text-secondary">Tipo <select value={editingChannel.type} onChange={(event) => setEditingChannel({ ...editingChannel, type: event.target.value as CommunityChannelType })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="text">Texto</option><option value="forum">Fórum</option><option value="voice">Voz</option></select></label><label className="block text-xs text-text-secondary">Categoria <select value={editingChannel.categoryId ?? ''} onChange={(event) => setEditingChannel({ ...editingChannel, categoryId: event.target.value || null })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="">Sem categoria</option>{state?.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isPrivate} onChange={(event) => setEditingChannel({ ...editingChannel, isPrivate: event.target.checked })} />Canal privado</label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isAnnouncement} onChange={(event) => setEditingChannel({ ...editingChannel, isAnnouncement: event.target.checked })} />Canal de avisos</label><div className="flex gap-2"><Button size="sm" loading={busy === `channel:${channel.id}`} onClick={() => void saveChannel()} leftIcon={<Check size={13} />}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setEditingChannel(null)}>Cancelar</Button></div></div> : <><span className="min-w-0 flex-1 truncate text-xs text-text-primary">#{channel.name}</span><button type="button" aria-label={`Mover canal ${channel.name} para cima`} disabled={channelIndex === 0 || Boolean(busy)} onClick={() => void moveChannel(channel.id, -1)} className="text-text-secondary disabled:opacity-40"><ArrowUp size={13} /></button><button type="button" aria-label={`Mover canal ${channel.name} para baixo`} disabled={channelIndex === siblings.length - 1 || Boolean(busy)} onClick={() => void moveChannel(channel.id, 1)} className="text-text-secondary disabled:opacity-40"><ArrowDown size={13} /></button><button type="button" aria-label={`Editar canal ${channel.name}`} onClick={() => setEditingChannel({ ...channel })} className="text-text-secondary"><Pencil size={13} /></button><button type="button" aria-label={`Excluir canal ${channel.name}`} onClick={() => setConfirmDelete({ type: 'channel', id: channel.id, name: channel.name })} className="text-red-300"><Trash2 size={13} /></button>{channel.categoryId && hasChannelOverrides && <button type="button" disabled={Boolean(busy)} onClick={() => void syncChannelPermissionsFromCategory(channel)} className="text-[10px] text-accent disabled:opacity-40">Herdar permissões da categoria</button>}</>}
                 </div>
                 })}
                 {state?.channels.filter((channel) => channel.isPrivate).map((channel) => <div key={channel.id} className="space-y-2 rounded-md border border-border p-2">
