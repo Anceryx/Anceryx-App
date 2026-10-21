@@ -27,35 +27,11 @@ jobs:
         env:
           SOURCE_REF: ${{ inputs.source_ref }}
         run: |
-          $sourceRef = $env:SOURCE_REF
-          $tag = $null
-          if ($sourceRef.StartsWith('refs/tags/')) {
-            $tag = $sourceRef.Substring('refs/tags/'.Length)
-          } else {
-            git show-ref --verify --quiet "refs/tags/$sourceRef"
-            if ($LASTEXITCODE -eq 0) {
-              $tag = $sourceRef
-            }
-          }
+          ./scripts/validate-release-source.ps1
 
-          if ($tag) {
-            if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
-              throw "Selected tag '$tag' is not a supported version tag (expected vMAJOR.MINOR.PATCH)."
-            }
-            $checkedOutTag = git describe --tags --exact-match HEAD
-            if ($LASTEXITCODE -ne 0 -or $checkedOutTag -ne $tag) {
-              throw "Selected tag '$tag' does not match the checked-out commit."
-            }
-
-            $tagVersion = $Matches.version
-            $packageVersion = node -p "require('./package.json').version"
-            if ($LASTEXITCODE -ne 0 -or $packageVersion -ne $tagVersion) {
-              throw "Tag '$tag' does not match package.json version '$packageVersion'."
-            }
-            Write-Host "Validated source tag $tag at package version $packageVersion."
-          } else {
-            Write-Host "Selected source ref: $sourceRef"
-          }
+      - name: Test release source validation
+        shell: pwsh
+        run: ./scripts/validate-release-source.test.ps1
 
       - name: Set artifact source label
         id: source
