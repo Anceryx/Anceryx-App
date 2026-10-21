@@ -23,7 +23,7 @@ function Copy-Allowlisted([string]$relativePath) {
 }
 
 $allowlist = @(
-  'README.md', 'LICENSE', 'SECURITY.md', 'CONTRIBUTING.md', '.github/PULL_REQUEST_TEMPLATE.md', '.github/assets/anceryx-banner.png',
+  'README.md', 'README.en.md', 'LICENSE', 'NOTICE', 'ASSETS_LICENSE.md', 'SECURITY.md', 'CONTRIBUTING.md', '.github/PULL_REQUEST_TEMPLATE.md', '.github/assets/anceryx-banner.png',
   'package.json', 'package-lock.json', '.env.example', 'tsconfig.json', 'tsconfig.node.json',
   'electron.vite.config.ts', 'electron-builder.yml', 'postcss.config.js', 'tailwind.config.js',
   'src/main', 'src/preload', 'src/renderer', 'src/shared', 'resources', 'scripts/generate-license-assets.mjs', 'scripts/audit-licenses.mjs',
