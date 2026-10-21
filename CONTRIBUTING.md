@@ -32,10 +32,10 @@ The client integrates with a private API. Changes must not assume access to priv
 
 ## Review and contribution terms
 
-Anceryx may review, request changes to, decline, or incorporate a submitted contribution. By submitting code, documentation, or other material for inclusion, you represent that you have the right to submit it and grant Anceryx a worldwide, perpetual, irrevocable, non-exclusive, royalty-free license to use, reproduce, modify, create derivative works from, distribute, and sublicense that contribution as incorporated in Anceryx software and its successor versions, in source or binary form. You retain ownership of your contribution. This grant does not give you rights to Anceryx trademarks or other contributors' work.
+By intentionally submitting a contribution for inclusion in this project, you agree that it is submitted under the Apache License 2.0, as described in section 5 of that license, without additional terms. You retain ownership of your contribution; no copyright assignment or separate broad license grant is required by this guide. Submit only material that you have the right to contribute under Apache 2.0. Identify third-party code and retain its required notices and license terms.
 
-Do not submit material that you cannot license on these terms. A contribution may be edited for consistency, security, compatibility, or maintenance. This contribution grant should be reviewed by qualified counsel before public launch.
+Do not include official Anceryx artwork in a contribution unless its use is permitted by [ASSETS_LICENSE.md](ASSETS_LICENSE.md). Contributions proposing changes to protected assets may include the material needed for review and a pull request under that policy. A pull request is not required: you may use, modify, and distribute code under Apache 2.0 without sending changes to Anceryx.
 
-## License
+## License and independent projects
 
-Use of the client source and forks is governed by the custom source-available terms in [LICENSE](LICENSE). Contributions do not change those terms for the project as a whole.
+The client code is licensed under [Apache License 2.0](LICENSE) (`Apache-2.0`). Forks and independent applications may use, modify, and redistribute that code, including commercially, subject to Apache 2.0. Keep the license and applicable notices, and mark modified files prominently when distributing them. The license does not grant rights to the Anceryx name, trademarks, official artwork, private API, or infrastructure. See [ASSETS_LICENSE.md](ASSETS_LICENSE.md) for the separate asset policy.
