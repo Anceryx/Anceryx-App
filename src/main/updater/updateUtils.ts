@@ -79,6 +79,17 @@ export function releaseNotesToLines(value: unknown): string[] {
     .map((entry) => entry.length > 240 ? `${entry.slice(0, 237)}...` : entry)
 }
 
-export function safeUpdaterError(): string {
+export function safeUpdaterError(error?: unknown): string {
+  const details = error && typeof error === 'object' ? error as { code?: unknown; message?: unknown } : null
+  const code = typeof details?.code === 'string' ? details.code : ''
+  const message = typeof details?.message === 'string' ? details.message : ''
+  const failure = `${code} ${message}`.toUpperCase()
+
+  if (failure.includes('MANIFEST_NOT_SIGNED') || failure.includes('MANIFEST_SIGNATURE_INVALID') || failure.includes('SIGNATURE_INVALID')) {
+    return 'A assinatura de segurança da atualização não foi confirmada. O download foi bloqueado.'
+  }
+  if (failure.includes('SHA512') || failure.includes('CHECKSUM') || failure.includes('HASH_MISMATCH')) {
+    return 'A integridade do arquivo de atualização não foi confirmada. O download foi bloqueado.'
+  }
   return 'Não foi possível verificar atualizações agora. O aplicativo continuará funcionando normalmente.'
 }

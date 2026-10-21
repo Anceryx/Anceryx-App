@@ -56,8 +56,8 @@ export class UpdateManager {
     this.setSnapshot({ state: 'checking', message: null, progress: null })
     this.checkPromise = autoUpdater.checkForUpdates()
       .then(() => this.getSnapshot())
-      .catch(() => {
-        this.setSnapshot({ state: 'error', message: safeUpdaterError(), lastCheckedAt: new Date().toISOString() })
+      .catch((error) => {
+        this.setSnapshot({ state: 'error', message: safeUpdaterError(error), lastCheckedAt: new Date().toISOString() })
         return this.getSnapshot()
       })
       .finally(() => { this.checkPromise = null })
@@ -69,8 +69,8 @@ export class UpdateManager {
     this.setSnapshot({ state: 'downloading', progress: 0, message: 'Baixando atualização...' })
     try {
       await autoUpdater.downloadUpdate()
-    } catch {
-      this.setSnapshot({ state: 'error', message: safeUpdaterError() })
+    } catch (error) {
+      this.setSnapshot({ state: 'error', message: safeUpdaterError(error) })
     }
     return this.getSnapshot()
   }
@@ -126,7 +126,7 @@ export class UpdateManager {
       progress: 100,
       message: 'Atualização pronta para instalar.',
     }))
-    autoUpdater.on('error', () => this.setSnapshot({ state: 'error', message: safeUpdaterError() }))
+    autoUpdater.on('error', (error) => this.setSnapshot({ state: 'error', message: safeUpdaterError(error) }))
     this.listenersRegistered = true
   }
 

@@ -8,7 +8,11 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - Não inclui instalador nem artefatos binários de distribuição.
 - A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
 
-## Próxima versão
+## [0.15.1] — preparação local (não publicada)
+
+- Prepara o cliente e o lockfile para a versão `0.15.1`, com `electron-builder` `26.18.0` e `electron-updater` `6.8.11` estáveis.
+- Mantém o atualizador integrado desativado. Os erros de assinatura inválida/ausente e de integridade passam a ter mensagens específicas, sem expor detalhes internos.
+- Atualiza os casos de segurança do atualizador para a nova versão base; a verificação criptográfica real de manifests e a atualização em Windows continuam pendentes.
 
 ### Comunidades
 
