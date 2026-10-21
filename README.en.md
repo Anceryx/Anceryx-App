@@ -83,7 +83,11 @@ To report a vulnerability, follow the responsible disclosure guidance in [SECURI
 
 ## License and ownership
 
-The client source is available under a custom *source-available* license. You may study it and use it to prepare contributions within the limits of [LICENSE](LICENSE). There is no general permission for commercial use or for redistributing your own application versions or binaries. The API and production infrastructure remain private. The Anceryx brand, Kaoli mascot, and other visual identity assets are reserved. See the [third-party notices](docs/legal/third-party-notices.md) and [brand asset notes](docs/brand/brand-assets.md) as well.
+**Client source code:** licensed under the Apache License 2.0 (SPDX: `Apache-2.0`). Within the license scope, you may study, modify, redistribute, and use the code commercially, including in independent and competing projects, provided you meet the license conditions. The license does not require changes to be submitted to the official project.
+
+**Official brand and assets:** are not automatically licensed under Apache 2.0. Kaoli, emojis, badges, icons, logos, banners, and illustrations are covered by the [separate asset policy](ASSETS_LICENSE.md) and [brand inventory](docs/brand/brand-assets.md). The origin and third-party rights for some files still need confirmation; do not assume permission beyond rights controlled by Anceryx.
+
+**API, database, and infrastructure:** remain private and outside this repository. **Third-party dependencies:** retain their own licenses and notices. See the [third-party notices](docs/legal/third-party-notices.md) and [licensing notes](docs/legal/licensing-notes.md). Apache 2.0 grants no rights to the Anceryx brand and does not imply that a derivative is an official Anceryx product or service.
 
 ## Official links
 

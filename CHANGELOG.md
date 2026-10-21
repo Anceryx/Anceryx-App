@@ -10,4 +10,9 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ## Próxima versão
 
+### Licenciamento
+
+- O código-fonte do cliente passa a ser licenciado sob Apache License 2.0 (`Apache-2.0`) nos commits desta mudança. A tag `v0.15.0` permanece como snapshot anterior à alteração.
+- Os assets oficiais permanecem sob política separada; a confirmação da origem e dos direitos sobre os 60 arquivos inventariados ainda é necessária antes da abertura pública.
+
 Correções e recursos serão registrados aqui quando forem implementados e validados. Itens apenas planejados não devem ser descritos como disponíveis.

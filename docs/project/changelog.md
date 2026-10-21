@@ -8,4 +8,9 @@ This file records changes to the Electron/React desktop client. The earlier comb
 - This preparation did not create a version, tag, installer, or GitHub Release.
 - Publication of the repository and distribution of the application remain subject to license and asset review and owner approval.
 
+## License preparation — 2026-10-20
+
+- The client code is prepared for Apache License 2.0 (`Apache-2.0`) from the license-change commits onward; tag `v0.15.0` remains the earlier source snapshot.
+- Official artwork has a separate usage policy. Rights and source confirmation for the 60 inventoried files remain open before public repository visibility.
+
 Record future client changes here with the corresponding version. Service, database, deployment, and infrastructure information belongs in private project documentation.

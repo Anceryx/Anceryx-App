@@ -83,7 +83,11 @@ Para relatar uma vulnerabilidade, siga as orientações de divulgação respons�
 
 ## Licença e propriedade
 
-O código do cliente é disponibilizado sob uma licença personalizada *source-available*. Ele pode ser estudado e usado para preparar contribuições nos limites da [LICENSE](LICENSE). Não há autorização geral para uso comercial nem para redistribuir versões próprias do aplicativo ou seus binários. A API e a infraestrutura de produção permanecem privadas. A marca Anceryx, o mascote Kaoli e os demais elementos de identidade visual têm direitos reservados. Consulte também os [avisos de terceiros](docs/legal/third-party-notices.md) e as [notas sobre assets da marca](docs/brand/brand-assets.md).
+**Código-fonte do cliente:** licenciado sob a Apache License 2.0 (SPDX: `Apache-2.0`). Dentro do escopo dessa licença, é permitido estudar, modificar, redistribuir e usar comercialmente o código, inclusive em projetos independentes e concorrentes, desde que as condições da licença sejam cumpridas. A licença não exige que alterações sejam enviadas ao projeto oficial.
+
+**Marca e assets oficiais:** não são automaticamente licenciados sob Apache 2.0. Kaoli, emojis, badges, ícones, logotipos, banners e ilustrações estão sujeitos à [política separada de assets](ASSETS_LICENSE.md) e ao [inventário da marca](docs/brand/brand-assets.md). A origem e os direitos de terceiros de alguns arquivos ainda precisam de confirmação; não presuma autorização além dos direitos controlados pela Anceryx.
+
+**API, banco de dados e infraestrutura:** permanecem privados e fora deste repositório. **Dependências de terceiros:** mantêm suas próprias licenças e avisos. Consulte os [avisos de terceiros](docs/legal/third-party-notices.md) e as [notas de licenciamento](docs/legal/licensing-notes.md). A Apache 2.0 não concede direitos sobre a marca Anceryx nem implica que um derivado seja um produto ou serviço oficial.
 
 ## Links oficiais
 
