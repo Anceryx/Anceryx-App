@@ -4,6 +4,16 @@ import { X } from 'lucide-react'
 export interface CommunityManagementSection {
   id: string
   label: string
+  group?: string
+}
+
+function groupSections(sections: CommunityManagementSection[]): Array<[string, CommunityManagementSection[]]> {
+  const groups = new Map<string, CommunityManagementSection[]>()
+  for (const section of sections) {
+    const group = section.group ?? 'Geral'
+    groups.set(group, [...(groups.get(group) ?? []), section])
+  }
+  return [...groups.entries()]
 }
 
 interface CommunityManagementModalProps {
@@ -30,11 +40,18 @@ const CommunityManagementModal: React.FC<CommunityManagementModalProps> = ({
           <p className="truncate text-sm font-semibold text-text-primary">{communityName}</p>
           <p className="text-xs text-text-secondary">Gerenciamento do Fórum</p>
         </div>
-        <nav className="max-h-[calc(100%-4rem)] space-y-1 overflow-y-auto" aria-label="Seções de gerenciamento">
-          {sections.map((section) => (
-            <button key={section.id} type="button" onClick={() => onSelectSection(section.id)} aria-current={activeSection === section.id ? 'page' : undefined} className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${activeSection === section.id ? 'bg-accent/15 font-semibold text-text-primary' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}>
-              {section.label}
-            </button>
+        <nav className="max-h-[calc(100%-4rem)] space-y-4 overflow-y-auto" aria-label="Seções de gerenciamento">
+          {groupSections(sections).map(([group, items]) => (
+            <div key={group}>
+              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-text-secondary/70">{group}</p>
+              <div className="space-y-1">
+                {items.map((section) => (
+                  <button key={section.id} type="button" onClick={() => onSelectSection(section.id)} aria-current={activeSection === section.id ? 'page' : undefined} className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${activeSection === section.id ? 'bg-accent/15 font-semibold text-text-primary' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}>
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
       </aside>

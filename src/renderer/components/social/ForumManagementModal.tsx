@@ -40,7 +40,7 @@ import { formatTimestamp } from '@/utils/formatters'
 import { mediaApi } from '@/services/mediaApi'
 import { communityApi } from '@/services/communityApi'
 
-export type ForumManagementTab = 'overview' | 'posts' | 'members' | 'moderation' | 'settings'
+export type ForumManagementTab = 'overview' | 'posts' | 'members' | 'moderation' | 'profile' | 'access' | 'critical' | 'settings'
 type TopicFlag = 'isPinned' | 'isLocked' | 'isResolved'
 
 interface ForumManagementModalProps {
@@ -56,7 +56,9 @@ const TABS: { id: ForumManagementTab; label: string; icon: React.ReactNode }[] =
   { id: 'posts', label: 'Posts', icon: <FileText size={15} /> },
   { id: 'members', label: 'Membros', icon: <Users size={15} /> },
   { id: 'moderation', label: 'Moderação', icon: <AlertTriangle size={15} /> },
-  { id: 'settings', label: 'Configurações', icon: <Settings size={15} /> },
+  { id: 'profile', label: 'Perfil do Fórum', icon: <Settings size={15} /> },
+  { id: 'access', label: 'Acesso e visibilidade', icon: <Unlock size={15} /> },
+  { id: 'critical', label: 'Ações críticas', icon: <Trash2 size={15} /> },
 ]
 
 function roleLabel(role: ForumMemberRole): string {
@@ -481,8 +483,9 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const renderSettings = () => (
     <div className="space-y-5">
-      <SectionHeader title="Configurações" description="Slug e ownership não são alterados nesta etapa." />
+      <SectionHeader title={activeTab === 'access' ? 'Acesso e visibilidade' : activeTab === 'critical' ? 'Propriedade e ações críticas' : 'Perfil do Fórum'} description={activeTab === 'access' ? 'Defina quem pode encontrar e acessar este Fórum.' : activeTab === 'critical' ? 'Ações que alteram o acesso ou removem o Fórum ficam separadas do uso diário.' : 'Mantenha a identidade do Fórum em um único lugar.'} />
       <ContentSectionCard className="space-y-4">
+        {(activeTab === 'profile' || activeTab === 'settings') && <>
         <label className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
           Nome
           <input disabled={!isOwner} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" value={settingsDraft.name} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, name: e.target.value }))} />
@@ -491,30 +494,35 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
           Descrição
           <textarea disabled={!isOwner} className="mt-1 w-full resize-none rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" rows={3} value={settingsDraft.description} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, description: e.target.value }))} />
         </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
+        </>}
+        {activeTab === 'access' && <label className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
           Visibilidade
-          <select disabled={!isOwner} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" value={settingsDraft.visibility} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, visibility: e.target.value as Forum['visibility'] }))}>
+          <select disabled={!isOwner} className="mt-1 w-full max-w-md rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" value={settingsDraft.visibility} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, visibility: e.target.value as Forum['visibility'] }))}>
             <option value="public">Público</option>
             <option value="private">Privado</option>
           </select>
-        </label>
-        <div className="grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
-          <div className="space-y-2 rounded-lg border border-border p-3">
+          <span className="mt-1 block normal-case font-normal">A visibilidade atual é {settingsDraft.visibility === 'public' ? 'pública' : 'privada'}.</span>
+        </label>}
+        {(activeTab === 'profile' || activeTab === 'settings') && <>
+        <div className="grid min-w-0 grid-cols-1 gap-3 @container sm:grid-cols-2">
+          <div className="min-w-0 space-y-2 rounded-lg border border-border p-3">
             <p className="text-xs font-semibold text-text-secondary">Ícone</p>
             {forum.iconImage && <img src={mediaApi.resolvePublicUrl(forum.iconImage)} alt="Ícone atual do fórum" className="h-14 w-14 rounded-xl object-cover" />}
             <input ref={iconInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => { void uploadIdentityImage('icon', event.target.files?.[0]); event.currentTarget.value = '' }} />
             <Button size="sm" variant="secondary" disabled={!isOwner || Boolean(imageBusy)} loading={imageBusy === 'icon'} onClick={() => iconInputRef.current?.click()} leftIcon={<ImagePlus size={14} />}>Enviar ícone</Button>
           </div>
-          <div className="space-y-2 rounded-lg border border-border p-3">
+          <div className="min-w-0 space-y-2 rounded-lg border border-border p-3">
             <p className="text-xs font-semibold text-text-secondary">Banner</p>
             {forum.bannerImage && <img src={mediaApi.resolvePublicUrl(forum.bannerImage)} alt="Banner atual do fórum" className="aspect-video w-full rounded-xl object-cover object-center" />}
             <input ref={bannerInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => { void uploadIdentityImage('banner', event.target.files?.[0]); event.currentTarget.value = '' }} />
             <Button size="sm" variant="secondary" disabled={!isOwner || Boolean(imageBusy)} loading={imageBusy === 'banner'} onClick={() => bannerInputRef.current?.click()} leftIcon={<ImagePlus size={14} />}>Enviar banner</Button>
           </div>
         </div>
-        <Button onClick={saveSettings} loading={pendingAction === 'settings:save'} disabled={!isOwner}>Salvar configurações</Button>
+        </>}
+        {(activeTab === 'profile' || activeTab === 'access' || activeTab === 'settings') && <Button onClick={saveSettings} loading={pendingAction === 'settings:save'} disabled={!isOwner}>Salvar alterações</Button>}
       </ContentSectionCard>
 
+      {(activeTab === 'profile' || activeTab === 'settings') && <>
       <ContentSectionCard className="space-y-3">
         <SectionHeader title="Tags" description="Organize este fórum com tags para facilitar sua descoberta." />
         <div className="flex gap-2">
@@ -532,7 +540,9 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
           ))}
         </div>
       </ContentSectionCard>
+      </>}
 
+      {activeTab === 'critical' && <>
       <ContentSectionCard className="border-red-500/30">
         <SectionHeader title="Ações da comunidade" description="A exclusão é restrita ao proprietário e encerra o acesso preservando o histórico para auditoria." />
         <div className="mt-4 grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
@@ -541,6 +551,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
         </div>
         {currentRole === 'owner' && <p className="mt-3 text-xs text-text-secondary">Transfira a propriedade antes de sair do fórum.</p>}
       </ContentSectionCard>
+      </>}
     </div>
   )
 

@@ -274,6 +274,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const [voiceProfileTarget, setVoiceProfileTarget] = useState<{ userId: string; x: number; y: number } | null>(null)
   const [voiceProfileUsername, setVoiceProfileUsername] = useState<string | null>(null)
   const [membersOpen, setMembersOpen] = useState(true)
+  const voiceLayoutRef = useRef<{ active: boolean; restoreMembers: boolean }>({ active: false, restoreMembers: true })
   const [managementOpen, setManagementOpen] = useState(false)
   const [forumMenuOpen, setForumMenuOpen] = useState(false)
   const forumMenuRef = useRef<HTMLDivElement>(null)
@@ -352,7 +353,11 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const viewerInSelectedVoice = voiceParticipants.some((participant) => participant.userId === currentUserId)
   const viewerVoiceState = state?.voiceStates.find((participant) => participant.userId === currentUserId) ?? null
   const viewerVoiceChannel = viewerVoiceState ? state?.channels.find((channel) => channel.id === viewerVoiceState.channelId) ?? null : null
-  const membersPanelClassName = mobileView === 'members'
+  const viewingConnectedVoice = Boolean(viewerInSelectedVoice && selectedChannel?.type === 'voice')
+  const voiceCallLayout = viewingConnectedVoice && voiceChatOpen
+  const membersPanelClassName = voiceCallLayout
+    ? 'hidden'
+    : mobileView === 'members'
     ? 'fixed inset-x-0 bottom-0 top-9 z-[61] overflow-y-auto border-border bg-background-tertiary xl:static xl:inset-auto xl:z-auto xl:block xl:border-l xl:bg-background-tertiary/35'
     : membersOpen
       ? 'hidden xl:block'
@@ -820,6 +825,20 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   useEffect(() => communityVoiceClient.subscribe(() => setVoiceTick((value) => value + 1)), [])
 
   useEffect(() => {
+    if (viewingConnectedVoice && !voiceLayoutRef.current.active) {
+      voiceLayoutRef.current = { active: true, restoreMembers: membersOpen }
+      setMembersOpen(false)
+      setVoiceChatOpen(true)
+      return
+    }
+    if (!viewingConnectedVoice && voiceLayoutRef.current.active) {
+      setVoiceChatOpen(false)
+      setMembersOpen(voiceLayoutRef.current.restoreMembers)
+      voiceLayoutRef.current.active = false
+    }
+  }, [viewingConnectedVoice, membersOpen])
+
+  useEffect(() => {
     const unsubMessage = realtimeClient.subscribe('community.message.created', (event) => {
       if (event.payload.communityId !== communityId || event.payload.channelId !== selectedChannelId) return
       const message = withResolvedMessageMedia({ ...event.payload, createdAt: String(event.payload.createdAt) })
@@ -1269,20 +1288,28 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
 
   const managementSections = useMemo<CommunityManagementSection[]>(() => [
     ...(canManageLegacyForum && forum ? [
-      { id: 'overview', label: 'Visão geral' },
-      { id: 'posts', label: 'Publicações' },
-      { id: 'members', label: 'Membros do fórum' },
-      { id: 'reports', label: 'Denúncias' },
-      { id: 'settings', label: 'Configurações' },
+      { id: 'overview', label: 'Visão geral', group: 'Geral' },
+      { id: 'profile', label: 'Perfil do Fórum', group: 'Geral' },
+      ...(canManageChannels ? [{ id: 'organization', label: 'Canais e categorias', group: 'Geral' }] : []),
+      { id: 'posts', label: 'Publicações', group: 'Geral' },
+      { id: 'members', label: 'Membros', group: 'Pessoas e acesso' },
+      ...(canManageRoles ? [{ id: 'roles', label: 'Cargos e permissões', group: 'Pessoas e acesso' }] : []),
+      ...(canManageInvites ? [{ id: 'invites', label: 'Convites', group: 'Pessoas e acesso' }] : []),
+      { id: 'access', label: 'Acesso e visibilidade', group: 'Pessoas e acesso' },
+      { id: 'reports', label: 'Denúncias', group: 'Moderação e segurança' },
+      { id: 'moderation', label: 'Moderação', group: 'Moderação e segurança' },
+      ...(canOpenManagement ? [{ id: 'appeals', label: 'Recursos', group: 'Moderação e segurança' }] : []),
+      ...(canViewAuditLog ? [{ id: 'audit', label: 'Auditoria', group: 'Moderação e segurança' }] : []),
+      ...(isCommunityOwner ? [{ id: 'critical', label: 'Propriedade e ações críticas', group: 'Avançado' }] : []),
     ] : []),
-    ...(canManageReports && !canManageLegacyForum ? [{ id: 'reports', label: 'Denúncias' }] : []),
-    ...(canManageChannels ? [{ id: 'organization', label: 'Organização' }] : []),
-    ...(canManageRoles ? [{ id: 'roles', label: 'Cargos e permissões' }] : []),
-    ...(canManageInvites ? [{ id: 'invites', label: 'Convites' }] : []),
-    ...(canOpenManagement && (canCreateModerationActions || canManageBans || canViewModerationCases || canManageReports) ? [{ id: 'moderation', label: 'Moderação' }] : []),
-    ...(canOpenManagement ? [{ id: 'appeals', label: 'Recursos' }] : []),
-    ...(canViewAuditLog ? [{ id: 'audit', label: 'Auditoria' }] : []),
-    ...(isCommunityOwner ? [{ id: 'forum', label: 'Fórum' }] : []),
+    ...(canManageReports && !canManageLegacyForum ? [{ id: 'reports', label: 'Denúncias', group: 'Moderação e segurança' }] : []),
+    ...(!canManageLegacyForum && canManageChannels ? [{ id: 'organization', label: 'Canais e categorias', group: 'Geral' }] : []),
+    ...(!canManageLegacyForum && canManageRoles ? [{ id: 'roles', label: 'Cargos e permissões', group: 'Pessoas e acesso' }] : []),
+    ...(!canManageLegacyForum && canManageInvites ? [{ id: 'invites', label: 'Convites', group: 'Pessoas e acesso' }] : []),
+    ...(!canManageLegacyForum && canOpenManagement && (canCreateModerationActions || canManageBans || canViewModerationCases || canManageReports) ? [{ id: 'moderation', label: 'Moderação', group: 'Moderação e segurança' }] : []),
+    ...(!canManageLegacyForum && canOpenManagement ? [{ id: 'appeals', label: 'Recursos', group: 'Moderação e segurança' }] : []),
+    ...(!canManageLegacyForum && canViewAuditLog ? [{ id: 'audit', label: 'Auditoria', group: 'Moderação e segurança' }] : []),
+    ...(isCommunityOwner ? [{ id: 'preferences', label: 'Preferências do Fórum', group: 'Avançado' }] : []),
   ], [canManageLegacyForum, forum, canOpenManagement, canCreateModerationActions, canManageBans, canViewModerationCases, canViewModerationSummary, canViewAuditLog, canManageChannels, canManageRoles, canManageInvites, isCommunityOwner])
   const moderationSummaryCards = [
     { label: 'Denúncias pendentes', value: moderationSummary?.reports.pending, onClick: canManageReports || forum && canManageLegacyForum ? () => setManagementSection('reports') : undefined },
@@ -1345,8 +1372,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
             <div className="space-y-4 border-t border-border p-3">
               <h3 className="text-sm font-semibold text-text-primary">{managementSection === 'organization' ? 'Organização' : managementSection === 'roles' ? 'Cargos e permissões' : managementSection === 'invites' ? 'Convites' : 'Gerenciar Fórum'}</h3>
               <div className="mt-3 space-y-4">
-              {managementSection === 'forum' && state?.community.ownerUserId === currentUserId && <section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Cargos autorizados a revisar recursos</h3>{state.roles.length === 0 ? <p className="text-xs text-text-secondary">Crie cargos antes de configurar revisores.</p> : state.roles.map((role) => <label key={role.id} className="flex items-center gap-2 text-xs text-text-primary"><input type="checkbox" checked={reviewerRoleIds.includes(role.id)} disabled={busy === 'appeal-reviewer-roles'} onChange={(event) => void toggleAppealReviewerRole(role.id, event.target.checked)} />{role.name}</label>)}</section>}
-              {managementSection === 'forum' && state?.community.ownerUserId === currentUserId && <section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Lista de membros</h3><label className="sr-only" htmlFor="community-member-list-mode">Modo de exibição</label><select id="community-member-list-mode" value={state.community.memberListMode} onChange={(event) => void updateMemberListMode(event.target.value as 'simple' | 'grouped_roles')} disabled={busy === 'member-list-mode'} className="w-full rounded-md border border-border bg-background-secondary px-2 py-1.5 text-xs text-text-primary"><option value="simple">Lista simples</option><option value="grouped_roles">Agrupada por cargos</option></select></section>}
+              {managementSection === 'preferences' && state?.community.ownerUserId === currentUserId && <><section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Cargos revisores de recursos</h3><p className="text-xs text-text-secondary">Escolha quais cargos podem revisar recursos com independência.</p>{state.roles.length === 0 ? <p className="text-xs text-text-secondary">Crie cargos antes de configurar revisores.</p> : state.roles.map((role) => <label key={role.id} className="flex items-center gap-2 text-xs text-text-primary"><input type="checkbox" checked={reviewerRoleIds.includes(role.id)} disabled={busy === 'appeal-reviewer-roles'} onChange={(event) => void toggleAppealReviewerRole(role.id, event.target.checked)} />{role.name}</label>)}</section><section className="space-y-2"><h3 className="text-xs font-semibold uppercase text-text-secondary">Lista de membros</h3><p className="text-xs text-text-secondary">Escolha como os membros aparecem na lateral do Fórum.</p><label className="sr-only" htmlFor="community-member-list-mode">Modo de exibição</label><select id="community-member-list-mode" value={state.community.memberListMode} onChange={(event) => void updateMemberListMode(event.target.value as 'simple' | 'grouped_roles')} disabled={busy === 'member-list-mode'} className="w-full max-w-md rounded-md border border-border bg-background-secondary px-2 py-1.5 text-xs text-text-primary"><option value="simple">Lista simples</option><option value="grouped_roles">Agrupada por cargos</option></select></section></>}
               {canManageChannels && managementSection === 'organization' && <section className="space-y-2">
                 <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-text-secondary"><Plus size={13} /> Canais</h3>
                 <Input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Categoria" />
@@ -1441,7 +1467,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
       aria-modal={presentation === 'modal' ? true : undefined}
       aria-label={presentation === 'modal' ? 'Comunidade' : undefined}
     >
-      <div className={`grid h-full min-h-0 w-full min-w-0 grid-cols-1 overflow-hidden bg-background-secondary ${presentation === 'modal' ? 'motion-surface-in' : ''} ${presentation === 'embedded' ? (membersOpen ? 'md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_260px]' : 'md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_44px]') : (membersOpen ? 'md:grid-cols-[64px_240px_minmax(0,1fr)] xl:grid-cols-[64px_240px_minmax(0,1fr)_260px]' : 'md:grid-cols-[64px_240px_minmax(0,1fr)] xl:grid-cols-[64px_240px_minmax(0,1fr)_44px]')}`}>
+      <div className={`grid h-full min-h-0 w-full min-w-0 grid-cols-1 overflow-hidden bg-background-secondary ${presentation === 'modal' ? 'motion-surface-in' : ''} ${presentation === 'embedded' ? (voiceCallLayout ? 'md:grid-cols-[240px_minmax(0,1fr)]' : membersOpen ? 'md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_260px]' : 'md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_44px]') : (voiceCallLayout ? 'md:grid-cols-[64px_240px_minmax(0,1fr)]' : membersOpen ? 'md:grid-cols-[64px_240px_minmax(0,1fr)] xl:grid-cols-[64px_240px_minmax(0,1fr)_260px]' : 'md:grid-cols-[64px_240px_minmax(0,1fr)] xl:grid-cols-[64px_240px_minmax(0,1fr)_44px]')}`}>
         {presentation === 'modal' && <nav className="hidden flex-col items-center gap-2 border-r border-border bg-background-primary py-3 md:flex" aria-label="Navegação do aplicativo">
           {([
             ['feed', Home, 'Home'], ['mensagens', MessageCircle, 'Mensagens'], ['explore', Compass, 'Explore'], ['foruns', Users, 'Fóruns'], ['perfil', User, 'Perfil'],
@@ -1465,7 +1491,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               </button>
               {forumMenuOpen && <div role="menu" aria-label="Ações do Fórum" className="absolute left-0 top-full z-[80] mt-1 max-h-[65vh] w-full min-w-52 overflow-y-auto rounded-xl border border-border bg-background-secondary p-1.5 shadow-2xl">
                 {canManageInvites && <button role="menuitem" type="button" onClick={() => openCommunityManagement('invites')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Users size={15} />Convidar membros</button>}
-                {(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || isCommunityOwner) && <button role="menuitem" type="button" onClick={() => openCommunityManagement(canManageLegacyForum ? 'settings' : canManageChannels ? 'organization' : canManageRoles ? 'roles' : canManageInvites ? 'invites' : 'forum')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Settings size={15} />Configurações do Fórum</button>}
+                {(canManageLegacyForum || canManageChannels || canManageRoles || canManageInvites || isCommunityOwner) && <button role="menuitem" type="button" onClick={() => openCommunityManagement(canManageLegacyForum ? 'profile' : canManageChannels ? 'organization' : canManageRoles ? 'roles' : canManageInvites ? 'invites' : 'preferences')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Settings size={15} />Configurações do Fórum</button>}
                 {canManageChannels && <>
                   <button role="menuitem" type="button" onClick={() => openCommunityManagement('organization')} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Plus size={15} />Criar canal</button>
                   <button role="menuitem" type="button" onClick={() => { setNewCategoryName(''); openCommunityManagement('organization') }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Plus size={15} />Criar categoria</button>
@@ -1510,7 +1536,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                             <span className="text-[11px] opacity-80">{state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0}</span>
                           )}
                         </button>
-                        {channel.type === 'voice' && (state?.voiceStates.filter((item) => item.channelId === channel.id) ?? []).length > 0 && <div className="ml-7 flex flex-col gap-1 pb-1">{state?.voiceStates.filter((item) => item.channelId === channel.id).slice(0, 3).map((voice) => <span key={voice.userId} className="truncate text-[11px] text-text-secondary">{voice.user.displayName}{voice.selfMuted || voice.serverMuted ? ' · microfone mudo' : ''}</span>)}{(state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0) > 3 && <span className="text-[10px] text-text-secondary">+{(state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0) - 3} pessoas</span>}</div>}</React.Fragment>
+                        {channel.type === 'voice' && (state?.voiceStates.filter((item) => item.channelId === channel.id) ?? []).length > 0 && <div className="ml-6 flex flex-col gap-1 pb-1">{state?.voiceStates.filter((item) => item.channelId === channel.id).slice(0, 3).map((voice) => <button key={voice.userId} type="button" onClick={(event) => { event.stopPropagation(); const rect = event.currentTarget.getBoundingClientRect(); setVoiceProfileTarget({ userId: voice.userId, x: rect.left, y: rect.bottom }) }} className="flex min-h-8 min-w-0 items-center gap-2 rounded-md px-1 text-left text-[11px] text-text-secondary hover:bg-background-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Abrir perfil de ${voice.user.displayName}`}><Avatar src={voice.user.avatarUrl} name={voice.user.displayName} size="xs" /><span className="min-w-0 truncate">{voice.user.displayName}{voice.selfMuted || voice.serverMuted ? ' · microfone mudo' : ''}</span></button>)}{(state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0) > 3 && <span className="pl-1 text-[10px] text-text-secondary">+{(state?.voiceStates.filter((item) => item.channelId === channel.id).length ?? 0) - 3} pessoas</span>}</div>}</React.Fragment>
                       ))}
                     </div>}
                   </section>
@@ -1669,7 +1695,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
       </div>
       {screenPickerOpen && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Escolher o que compartilhar"><section className="w-full max-w-2xl rounded-2xl border border-border bg-background-secondary p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-text-primary">Compartilhar tela</h2><p className="mt-1 text-sm text-text-secondary">Escolha uma tela ou janela. O compartilhamento transmite vídeo; o áudio do sistema não está habilitado.</p></div><button type="button" onClick={() => setScreenPickerOpen(false)} aria-label="Fechar seletor" className="rounded-md p-2 text-text-secondary hover:bg-background-tertiary"><X size={16} /></button></div><div className="mt-4 grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">{screenSources.map((source) => <button key={source.id} type="button" disabled={screenPickerLoading} onClick={() => void startScreenShareFromSource(source.id)} className="overflow-hidden rounded-xl border border-border bg-background-primary text-left transition hover:border-accent/60 disabled:opacity-60">{source.thumbnail ? <img src={source.thumbnail} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="grid aspect-video place-items-center bg-background-tertiary"><MonitorUp size={26} className="text-text-secondary" /></div>}<span className="block truncate px-3 py-2 text-sm font-medium text-text-primary">{source.name}</span></button>)}</div><div className="mt-4 flex justify-end"><Button variant="ghost" onClick={() => setScreenPickerOpen(false)}>Cancelar</Button></div></section></div>}
       {managementOpen && <CommunityManagementModal communityName={state?.community.name ?? forum?.name ?? 'Comunidade'} sections={managementSections} activeSection={managementSection} onSelectSection={setManagementSection} onClose={() => setManagementOpen(false)}>
-        {managementSection === 'reports' && canManageReports ? communityMessageReportsSection : ['overview', 'posts', 'members', 'reports', 'settings'].includes(managementSection) && forum && canManageLegacyForum ? <ForumManagementModal forum={forum} onClose={() => setManagementOpen(false)} onForumDeleted={onForumDeleted} presentation="embedded" initialTab={(managementSection === 'reports' ? 'moderation' : managementSection) as ForumManagementTab} /> : managementSection === 'moderation' ? <div className="space-y-4">
+        {managementSection === 'reports' && canManageReports ? communityMessageReportsSection : ['overview', 'profile', 'access', 'critical', 'posts', 'members', 'reports'].includes(managementSection) && forum && canManageLegacyForum ? <ForumManagementModal forum={forum} onClose={() => setManagementOpen(false)} onForumDeleted={onForumDeleted} presentation="embedded" initialTab={(managementSection === 'reports' ? 'moderation' : managementSection) as ForumManagementTab} /> : managementSection === 'moderation' ? <div className="space-y-4">
           <div><h2 className="text-xl font-semibold text-text-primary">Moderação</h2><p className="mt-1 text-sm text-text-secondary">Aplique medidas e consulte o histórico disciplinar deste fórum.</p></div>
           {moderationSummaryError && <p role="alert" className="text-sm text-red-300">{moderationSummaryError}</p>}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Resumo da moderação">
@@ -1687,7 +1713,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
           <div><h2 className="text-xl font-semibold text-text-primary">Recursos</h2><p className="mt-1 text-sm text-text-secondary">Acompanhe recursos próprios e revise as solicitações de forma independente.</p></div>
           {communityManagementContent}
         </div> : managementSection === 'audit' ? <div className="space-y-4"><h2 className="text-xl font-semibold text-text-primary">Registro de auditoria</h2>{auditLogSection}</div> : <div className="space-y-4">
-          <div><h2 className="text-xl font-semibold text-text-primary">Gestão do Fórum</h2><p className="mt-1 text-sm text-text-secondary">Canais, cargos, convites, membros e moderação em um único painel.</p></div>
+          <div><h2 className="text-xl font-semibold text-text-primary">{managementSection === 'preferences' ? 'Preferências do Fórum' : 'Canais, cargos e convites'}</h2><p className="mt-1 text-sm text-text-secondary">{managementSection === 'preferences' ? 'Ajuste como os membros aparecem e quem pode revisar recursos.' : 'Organize o acesso, os canais e as pessoas do Fórum.'}</p></div>
           {communityManagementContent}
         </div>}
       </CommunityManagementModal>}
