@@ -60,6 +60,7 @@ interface SocialState {
   deleteRealtimeComment: (postId: string, commentId: string) => void
   createForum: (params: CreateForumParams) => Promise<Forum>
   toggleForumJoin: (forumId: string) => Promise<void>
+  removeForum: (forumId: string) => void
   updateForum: (forumId: string, patch: Pick<Partial<Forum>, 'name' | 'description' | 'visibility' | 'iconImage' | 'bannerImage'>) => void
   updateForumTags: (forumId: string, tags: string[]) => void
   setForumMemberRole: (forumId: string, actorUserId: string, targetUserId: string, role: Exclude<ForumMemberRole, 'owner'>) => void
@@ -284,6 +285,8 @@ export const useSocialStore = create<SocialState>()((set) => ({
       }),
     }))
   },
+
+  removeForum: (forumId) => set((state) => ({ forums: state.forums.filter((forum) => forum.id !== forumId), activeForum: state.activeForum === forumId ? null : state.activeForum })),
 
   updateForum: (forumId, patch) =>
     set((state) => ({

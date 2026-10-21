@@ -74,7 +74,8 @@ import { mediaApi } from '@/services/mediaApi'
 import MessageComposer from '@/components/messages/MessageComposer'
 import type { KlipyGif } from '@/services/klipyApi'
 import { isSafeKlipyMediaUrl, registerKlipyShare } from '@/services/klipyApi'
-import type { KaoliStickerKey } from '@/lib/kaoliStickers'
+import { getKaoliSticker, type KaoliStickerKey } from '@/lib/kaoliStickers'
+import { renderAnceryxText } from '@/lib/anceryxEmojis'
 import { ApiError } from '@/services/apiClient'
 import ForumManagementModal, { type ForumManagementTab } from './ForumManagementModal'
 import CommunityForumChannel from './CommunityForumChannel'
@@ -86,6 +87,7 @@ interface CommunityWorkspaceModalProps {
   communityId: string
   forum?: Forum
   onClose: () => void
+  onForumDeleted?: () => void
   onNavigateGlobal?: (section: SidebarSection) => void
 }
 
@@ -158,7 +160,7 @@ function getAuditChanges(details: CommunityAuditLogDto['details']): CommunityAud
   return Array.isArray(changes) ? changes as CommunityAuditChange[] : []
 }
 
-const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ communityId, forum, onClose, onNavigateGlobal }) => {
+const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ communityId, forum, onClose, onForumDeleted, onNavigateGlobal }) => {
   const token = useAuthStore((s) => s.token)
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const currentUserAvatar = useAuthStore((s) => s.user?.avatar)
@@ -344,7 +346,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const viewerVoiceState = state?.voiceStates.find((participant) => participant.userId === currentUserId) ?? null
   const viewerVoiceChannel = viewerVoiceState ? state?.channels.find((channel) => channel.id === viewerVoiceState.channelId) ?? null : null
   const membersPanelClassName = mobileView === 'members'
-    ? 'fixed inset-0 z-[61] overflow-y-auto border-border bg-background-tertiary xl:static xl:inset-auto xl:z-auto xl:block xl:border-l xl:bg-background-tertiary/35'
+    ? 'fixed inset-x-0 bottom-0 top-9 z-[61] overflow-y-auto border-border bg-background-tertiary xl:static xl:inset-auto xl:z-auto xl:block xl:border-l xl:bg-background-tertiary/35'
     : membersOpen
       ? 'hidden xl:block'
       : 'hidden'
@@ -1332,7 +1334,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
 
   return (
     <div
-      className="motion-backdrop-in fixed inset-0 z-[60] flex bg-background-primary"
+      className="motion-backdrop-in fixed inset-x-0 bottom-0 top-9 z-[60] flex bg-background-primary"
       onClick={(event) => event.target === event.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
@@ -1472,7 +1474,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                   const isSelf = participant.userId === currentUserId
                   const isSharing = isSelf ? communityVoiceClient.isScreenSharing : communityVoiceClient.getRemoteScreenShares().some((share) => share.userId === participant.userId)
                   return <article key={participant.userId} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background-primary p-3 text-left">
-                    <div className="min-w-0"><p className="truncate text-sm font-medium text-text-primary">{participant.user.displayName}{isSelf ? ' (você)' : ''}</p><p className="text-[11px] text-text-secondary">{participant.selfDeafened || participant.serverDeafened ? 'Áudio desativado' : participant.selfMuted || participant.serverMuted ? 'Microfone mudo' : 'Conectado'}</p></div>
+                    <div className="flex min-w-0 items-center gap-3"><Avatar src={participant.user.avatarUrl} name={participant.user.displayName} size="sm" /><div className="min-w-0"><p className="truncate text-sm font-medium text-text-primary">{participant.user.displayName}{isSelf ? ' (você)' : ''}</p><p className="text-[11px] text-text-secondary">{participant.selfDeafened || participant.serverDeafened ? 'Áudio desativado' : participant.selfMuted || participant.serverMuted ? 'Microfone mudo' : 'Microfone ativo'}</p></div></div>
                     {isSharing && <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-semibold text-red-200">AO VIVO</span>}
                   </article>
                 })}
@@ -1494,21 +1496,22 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                   <div className="flex h-full items-center justify-center text-sm text-text-secondary">Nenhuma mensagem ainda.</div>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {messages.map((message) => (
-                      <article id={`community-message-${message.id}`} key={message.id} className="flex gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-bold text-white">
-                          {message.author.displayName.charAt(0).toUpperCase()}
-                        </div>
+                    {messages.map((message, index) => {
+                      const previous = messages[index - 1]
+                      const grouped = previous?.author.id === message.author.id && new Date(message.createdAt).getTime() - new Date(previous.createdAt).getTime() < 5 * 60_000
+                      const sticker = message.contentType === 'sticker' ? getKaoliSticker(message.stickerKey) : undefined
+                      return <article id={`community-message-${message.id}`} key={message.id} className="flex gap-3">
+                        {grouped ? <div className="w-9 shrink-0" /> : <Avatar src={message.author.avatarUrl} name={message.author.displayName} size="sm" />}
                         <div className="min-w-0">
                           {message.replyTo && <button type="button" onClick={() => document.getElementById(`community-message-${message.replyTo!.messageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="mb-1 block max-w-full truncate border-l-2 border-accent pl-2 text-left text-xs text-text-secondary">{message.replyTo.deleted ? 'Mensagem excluída' : `${message.replyTo.author?.displayName ?? 'Usuário'}: ${message.replyTo.excerpt ?? ''}`}</button>}
                           <div className="flex flex-wrap items-baseline gap-2">
-                            <strong className="text-sm text-text-primary">{message.author.displayName}</strong>
+                            {grouped ? <span className="sr-only">{message.author.displayName}</span> : <strong className="text-sm text-text-primary">{message.author.displayName}</strong>}
                             <span className="text-[11px] text-text-secondary">{formatTimestamp(new Date(message.createdAt))}</span><button type="button" onClick={() => setReplyTarget(message)} className="rounded p-1 text-text-secondary hover:bg-background-tertiary hover:text-text-primary" aria-label="Responder mensagem" title="Responder"><Reply size={13} /></button>{message.author.id !== currentUserId && <button type="button" onClick={() => { setMessageReportTarget(message); setMessageReportChannelId(selectedChannel?.id ?? null); setMessageReportReason('spam'); setMessageReportDetails('') }} className="rounded p-1 text-text-secondary hover:bg-background-tertiary hover:text-text-primary" aria-label="Denunciar mensagem" title="Denunciar mensagem"><Flag size={13} /></button>}
                           </div>
-                          {message.contentType === 'sticker' ? <p className="text-sm text-text-secondary">Figurinha: {message.stickerKey}</p> : <><p className="whitespace-pre-wrap break-words text-sm text-text-secondary">{message.content}</p>{message.mediaUrl && <MediaAttachment src={message.mediaUrl} mimeType={message.mediaMimeType ?? (message.mediaUrl.toLowerCase().split('?')[0].endsWith('.mp4') ? 'video/mp4' : 'image/gif')} privateMedia alt="Mídia da mensagem" className="mt-2 max-h-64 max-w-full rounded-lg" />}</>}
+                          {message.contentType === 'sticker' ? sticker ? <img src={sticker.asset} alt={sticker.name} className="h-32 w-32 object-contain" draggable={false} /> : <p className="text-sm text-text-secondary">Figurinha indisponível</p> : <><p className="whitespace-pre-wrap break-words text-sm text-text-secondary">{renderAnceryxText(message.content)}</p>{message.mediaUrl && <MediaAttachment src={message.mediaUrl} mimeType={message.mediaMimeType ?? (message.mediaUrl.toLowerCase().split('?')[0].endsWith('.mp4') ? 'video/mp4' : 'image/gif')} privateMedia alt="Mídia da mensagem" className="mt-2 max-h-64 max-w-full rounded-lg" />}</>}
                         </div>
                       </article>
-                    ))}
+                    })}
                   </div>
                 )}
               </div>
@@ -1560,9 +1563,9 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
         </aside>
         {!membersOpen && <button type="button" onClick={() => setMembersOpen(true)} className="hidden place-items-center border-l border-border text-text-secondary hover:text-text-primary xl:grid" aria-label="Mostrar membros" title="Mostrar membros"><Users size={17} /></button>}
       </div>
-      {screenPickerOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Escolher o que compartilhar"><section className="w-full max-w-2xl rounded-2xl border border-border bg-background-secondary p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-text-primary">Compartilhar tela</h2><p className="mt-1 text-sm text-text-secondary">Escolha uma tela ou janela. O compartilhamento transmite vídeo; o áudio do sistema não está habilitado.</p></div><button type="button" onClick={() => setScreenPickerOpen(false)} aria-label="Fechar seletor" className="rounded-md p-2 text-text-secondary hover:bg-background-tertiary"><X size={16} /></button></div><div className="mt-4 grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">{screenSources.map((source) => <button key={source.id} type="button" disabled={screenPickerLoading} onClick={() => void startScreenShareFromSource(source.id)} className="overflow-hidden rounded-xl border border-border bg-background-primary text-left transition hover:border-accent/60 disabled:opacity-60">{source.thumbnail ? <img src={source.thumbnail} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="grid aspect-video place-items-center bg-background-tertiary"><MonitorUp size={26} className="text-text-secondary" /></div>}<span className="block truncate px-3 py-2 text-sm font-medium text-text-primary">{source.name}</span></button>)}</div><div className="mt-4 flex justify-end"><Button variant="ghost" onClick={() => setScreenPickerOpen(false)}>Cancelar</Button></div></section></div>}
+      {screenPickerOpen && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Escolher o que compartilhar"><section className="w-full max-w-2xl rounded-2xl border border-border bg-background-secondary p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-text-primary">Compartilhar tela</h2><p className="mt-1 text-sm text-text-secondary">Escolha uma tela ou janela. O compartilhamento transmite vídeo; o áudio do sistema não está habilitado.</p></div><button type="button" onClick={() => setScreenPickerOpen(false)} aria-label="Fechar seletor" className="rounded-md p-2 text-text-secondary hover:bg-background-tertiary"><X size={16} /></button></div><div className="mt-4 grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">{screenSources.map((source) => <button key={source.id} type="button" disabled={screenPickerLoading} onClick={() => void startScreenShareFromSource(source.id)} className="overflow-hidden rounded-xl border border-border bg-background-primary text-left transition hover:border-accent/60 disabled:opacity-60">{source.thumbnail ? <img src={source.thumbnail} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="grid aspect-video place-items-center bg-background-tertiary"><MonitorUp size={26} className="text-text-secondary" /></div>}<span className="block truncate px-3 py-2 text-sm font-medium text-text-primary">{source.name}</span></button>)}</div><div className="mt-4 flex justify-end"><Button variant="ghost" onClick={() => setScreenPickerOpen(false)}>Cancelar</Button></div></section></div>}
       {managementOpen && <CommunityManagementModal communityName={state?.community.name ?? forum?.name ?? 'Comunidade'} sections={managementSections} activeSection={managementSection} onSelectSection={setManagementSection} onClose={() => setManagementOpen(false)}>
-        {managementSection === 'reports' && canManageReports ? communityMessageReportsSection : ['overview', 'posts', 'members', 'reports', 'settings'].includes(managementSection) && forum && canManageLegacyForum ? <ForumManagementModal forum={forum} onClose={() => setManagementOpen(false)} presentation="embedded" initialTab={(managementSection === 'reports' ? 'moderation' : managementSection) as ForumManagementTab} /> : managementSection === 'moderation' ? <div className="space-y-4">
+        {managementSection === 'reports' && canManageReports ? communityMessageReportsSection : ['overview', 'posts', 'members', 'reports', 'settings'].includes(managementSection) && forum && canManageLegacyForum ? <ForumManagementModal forum={forum} onClose={() => setManagementOpen(false)} onForumDeleted={onForumDeleted} presentation="embedded" initialTab={(managementSection === 'reports' ? 'moderation' : managementSection) as ForumManagementTab} /> : managementSection === 'moderation' ? <div className="space-y-4">
           <div><h2 className="text-xl font-semibold text-text-primary">Moderação</h2><p className="mt-1 text-sm text-text-secondary">Aplique medidas e consulte o histórico disciplinar deste fórum.</p></div>
           {moderationSummaryError && <p role="alert" className="text-sm text-red-300">{moderationSummaryError}</p>}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Resumo da moderação">
@@ -1584,8 +1587,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
           {communityManagementContent}
         </div>}
       </CommunityManagementModal>}
-      {messageReportTarget && <div className="fixed inset-0 z-[85] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="community-message-report-title" onKeyDown={(event) => { if (event.key === 'Escape' && busy !== 'message-report:create') setMessageReportTarget(null) }}><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5" onSubmit={(event) => { event.preventDefault(); void submitMessageReport() }}><div><h2 id="community-message-report-title" className="font-semibold text-text-primary">Denunciar mensagem</h2><p className="mt-1 line-clamp-3 break-words text-xs text-text-secondary">{messageReportTarget.content || (messageReportTarget.contentType === 'sticker' ? 'Figurinha' : 'Anexo')}</p></div><label className="block text-xs text-text-secondary">Motivo<select value={messageReportReason} onChange={(event) => setMessageReportReason(event.target.value)} className="mt-1 w-full rounded-md border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="spam">Spam</option><option value="harassment">Assédio</option><option value="inappropriate_content">Conteúdo inadequado</option><option value="scam_or_fraud">Golpe ou fraude</option><option value="violence_or_threat">Violência ou ameaça</option><option value="personal_information">Exposição de dados pessoais</option><option value="other">Outro</option></select></label><label className="block text-xs text-text-secondary">Detalhes {messageReportReason === 'other' ? '(obrigatórios)' : '(opcionais)'}<textarea value={messageReportDetails} onChange={(event) => setMessageReportDetails(event.target.value.slice(0, 1000))} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border border-border bg-background-primary p-2 text-sm text-text-primary" /></label><div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={busy === 'message-report:create'} onClick={() => setMessageReportTarget(null)}>Cancelar</Button><Button type="submit" loading={busy === 'message-report:create'} disabled={!messageReportChannelId || messageReportReason === 'other' && !messageReportDetails.trim()}>Enviar denúncia</Button></div></form></div>}
-      {confirmDelete && <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="alertdialog" aria-modal="true" aria-label="Confirmar exclusão"><div className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-background-secondary p-5"><h2 className="font-semibold text-text-primary">Excluir {confirmDelete.type === 'category' ? 'categoria' : 'canal'}?</h2><p className="text-sm text-text-secondary">{confirmDelete.name}</p><div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancelar</Button><Button variant="danger" loading={busy === `${confirmDelete.type}:${confirmDelete.id}`} onClick={() => void (confirmDelete.type === 'category' ? deleteCategory(confirmDelete.id) : deleteChannel(confirmDelete.id))}>Excluir</Button></div></div></div>}
+      {messageReportTarget && <div className="fixed inset-x-0 bottom-0 top-9 z-[85] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="community-message-report-title" onKeyDown={(event) => { if (event.key === 'Escape' && busy !== 'message-report:create') setMessageReportTarget(null) }}><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5" onSubmit={(event) => { event.preventDefault(); void submitMessageReport() }}><div><h2 id="community-message-report-title" className="font-semibold text-text-primary">Denunciar mensagem</h2><p className="mt-1 line-clamp-3 break-words text-xs text-text-secondary">{messageReportTarget.content || (messageReportTarget.contentType === 'sticker' ? 'Figurinha' : 'Anexo')}</p></div><label className="block text-xs text-text-secondary">Motivo<select value={messageReportReason} onChange={(event) => setMessageReportReason(event.target.value)} className="mt-1 w-full rounded-md border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="spam">Spam</option><option value="harassment">Assédio</option><option value="inappropriate_content">Conteúdo inadequado</option><option value="scam_or_fraud">Golpe ou fraude</option><option value="violence_or_threat">Violência ou ameaça</option><option value="personal_information">Exposição de dados pessoais</option><option value="other">Outro</option></select></label><label className="block text-xs text-text-secondary">Detalhes {messageReportReason === 'other' ? '(obrigatórios)' : '(opcionais)'}<textarea value={messageReportDetails} onChange={(event) => setMessageReportDetails(event.target.value.slice(0, 1000))} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border border-border bg-background-primary p-2 text-sm text-text-primary" /></label><div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={busy === 'message-report:create'} onClick={() => setMessageReportTarget(null)}>Cancelar</Button><Button type="submit" loading={busy === 'message-report:create'} disabled={!messageReportChannelId || messageReportReason === 'other' && !messageReportDetails.trim()}>Enviar denúncia</Button></div></form></div>}
+      {confirmDelete && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/70 p-4" role="alertdialog" aria-modal="true" aria-label="Confirmar exclusão"><div className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-background-secondary p-5"><h2 className="font-semibold text-text-primary">Excluir {confirmDelete.type === 'category' ? 'categoria' : 'canal'}?</h2><p className="text-sm text-text-secondary">{confirmDelete.name}</p><div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancelar</Button><Button variant="danger" loading={busy === `${confirmDelete.type}:${confirmDelete.id}`} onClick={() => void (confirmDelete.type === 'category' ? deleteCategory(confirmDelete.id) : deleteChannel(confirmDelete.id))}>Excluir</Button></div></div></div>}
       {selectedMember && state && <UserProfileModal username={selectedMember.user.username} communityContext={{ forumName: state.community.name, joinedAt: selectedMember.joinedAt, memberRole: selectedMember.role, roles: selectedMember.roles }} isOpen onClose={() => setSelectedMember(null)} />}
     </div>
   )

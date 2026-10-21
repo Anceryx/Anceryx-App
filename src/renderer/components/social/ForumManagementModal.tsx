@@ -22,6 +22,7 @@ import {
   SectionHeader,
   StatCard,
   ImageCropModal,
+  Input,
 } from '@/components/ui/index'
 import { useAuthStore } from '@/store/authStore'
 import { useSocialStore } from '@/store/socialStore'
@@ -37,6 +38,7 @@ import {
 import { Avatar } from '@/components/ui/index'
 import { formatTimestamp } from '@/utils/formatters'
 import { mediaApi } from '@/services/mediaApi'
+import { communityApi } from '@/services/communityApi'
 
 export type ForumManagementTab = 'overview' | 'posts' | 'members' | 'moderation' | 'settings'
 type TopicFlag = 'isPinned' | 'isLocked' | 'isResolved'
@@ -44,6 +46,7 @@ type TopicFlag = 'isPinned' | 'isLocked' | 'isResolved'
 interface ForumManagementModalProps {
   forum: Forum
   onClose: () => void
+  onForumDeleted?: () => void
   presentation?: 'modal' | 'embedded'
   initialTab?: ForumManagementTab
 }
@@ -70,7 +73,7 @@ function reportStatusLabel(status: ApiForumReport['status'] | 'open'): string {
   return status === 'pending' ? 'open' : status
 }
 
-const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onClose, presentation = 'modal', initialTab = 'overview' }) => {
+const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onClose, onForumDeleted, presentation = 'modal', initialTab = 'overview' }) => {
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const addNotification = useUIStore((s) => s.addNotification)
   const {
@@ -79,6 +82,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     updateForumTags,
     setForumMemberRole,
     removeForumMember,
+    removeForum,
     setForumTopicFlag,
     profiles,
   } = useSocialStore((s) => ({
@@ -87,6 +91,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     updateForumTags: s.updateForumTags,
     setForumMemberRole: s.setForumMemberRole,
     removeForumMember: s.removeForumMember,
+    removeForum: s.removeForum,
     setForumTopicFlag: s.setForumTopicFlag,
     profiles: s.profiles,
   }))
@@ -94,6 +99,8 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const [activeTab, setActiveTab] = useState<ForumManagementTab>(initialTab)
   const [confirmRemoveUserId, setConfirmRemoveUserId] = useState<string | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [apiError, setApiError] = useState<string | null>(null)
@@ -289,6 +296,19 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       onClose()
     })
   }
+
+  const deleteForum = () => {
+    if (!isOwner || deleteConfirmation !== forum.name) return
+    void runBackendAction('forum:delete', 'Fórum excluído. O acesso foi encerrado.', async () => {
+      await communityApi.deleteCommunity(forum.id, forum.name)
+      removeForum(forum.id)
+      setDeleteDialogOpen(false)
+      onClose()
+      onForumDeleted?.()
+    })
+  }
+
+  const deleteConfirmationDialog = deleteDialogOpen && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/75 p-4" role="alertdialog" aria-modal="true" aria-labelledby="forum-delete-title" aria-describedby="forum-delete-description"><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5 shadow-2xl" onSubmit={(event) => { event.preventDefault(); deleteForum() }}><div><h2 id="forum-delete-title" className="text-lg font-semibold text-text-primary">Excluir fórum</h2><p id="forum-delete-description" className="mt-2 text-sm text-text-secondary">O acesso será encerrado para todos. O histórico será preservado para auditoria e não será possível reverter esta ação.</p><p className="mt-3 rounded-md bg-background-tertiary p-2 text-sm font-semibold text-text-primary">{forum.name}</p></div><label className="block text-sm text-text-secondary">Digite o nome do fórum para confirmar<Input autoFocus value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} className="mt-1" /></label>{apiError && <p role="alert" className="text-sm text-red-300">{apiError}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={pendingAction === 'forum:delete'} onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmation('') }}>Cancelar</Button><Button type="submit" variant="danger" loading={pendingAction === 'forum:delete'} disabled={deleteConfirmation !== forum.name}>Excluir fórum</Button></div></form></div>
 
   const uploadIdentityImage = async (target: 'icon' | 'banner', file?: File) => {
     if (!file || !isOwner) return
@@ -514,10 +534,10 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       </ContentSectionCard>
 
       <ContentSectionCard className="border-red-500/30">
-        <SectionHeader title="Ações da comunidade" description="Sair usa a rota existente da API. A exclusão ainda não tem uma operação segura disponível." />
+        <SectionHeader title="Ações da comunidade" description="A exclusão é restrita ao proprietário e encerra o acesso preservando o histórico para auditoria." />
         <div className="mt-4 grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
           <Button variant="secondary" disabled={!forum.isJoined || currentRole === 'owner'} loading={pendingAction === 'forum:leave'} onClick={leaveForum}>Sair do fórum</Button>
-          <Button variant="danger" disabled leftIcon={<Trash2 size={14} />}>Exclusão indisponível</Button>
+          <Button variant="danger" disabled={!isOwner || Boolean(pendingAction)} onClick={() => { setDeleteConfirmation(''); setApiError(null); setDeleteDialogOpen(true) }} leftIcon={<Trash2 size={14} />}>Excluir fórum</Button>
         </div>
         {currentRole === 'owner' && <p className="mt-3 text-xs text-text-secondary">Transfira a propriedade antes de sair do fórum.</p>}
       </ContentSectionCard>
@@ -544,6 +564,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       {errorBanner}
       {renderActiveTab()}
       {confirmRemoveUserId && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Confirmar remoção"><div className="w-full max-w-md rounded-xl border border-border bg-background-secondary p-5 shadow-2xl"><h3 className="text-lg font-semibold text-text-primary">Remover membro?</h3><p className="mt-2 text-sm text-text-secondary">A pessoa perderá acesso a este Fórum. A propriedade do Fórum não pode ser removida por esta ação.</p><div className="mt-5 flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmRemoveUserId(null)}>Cancelar</Button><Button variant="danger" loading={pendingAction === `remove:${confirmRemoveUserId}`} onClick={remove}>Remover</Button></div></div></div>}
+      {deleteConfirmationDialog}
       {cropSource && <ImageCropModal src={cropSource} shape={cropTarget === 'icon' ? 'circle' : 'rect'} aspect={cropTarget === 'icon' ? 1 : 16 / 9} outputWidth={cropTarget === 'icon' ? 512 : 1920} outputHeight={cropTarget === 'icon' ? 512 : 1080} title={cropTarget === 'icon' ? 'Editar ícone do Fórum' : 'Editar banner do Fórum'} onApply={(dataUrl) => { void applyIdentityCrop(dataUrl) }} onCancel={() => { if (cropSource) URL.revokeObjectURL(cropSource); setCropSource(null); setCropFile(null) }} />}
     </div>
   )
@@ -600,6 +621,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
           </div>
         </div>
       )}
+      {deleteConfirmationDialog}
       {cropSource && <ImageCropModal src={cropSource} shape={cropTarget === 'icon' ? 'circle' : 'rect'} aspect={cropTarget === 'icon' ? 1 : 16 / 9} outputWidth={cropTarget === 'icon' ? 512 : 1920} outputHeight={cropTarget === 'icon' ? 512 : 1080} title={cropTarget === 'icon' ? 'Editar ícone do fórum' : 'Editar banner do fórum'} onApply={(dataUrl) => { void applyIdentityCrop(dataUrl) }} onCancel={() => { if (cropSource) URL.revokeObjectURL(cropSource); setCropSource(null); setCropFile(null) }} />}
     </div>
   )

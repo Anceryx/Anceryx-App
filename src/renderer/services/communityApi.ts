@@ -278,6 +278,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const communityApi = {
+  deleteCommunity: (communityId: string, name: string) => request<{ status: 'ok' }>(`/communities/${communityId}`, { method: 'DELETE', body: JSON.stringify({ name }) }),
   listMyModerationHistory: () => request<{ cases: OwnCommunityModerationCaseDto[] }>('/me/community-moderation-cases'),
   submitMyModerationAppeal: (caseId: string, input: { statement: string; additionalInfo?: string; evidence?: string[] }) => request<{ appeal: { id: string; status: CommunityModerationAppealDto['status'] }; eligibleReviewerCount: number }>(`/me/community-moderation-cases/${caseId}/appeals`, { method: 'POST', body: JSON.stringify({ evidence: [], ...input }) }),
   getState: (communityId: string) => request<{ state: CommunityStateDto }>(`/communities/${communityId}`),

@@ -135,7 +135,7 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onN
       </div>
 
       {workspaceOpen && (
-        <CommunityWorkspaceModal forum={liveForum} communityId={liveForum.id} onClose={() => setWorkspaceOpen(false)} onNavigateGlobal={(section) => { setWorkspaceOpen(false); onClose(); onNavigateGlobal?.(section) }} />
+        <CommunityWorkspaceModal forum={liveForum} communityId={liveForum.id} onClose={() => setWorkspaceOpen(false)} onForumDeleted={() => { setWorkspaceOpen(false); onClose() }} onNavigateGlobal={(section) => { setWorkspaceOpen(false); onClose(); onNavigateGlobal?.(section) }} />
       )}
     </div>
   )

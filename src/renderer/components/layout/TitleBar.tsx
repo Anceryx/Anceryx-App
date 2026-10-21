@@ -34,7 +34,7 @@ const TitleBar: React.FC = () => {
   return (
     <>
     <div
-      className="h-9 flex items-center justify-between bg-background-primary/95 border-b border-border shrink-0 select-none"
+      className="relative z-[100] h-9 flex items-center justify-between bg-background-primary/95 border-b border-border shrink-0 select-none"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* Esquerda: logo + nome */}

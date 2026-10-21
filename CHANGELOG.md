@@ -1,5 +1,6 @@
 # Registro de alterações
 
+
 Este arquivo registra versões preparadas a partir do histórico disponível no repositório. O snapshot independente não importa o histórico privado anterior; por isso, esta versão registra a linha de base do código-fonte e não atribui mudanças específicas a commits antigos.
 
 ## [0.15.0] — linha de base do código-fonte
@@ -9,6 +10,8 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
 
 ## [0.15.1] — preparação local (não publicada)
+
+- Correções locais de interface: mensagens da comunidade agora usam avatares, emojis e figurinhas existentes; mensagens consecutivas são agrupadas, participantes de voz mostram avatar e estado de áudio, e janelas sobrepostas respeitam a barra de título do Windows.
 
 - Prepara o cliente e o lockfile para a versão `0.15.1`, com `electron-builder` `26.18.0` e `electron-updater` `6.8.11` estáveis.
 - Mantém o atualizador integrado desativado. Os erros de assinatura inválida/ausente e de integridade passam a ter mensagens específicas, sem expor detalhes internos.
