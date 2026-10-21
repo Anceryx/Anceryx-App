@@ -304,6 +304,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const canViewSelectedChannel = selectedChannel?.viewerCanView ?? true
   const voiceParticipants = state?.voiceStates.filter((item) => item.channelId === selectedChannelId) ?? []
   const viewerInSelectedVoice = voiceParticipants.some((participant) => participant.userId === currentUserId)
+  const viewerVoiceState = state?.voiceStates.find((participant) => participant.userId === currentUserId) ?? null
+  const viewerVoiceChannel = viewerVoiceState ? state?.channels.find((channel) => channel.id === viewerVoiceState.channelId) ?? null : null
   const membersPanelClassName = mobileView === 'members'
     ? 'fixed inset-0 z-[61] overflow-y-auto border-border bg-background-tertiary xl:static xl:inset-auto xl:z-auto xl:block xl:border-l xl:bg-background-tertiary/35'
     : membersOpen
@@ -1359,6 +1361,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               {!state?.channels.some((channel) => channel.type === 'forum') && <button type="button" onClick={() => { setSelectedChannelId(null); setShowCommunityPosts(true); setMobileView('content') }} className={`mt-2 flex min-h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm ${showCommunityPosts ? 'bg-accent text-white' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}><MessageSquare size={14} /><span>Publicações</span></button>}
             </nav>
           )}
+          {viewerVoiceState && <section className="sticky bottom-0 border-t border-border bg-background-primary p-3 shadow-[0_-8px_20px_rgba(0,0,0,0.15)]" aria-label="Controles persistentes de voz"><div className="mb-2 flex items-center justify-between gap-2"><button type="button" onClick={() => { setSelectedChannelId(viewerVoiceState.channelId); setShowCommunityPosts(false); setShowEvents(false); setMobileView('content') }} className="min-w-0 text-left"><span className="block text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Conectado à voz</span><span className="block truncate text-sm font-semibold text-text-primary">{viewerVoiceChannel?.name ?? 'Canal de voz'}</span></button><span className="shrink-0 text-[10px] text-text-secondary">{voiceStatus}</span></div><div className="flex flex-wrap gap-1.5"><Button size="sm" variant="secondary" aria-label={communityVoiceClient.muted ? 'Ativar microfone' : 'Silenciar microfone'} onClick={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} leftIcon={communityVoiceClient.muted ? <MicOff size={13} /> : <Mic size={13} />}>{communityVoiceClient.muted ? 'Ativar mic.' : 'Silenciar'}</Button><Button size="sm" variant="secondary" aria-label={communityVoiceClient.deafened ? 'Ativar áudio' : 'Desativar áudio'} onClick={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} leftIcon={communityVoiceClient.deafened ? <VolumeX size={13} /> : <Volume2 size={13} />}>{communityVoiceClient.deafened ? 'Ativar áudio' : 'Desativar áudio'}</Button><Button size="sm" variant="secondary" disabled={screenPickerLoading} onClick={() => void toggleVoiceScreenShare()} leftIcon={<MonitorUp size={13} />}>{communityVoiceClient.isScreenSharing ? 'Parar transmissão' : 'Compartilhar tela'}</Button><Button size="sm" variant="danger" loading={busy === 'voice:leave'} onClick={() => void leaveVoice()} leftIcon={<PhoneOff size={13} />}>Sair</Button></div></section>}
         </aside>
 
         <main key={`${mobileView}:${selectedChannelId ?? 'none'}`} className={["motion-view-forward min-w-0 flex-col md:motion-view-in", mobileView === 'content' ? 'flex' : 'hidden md:flex'].join(' ')}>
@@ -1419,18 +1422,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 })}
                 {voiceParticipants.length === 0 && <p className="col-span-full rounded-xl border border-dashed border-border p-5 text-sm text-text-secondary">Ninguém está conectado a este canal. Entre para iniciar a conversa.</p>}
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {!viewerInSelectedVoice ? <Button onClick={() => void joinVoice(selectedChannel)} loading={busy === `voice:${selectedChannel.id}`} leftIcon={<Mic size={15} />}>Entrar no canal</Button> : <Button variant="danger" onClick={() => void leaveVoice()} loading={busy === 'voice:leave'} leftIcon={<PhoneOff size={15} />}>Sair da voz</Button>}
-                <Button variant="secondary" disabled={!viewerInSelectedVoice} onClick={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} leftIcon={communityVoiceClient.muted ? <MicOff size={15} /> : <Mic size={15} />}>
-                  {communityVoiceClient.muted ? 'Mutado' : 'Microfone'}
-                </Button>
-                <Button variant="secondary" disabled={!viewerInSelectedVoice} onClick={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} leftIcon={communityVoiceClient.deafened ? <VolumeX size={15} /> : <Volume2 size={15} />}>
-                  {communityVoiceClient.deafened ? 'Surdo' : 'Áudio'}
-                </Button>
-                <Button variant="secondary" disabled={!viewerInSelectedVoice || screenPickerLoading} onClick={() => void toggleVoiceScreenShare()} leftIcon={<MonitorUp size={15} />}>
-                  {communityVoiceClient.isScreenSharing ? 'Parar tela' : 'Compartilhar tela'}
-                </Button>
-              </div>
+              {!viewerInSelectedVoice && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => void joinVoice(selectedChannel)} loading={busy === `voice:${selectedChannel.id}`} leftIcon={<Mic size={15} />}>Entrar no canal</Button></div>}
               {communityVoiceClient.getRemoteScreenShares().filter((share) => voiceParticipants.some((participant) => participant.userId === share.userId)).map((share) => <figure key={share.userId} className="w-full max-w-3xl overflow-hidden rounded-lg border border-border bg-background-secondary text-left">
                 <figcaption className="border-b border-border px-3 py-2 text-xs font-medium text-text-primary">Tela compartilhada por {voiceParticipants.find((participant) => participant.userId === share.userId)?.user.displayName ?? 'participante'}</figcaption>
                 <video ref={(element) => { if (element && element.srcObject !== share.stream) element.srcObject = share.stream }} autoPlay playsInline className="max-h-[60vh] w-full bg-black object-contain" aria-label={`Tela compartilhada por ${voiceParticipants.find((participant) => participant.userId === share.userId)?.user.displayName ?? 'participante'}`} />
@@ -1491,6 +1483,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               />}
             </section>
           )}
+          {viewerVoiceState && <section className="sticky bottom-0 z-20 border-t border-border bg-background-primary/95 p-2 backdrop-blur md:hidden" aria-label="Controles de voz"><div className="mb-1 flex items-center justify-between gap-2"><span className="truncate text-xs font-semibold text-text-primary">Voz · {viewerVoiceChannel?.name ?? 'Conectado'}</span><span className="text-[10px] text-text-secondary">{voiceStatus}</span></div><div className="flex flex-wrap gap-1"><Button size="sm" variant="secondary" aria-label={communityVoiceClient.muted ? 'Ativar microfone' : 'Silenciar microfone'} onClick={() => void communityVoiceClient.setMuted(!communityVoiceClient.muted)} leftIcon={communityVoiceClient.muted ? <MicOff size={13} /> : <Mic size={13} />} /><Button size="sm" variant="secondary" aria-label={communityVoiceClient.deafened ? 'Ativar áudio' : 'Desativar áudio'} onClick={() => void communityVoiceClient.setDeafened(!communityVoiceClient.deafened)} leftIcon={communityVoiceClient.deafened ? <VolumeX size={13} /> : <Volume2 size={13} />} /><Button size="sm" variant="secondary" disabled={screenPickerLoading} onClick={() => void toggleVoiceScreenShare()} leftIcon={<MonitorUp size={13} />}>{communityVoiceClient.isScreenSharing ? 'Parar live' : 'Compartilhar'}</Button><Button size="sm" variant="danger" loading={busy === 'voice:leave'} onClick={() => void leaveVoice()} leftIcon={<PhoneOff size={13} />}>Sair</Button></div></section>}
         </main>
 
         <aside className={`${membersPanelClassName} overflow-y-auto`}>
