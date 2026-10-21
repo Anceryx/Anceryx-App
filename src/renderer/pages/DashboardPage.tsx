@@ -23,6 +23,7 @@ import CobrancaPage from '@/pages/CobrancaPage'
 import SavedPostsPage from '@/pages/SavedPostsPage'
 import type { Forum, SidebarSection } from '@/types/index'
 import CommunityWorkspaceModal from '@/components/social/CommunityWorkspaceModal'
+import UserProfileModal from '@/components/social/UserProfileModal'
 import { resolveAvatarName } from '@/utils/avatar'
 import { dispatchKeyboardShortcut } from '@/utils/keyboardShortcuts'
 import { useTranslation, type TranslationKey } from '@/i18n'
@@ -106,6 +107,13 @@ const DashboardPage: React.FC = () => {
   }, [setSidebarWidth])
 
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const pendingProfileUsername = useUIStore((s) => s.pendingProfileUsername)
+  const consumePendingProfileUsername = useUIStore((s) => s.consumePendingProfileUsername)
+  const [linkedProfileUsername, setLinkedProfileUsername] = useState<string | null>(null)
+  useEffect(() => {
+    if (!pendingProfileUsername) return
+    setLinkedProfileUsername(consumePendingProfileUsername())
+  }, [consumePendingProfileUsername, pendingProfileUsername])
   const settingsSection = useUIStore((s) => s.settingsSection)
   const closeSettingsStore = useUIStore((s) => s.closeSettings)
 
@@ -284,6 +292,7 @@ const DashboardPage: React.FC = () => {
         }}
         initialSection={settingsSection ?? undefined}
       />
+      {linkedProfileUsername && <UserProfileModal username={linkedProfileUsername} isOpen onClose={() => setLinkedProfileUsername(null)} />}
       {callStatus !== 'idle' && !isExpanded && <MiniCallCard />}
       {callStatus !== 'idle' && isExpanded && (
         <CallOverlay

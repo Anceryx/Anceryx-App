@@ -8,6 +8,11 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build && node scripts/generate-license-assets.mjs",
+    "dev:web": "vite --config vite.web.config.ts",
+    "build:web": "vite build --config vite.web.config.ts && node scripts/prepare-web-output.mjs && node scripts/web-build-smoke.mjs",
+    "preview:web": "vite preview --config vite.web.config.ts",
+    "typecheck:web": "tsc -p tsconfig.web.json --noEmit",
+    "test:web-routing": "node --experimental-strip-types scripts/web-routing.test.mjs",
     "audit:licenses": "node scripts/audit-licenses.mjs",
     "test:license-audit": "node --test scripts/license-audit.test.mjs",
     "preview": "electron-vite preview",

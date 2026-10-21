@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Search, Plus, Crown, Users, MessageSquare } from 'lucide-react'
 import { useSocialStore } from '@/store/socialStore'
 import { useAuthStore } from '@/store/authStore'
@@ -25,15 +25,45 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
   const token         = useAuthStore((s) => s.token)
   const addNotification = useUIStore((s) => s.addNotification)
   const hydrateSocial = useSocialStore((s) => s.hydrateSocial)
+  const pendingForumId = useUIStore((s) => s.pendingForumId)
+  const consumePendingForumId = useUIStore((s) => s.consumePendingForumId)
+  const pendingInviteToken = useUIStore((s) => s.pendingInviteToken)
+  const consumePendingInviteToken = useUIStore((s) => s.consumePendingInviteToken)
 
   const [activeTab,    setActiveTab]    = useState<Tab>('todos')
+  const [forumsLoaded, setForumsLoaded] = useState(false)
   const [searchQuery,  setSearchQuery]  = useState('')
   const [showCreate,   setShowCreate]   = useState(false)
   const [detailForum,  setDetailForum]  = useState<Forum | null>(null)
-  const openForum = (forum: Forum) => {
+  const openForum = useCallback((forum: Forum) => {
     if (forum.isJoined && onOpenWorkspace) onOpenWorkspace(forum)
     else setDetailForum(forum)
-  }
+  }, [onOpenWorkspace])
+
+  useEffect(() => {
+    let active = true
+    void hydrateSocial().finally(() => { if (active) setForumsLoaded(true) })
+    return () => { active = false }
+  }, [hydrateSocial])
+
+  useEffect(() => {
+    if (!pendingForumId || !forumsLoaded) return
+    const forumId = consumePendingForumId()
+    const forum = forumId ? forums.find((item) => item.id === forumId) : undefined
+    if (forum) openForum(forum)
+    else addNotification('Este fórum não está disponível para sua conta.', 'error')
+  }, [addNotification, consumePendingForumId, forums, forumsLoaded, openForum, pendingForumId])
+
+  const joinInvite = useCallback(async (inviteToken: string) => {
+    try {
+      const { joined } = await communityApi.joinByInvite(inviteToken)
+      await hydrateSocial()
+      setActiveTab('meus')
+      addNotification(joined.channelId ? 'Você entrou no fórum pelo convite. Abra o canal indicado para continuar.' : 'Você entrou no fórum pelo convite.', 'success')
+    } catch (reason) {
+      addNotification(reason instanceof Error ? reason.message : 'Não foi possível entrar pelo convite.', 'error')
+    }
+  }, [addNotification, hydrateSocial])
 
   useEffect(() => {
     if (!token) return
@@ -52,15 +82,15 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
   }, [addNotification, deleteRealtimeForumTopic, setForumTopicFlag, token, upsertRealtimeForumTopic])
 
   useEffect(() => {
-    const unsubscribe = window.electronAPI?.community.onInvite((inviteToken) => {
-      void communityApi.joinByInvite(inviteToken).then(async ({ joined }) => {
-        await hydrateSocial()
-        setActiveTab('meus')
-        addNotification(joined.channelId ? 'Você entrou no fórum pelo convite. Abra o canal indicado para continuar.' : 'Você entrou no fórum pelo convite.', 'success')
-      }).catch((reason) => addNotification(reason instanceof Error ? reason.message : 'Não foi possível entrar pelo convite.', 'error'))
-    })
+    const unsubscribe = window.electronAPI?.community.onInvite((inviteToken) => { void joinInvite(inviteToken) })
     return unsubscribe
-  }, [addNotification, hydrateSocial, token])
+  }, [joinInvite, token])
+
+  useEffect(() => {
+    if (!pendingInviteToken) return
+    const inviteToken = consumePendingInviteToken()
+    if (inviteToken) void joinInvite(inviteToken)
+  }, [consumePendingInviteToken, joinInvite, pendingInviteToken])
 
   const filtered = forums
     .filter((f) => {

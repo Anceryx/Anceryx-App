@@ -6,6 +6,7 @@ import { Button, ContentSectionCard, WidePage } from '@/components/ui/index'
 import { PREMIUM_BENEFITS, PREMIUM_PLANS } from '@/lib/billingData'
 import { type PremiumPlan, hasAnceryxPlus } from '@/lib/premium'
 import { billingApi } from '@/services/billingApi'
+import { openExternalUrl } from '@/platform/platform'
 import mascotPremium from '@/assets/mascot/mascot-premium.png'
 import mascotStar from '@/assets/mascot/mascot-star.png'
 import mascotText from '@/assets/mascot/mascot-text.png'
@@ -25,8 +26,7 @@ const CobrancaPage: React.FC = () => {
   const isPremium = hasAnceryxPlus(user?.subscription)
 
   const openExternal = (url: string) => {
-    if (window.electronAPI) window.electronAPI.openExternal(url)
-    else window.open(url, '_blank', 'noopener,noreferrer')
+    openExternalUrl(url)
   }
 
   const startCheckout = async (plan: PremiumPlan = activePlan) => {

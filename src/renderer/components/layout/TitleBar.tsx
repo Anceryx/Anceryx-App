@@ -31,6 +31,8 @@ const TitleBar: React.FC = () => {
     }
   }, [hasElectronAPI])
 
+  if (!hasElectronAPI) return null
+
   return (
     <>
     <div

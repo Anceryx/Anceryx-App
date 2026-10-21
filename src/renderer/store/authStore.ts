@@ -3,6 +3,7 @@ import { UserStatus, type User } from '@/types/index'
 import type { Subscription } from '@/lib/premium'
 import { authApi, type AuthSuccessDto, type AuthUserDto, type LoginResultDto } from '@/services/authApi'
 import { createSessionRevision } from './sessionRevision'
+import { isWebPlatform } from '@/platform/platform'
 
 export type AuthStatus = 'idle' | 'hydrating' | 'authenticated' | 'unauthenticated'
 
@@ -30,10 +31,15 @@ function toUser(user: AuthUserDto): User {
 }
 
 async function readProtectedRefreshToken(): Promise<string | null> {
+  if (isWebPlatform) return null
   return window.electronAPI?.authTokens.getRefreshToken() ?? null
 }
 
 async function saveProtectedRefreshToken(token: string | null): Promise<void> {
+  if (isWebPlatform) {
+    refreshTokenInMemory = null
+    return
+  }
   refreshTokenInMemory = token
   const write = protectedTokenWrites.then(async () => {
     if (token) await window.electronAPI?.authTokens.setRefreshToken(token)
@@ -63,7 +69,7 @@ interface AuthState {
 
 async function applySession(result: AuthSuccessDto, revision: number): Promise<void> {
   if (!sessionRevision.isCurrent(revision)) throw new Error('A operação de autenticação foi cancelada.')
-  await saveProtectedRefreshToken(result.tokens.refreshToken)
+  await saveProtectedRefreshToken(result.tokens.refreshToken ?? null)
   if (!sessionRevision.isCurrent(revision)) throw new Error('A operação de autenticação foi cancelada.')
   useAuthStore.setState({
     user: toUser(result.user), token: result.tokens.accessToken,
@@ -89,6 +95,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const revision = sessionRevision.current()
     set({ status: 'hydrating' })
     try {
+      if (isWebPlatform) {
+        if (!(await get().refreshSession()) && sessionRevision.isCurrent(revision)) clearSession()
+        return
+      }
       const storedToken = await readProtectedRefreshToken()
       if (!sessionRevision.isCurrent(revision)) return
       refreshTokenInMemory = storedToken
@@ -130,12 +140,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const revision = sessionRevision.current()
     refreshPromise = (async () => {
       try {
-        refreshTokenInMemory ??= await readProtectedRefreshToken()
+        let tokens: Awaited<ReturnType<typeof authApi.refresh>>['tokens']
+        if (isWebPlatform) {
+          ;({ tokens } = await authApi.refresh())
+        } else {
+          refreshTokenInMemory ??= await readProtectedRefreshToken()
+          if (!refreshTokenInMemory) return false
+          ;({ tokens } = await authApi.refresh(refreshTokenInMemory))
+        }
         if (!sessionRevision.isCurrent(revision)) return false
-        if (!refreshTokenInMemory) return false
-        const { tokens } = await authApi.refresh(refreshTokenInMemory)
-        if (!sessionRevision.isCurrent(revision)) return false
-        await saveProtectedRefreshToken(tokens.refreshToken)
+        if (tokens.refreshToken) await saveProtectedRefreshToken(tokens.refreshToken)
         if (!sessionRevision.isCurrent(revision)) return false
         const { user } = await authApi.me(tokens.accessToken)
         if (!sessionRevision.isCurrent(revision)) return false
@@ -153,6 +167,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
+    if (isWebPlatform) {
+      const revision = sessionRevision.advance()
+      refreshTokenInMemory = null
+      set({ user: null, token: null, status: 'unauthenticated', isAuthenticated: false, subscriptionVerified: false })
+      try { await authApi.logout() } catch { /* A local logout remains effective if the API is unavailable. */ }
+      if (!sessionRevision.isCurrent(revision)) return
+      return
+    }
     const storedTokenPromise = refreshTokenInMemory ? Promise.resolve(refreshTokenInMemory) : readProtectedRefreshToken()
     const revision = sessionRevision.advance()
     const inMemoryToken = refreshTokenInMemory

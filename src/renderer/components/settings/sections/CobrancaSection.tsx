@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { ExternalLink, WalletCards } from 'lucide-react'
 import { Button, ContentSectionCard, SectionHeader, StatCard } from '@/components/ui/index'
 import { billingApi, type BillingEntitlement } from '@/services/billingApi'
+import { openExternalUrl } from '@/platform/platform'
 import { useAuthStore } from '@/store/authStore'
 
 const CobrancaSection: React.FC = () => {
@@ -11,7 +12,7 @@ const CobrancaSection: React.FC = () => {
   useEffect(() => { void billingApi.entitlement().then(({ entitlement: value }) => { setEntitlement(value); setSubscription({ plan: value.plan, status: value.status, expiresAt: value.currentPeriodEnd ?? undefined, cancelAtPeriodEnd: value.cancelAtPeriodEnd }) }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Billing indisponível.')) }, [setSubscription])
   const active = entitlement?.status === 'active' || entitlement?.status === 'trialing'
   const periodEnd = entitlement?.currentPeriodEnd ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(entitlement.currentPeriodEnd)) : 'Não disponível'
-  const manage = () => { void billingApi.portal().then(({ portal }) => window.electronAPI?.openExternal(portal.url)).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Não foi possível abrir o portal.')) }
+  const manage = () => { void billingApi.portal().then(({ portal }) => openExternalUrl(portal.url)).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Não foi possível abrir o portal.')) }
 
   return <div className="space-y-5">
     <SectionHeader eyebrow="Cobrança" title="Gestão financeira" description="O Stripe é responsável pelo checkout, método de pagamento, faturas e cancelamento." />

@@ -21,6 +21,9 @@ interface UIState {
   experienceSection: ExperienceSection
   pendingDmUser: { id: string; username: string } | null
   pendingPostId: string | null
+  pendingForumId: string | null
+  pendingProfileUsername: string | null
+  pendingInviteToken: string | null
   toggleTheme: () => void
   setTheme: (theme: Theme) => void
   setLocale: (locale: UIState['locale']) => void
@@ -41,6 +44,12 @@ interface UIState {
   consumePendingDm: () => { id: string; username: string } | null
   openPost: (postId: string) => void
   consumePendingPost: () => string | null
+  openForumById: (forumId: string) => void
+  consumePendingForumId: () => string | null
+  openProfileByUsername: (username: string) => void
+  consumePendingProfileUsername: () => string | null
+  openInvite: (token: string) => void
+  consumePendingInviteToken: () => string | null
 }
 
 export const useUIStore = create<UIState>()(
@@ -60,6 +69,9 @@ export const useUIStore = create<UIState>()(
       experienceSection: 'appearance',
       pendingDmUser: null,
       pendingPostId: null,
+      pendingForumId: null,
+      pendingProfileUsername: null,
+      pendingInviteToken: null,
 
       toggleTheme: () =>
         // Cycles between dark and light only.
@@ -119,6 +131,24 @@ export const useUIStore = create<UIState>()(
         let postId: string | null = null
         set((state) => { postId = state.pendingPostId; return { pendingPostId: null } })
         return postId
+      },
+      openForumById: (forumId) => set({ pendingForumId: forumId }),
+      consumePendingForumId: () => {
+        let forumId: string | null = null
+        set((state) => { forumId = state.pendingForumId; return { pendingForumId: null } })
+        return forumId
+      },
+      openProfileByUsername: (username) => set({ pendingProfileUsername: username }),
+      consumePendingProfileUsername: () => {
+        let username: string | null = null
+        set((state) => { username = state.pendingProfileUsername; return { pendingProfileUsername: null } })
+        return username
+      },
+      openInvite: (token) => set({ pendingInviteToken: token }),
+      consumePendingInviteToken: () => {
+        let token: string | null = null
+        set((state) => { token = state.pendingInviteToken; return { pendingInviteToken: null } })
+        return token
       },
     }),
     {

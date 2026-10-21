@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore'
 import { API_BASE_URL } from './apiConfig'
+import { isWebPlatform } from '@/platform/platform'
 export { API_BASE_URL }
 
 export class ApiError extends Error {
@@ -33,7 +34,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, retrie
   const route = diagnosticRoute(path)
   const operation = `${method} ${route}`
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, credentials: isWebPlatform ? 'include' : init.credentials })
   } catch {
     logApiDiagnostic(method, route, 0)
     throw new ApiError('Não foi possível conectar à API da Anceryx. Verifique a conexão e tente novamente.', 0, undefined, undefined, operation)
@@ -92,7 +93,7 @@ export async function apiStream(path: string, retried = false): Promise<Response
   const headers = new Headers(); if (token) headers.set('authorization', `Bearer ${token}`)
   let response: Response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { headers })
+    response = await fetch(`${API_BASE_URL}${path}`, { headers, credentials: isWebPlatform ? 'include' : undefined })
   } catch {
     const route = diagnosticRoute(path)
     logApiDiagnostic('GET', route, 0)

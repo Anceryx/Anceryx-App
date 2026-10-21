@@ -8,6 +8,7 @@ import { useSocialStore } from '@/store/socialStore'
 import { Avatar } from '@/components/ui/index'
 import { useNavigate } from 'react-router-dom'
 import { ANCERYX_PRIVACY_URL, ANCERYX_TERMS_URL } from '@/lib/premium'
+import { openExternalUrl } from '@/platform/platform'
 import { realtimeClient } from '@/services/realtimeClient'
 import { useTranslation, type TranslationKey } from '@/i18n'
 
@@ -150,13 +151,13 @@ const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) 
           <p className="leading-relaxed">Anceryx Desktop • v{appVersion ?? '...'}</p>
           <div className="mt-1 flex items-center gap-3">
             <button
-              onClick={() => window.electronAPI?.openExternal(ANCERYX_PRIVACY_URL)}
+              onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}
               className="cursor-pointer hover:text-accent-secondary transition-colors"
             >
               Privacidade
             </button>
             <button
-              onClick={() => window.electronAPI?.openExternal(ANCERYX_TERMS_URL)}
+              onClick={() => openExternalUrl(ANCERYX_TERMS_URL)}
               className="cursor-pointer hover:text-accent-secondary transition-colors"
             >
               Termos

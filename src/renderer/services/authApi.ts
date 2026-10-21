@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './apiConfig'
+import { isWebPlatform } from '@/platform/platform'
 
 function redactConnectionOrigin(value: string): string {
   try {
@@ -22,7 +23,7 @@ export interface AuthUserDto {
 
 export interface AuthTokensDto {
   accessToken: string
-  refreshToken: string
+  refreshToken?: string
 }
 
 export interface AuthSuccessDto {
@@ -70,9 +71,13 @@ function friendlyAuthMessage(code: string | undefined, status: number): string {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response
   try {
+    const headers = new Headers(init.headers)
+    headers.set('content-type', 'application/json')
+    if (isWebPlatform && path.startsWith('/auth/')) headers.set('x-anceryx-platform', 'web')
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      headers: { 'content-type': 'application/json', ...init.headers },
+      headers,
+      credentials: isWebPlatform ? 'include' : init.credentials,
     })
   } catch {
     console.warn('[auth] request failed before receiving a response', {
@@ -113,11 +118,11 @@ export const authApi = {
   }),
   register: (input: { username: string; displayName: string; email: string; password: string }) =>
     request<AuthSuccessDto>('/auth/register', { method: 'POST', body: JSON.stringify(input) }),
-  refresh: (refreshToken: string) => request<{ tokens: AuthTokensDto }>('/auth/refresh', {
-    method: 'POST', body: JSON.stringify({ refreshToken }),
+  refresh: (refreshToken?: string) => request<{ tokens: AuthTokensDto }>('/auth/refresh', {
+    method: 'POST', ...(isWebPlatform ? {} : { body: JSON.stringify({ refreshToken }) }),
   }),
-  logout: (refreshToken: string) => request<{ status: 'ok' }>('/auth/logout', {
-    method: 'POST', body: JSON.stringify({ refreshToken }),
+  logout: (refreshToken?: string) => request<{ status: 'ok' }>('/auth/logout', {
+    method: 'POST', ...(isWebPlatform ? {} : { body: JSON.stringify({ refreshToken }) }),
   }),
   forgotPassword: (email: string) => request<unknown>('/auth/password/forgot', {
     method: 'POST', body: JSON.stringify({ email }),

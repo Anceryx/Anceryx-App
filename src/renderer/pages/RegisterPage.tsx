@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { useAuthStore } from '@/store/authStore'
 import { isValidEmail, isStrongPassword, doPasswordsMatch } from '@/utils/validators'
 import { ANCERYX_PRIVACY_URL, ANCERYX_TERMS_URL } from '@/lib/premium'
 import { authApi, AuthApiError } from '@/services/authApi'
+import { isWebPlatform, openExternalUrl, safeReturnTo } from '@/platform/platform'
 
 interface FieldErrors {
   name?: string
@@ -17,10 +18,11 @@ interface FieldErrors {
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const register = useAuthStore((s) => s.register)
   const consumeGoogleHandoff = useAuthStore((s) => s.consumeGoogleHandoff)
   const authStatus = useAuthStore((s) => s.status)
-  useEffect(() => { if (authStatus === 'authenticated') navigate('/app', { replace: true }) }, [authStatus, navigate])
+  useEffect(() => { if (authStatus === 'authenticated') navigate(safeReturnTo(location.state), { replace: true }) }, [authStatus, location.state, navigate])
 
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
@@ -61,8 +63,9 @@ const RegisterPage: React.FC = () => {
     try {
       const result = await authApi.startGoogleRegistration()
       if (!result.available || !result.authUrl) throw new Error('O cadastro com Google não está configurado no servidor.')
-      if (!window.electronAPI?.openExternal) throw new Error('O cadastro com Google só está disponível no aplicativo Anceryx Desktop.')
-      window.electronAPI.openExternal(result.authUrl)
+      if (isWebPlatform) window.location.assign(result.authUrl)
+      else if (window.electronAPI?.openExternal) window.electronAPI.openExternal(result.authUrl)
+      else throw new Error('O navegador não pode abrir o login com Google.')
     } catch (error) {
       setGlobalError(error instanceof AuthApiError || error instanceof Error ? error.message : 'Não foi possível iniciar o cadastro com Google.')
     } finally {
@@ -104,7 +107,7 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true)
     try {
       await register(username.trim(), name.trim(), email.trim(), password)
-      navigate('/app')
+      navigate(safeReturnTo(location.state))
     } catch (err) {
       setGlobalError(err instanceof Error ? err.message : 'Erro ao registrar')
     } finally {
@@ -214,7 +217,7 @@ const RegisterPage: React.FC = () => {
             Ao criar uma conta, você concorda com os{' '}
             <button
               type="button"
-              onClick={() => window.electronAPI?.openExternal(ANCERYX_TERMS_URL)}
+              onClick={() => openExternalUrl(ANCERYX_TERMS_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
               Termos de Uso
@@ -222,7 +225,7 @@ const RegisterPage: React.FC = () => {
             e a{' '}
             <button
               type="button"
-              onClick={() => window.electronAPI?.openExternal(ANCERYX_PRIVACY_URL)}
+              onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
               Privacidade
@@ -235,6 +238,7 @@ const RegisterPage: React.FC = () => {
             Já tem conta?{' '}
             <Link
               to="/login"
+              state={location.state}
               className="text-accent hover:underline font-medium"
             >
               Entrar

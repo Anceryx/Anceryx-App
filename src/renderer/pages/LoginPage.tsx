@@ -5,13 +5,14 @@ import React, {
   useCallback,
   useId,
 } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Chrome, Eye, EyeOff } from 'lucide-react'
 import useAuth from '@/hooks/useAuth'
 import { isValidEmail } from '@/utils/validators'
 import { ANCERYX_PRIVACY_URL, ANCERYX_TERMS_URL } from '@/lib/premium'
 import { authApi } from '@/services/authApi'
 import { useAuthStore } from '@/store/authStore'
+import { isWebPlatform, openExternalUrl, safeReturnTo } from '@/platform/platform'
 
 // ── Mascotes usados nesta tela (pré-carregados) ────────────────────────────────
 import mascotDefault  from '@/assets/mascot/mascot-default.png'
@@ -120,13 +121,14 @@ const MascotDisplay: React.FC<MascotDisplayProps> = ({ state, parallaxRef }) => 
 // ── Página principal ───────────────────────────────────────────────────────────
 const LoginPage: React.FC = () => {
   const navigate      = useNavigate()
+  const location = useLocation()
   const { login, completeMfa, forgotPassword, isLoading, isAuthenticated, status } = useAuth()
   const consumeGoogleHandoff = useAuthStore((state) => state.consumeGoogleHandoff)
   const [googleLoading, setGoogleLoading] = useState(false)
 
   useEffect(() => {
-    if (status === 'authenticated' && isAuthenticated) navigate('/app', { replace: true })
-  }, [isAuthenticated, navigate, status])
+    if (status === 'authenticated' && isAuthenticated) navigate(safeReturnTo(location.state), { replace: true })
+  }, [isAuthenticated, location.state, navigate, status])
 
   useEffect(() => {
     const unsubscribe = window.electronAPI?.auth.onGoogleHandoff((payload) => {
@@ -157,7 +159,8 @@ const LoginPage: React.FC = () => {
     try {
       const result = await authApi.startGoogleLogin()
       if (!result.available || !result.authUrl) throw new Error('Google OAuth ainda não está configurado no servidor.')
-      window.electronAPI?.openExternal(result.authUrl)
+      if (isWebPlatform) window.location.assign(result.authUrl)
+      else window.electronAPI?.openExternal(result.authUrl)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível iniciar a autenticação Google.')
     } finally {
@@ -176,6 +179,14 @@ const LoginPage: React.FC = () => {
   const [recoveryMode, setRecoveryMode] = useState(false)
   const [recoverySent, setRecoverySent] = useState(false)
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null)
+  useEffect(() => {
+    const challenge = (location.state as { mfaChallenge?: unknown } | null)?.mfaChallenge
+    if (typeof challenge !== 'string') return
+    setMfaChallenge(challenge)
+    setMfaCode('')
+    setMfaRecoveryMode(false)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
   const [mfaCode, setMfaCode] = useState('')
   const [mfaRecoveryMode, setMfaRecoveryMode] = useState(false)
 
@@ -279,7 +290,7 @@ const LoginPage: React.FC = () => {
       }
       try {
         await completeMfa(mfaChallenge, submittedCode)
-        navigate('/app')
+        navigate(safeReturnTo(location.state))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Codigo de autenticacao invalido')
       }
@@ -530,6 +541,7 @@ const LoginPage: React.FC = () => {
             Não tem conta?{' '}
             <Link
               to="/register"
+              state={location.state}
               className="text-accent hover:text-accent/80 font-medium transition-colors"
             >
               Registre-se
@@ -553,7 +565,7 @@ const LoginPage: React.FC = () => {
             Ao entrar, você concorda com os{' '}
             <button
               type="button"
-              onClick={() => window.electronAPI?.openExternal(ANCERYX_TERMS_URL)}
+              onClick={() => openExternalUrl(ANCERYX_TERMS_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
               Termos de Uso
@@ -561,7 +573,7 @@ const LoginPage: React.FC = () => {
             e a{' '}
             <button
               type="button"
-              onClick={() => window.electronAPI?.openExternal(ANCERYX_PRIVACY_URL)}
+              onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
               Privacidade

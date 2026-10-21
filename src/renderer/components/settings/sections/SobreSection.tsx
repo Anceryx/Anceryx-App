@@ -29,6 +29,8 @@ const SobreSection: React.FC = () => {
   const download = async () => { setBusy(true); try { setInfo(await window.electronAPI!.updater.download()) } finally { setBusy(false) } }
   const restart = async () => { setInfo(await window.electronAPI!.updater.restart()) }
 
+  if (!window.electronAPI?.updater) return <div className="space-y-5"><SectionHeader eyebrow="Sobre a Anceryx" title="Aplicativo Web" description="O controle do atualizador está disponível somente no aplicativo desktop." /></div>
+
   return <div className="space-y-5">
     <SectionHeader eyebrow="Sobre a Anceryx" title="Atualizações do aplicativo" description="Verifique novas versões com consentimento antes do download e da instalação." />
     <ContentSectionCard className="space-y-4">
