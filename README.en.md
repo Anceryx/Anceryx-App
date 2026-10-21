@@ -85,7 +85,7 @@ To report a vulnerability, follow the responsible disclosure guidance in [SECURI
 
 **Client source code:** licensed under the Apache License 2.0 (SPDX: `Apache-2.0`). Within the license scope, you may study, modify, redistribute, and use the code commercially, including in independent and competing projects, provided you meet the license conditions. The license does not require changes to be submitted to the official project.
 
-**Official brand and assets:** are not automatically licensed under Apache 2.0. Kaoli, emojis, badges, icons, logos, banners, and illustrations are covered by the [separate asset policy](ASSETS_LICENSE.md) and [brand inventory](docs/brand/brand-assets.md). The origin and third-party rights for some files still need confirmation; do not assume permission beyond rights controlled by Anceryx.
+**Official brand and assets:** are not licensed under Apache 2.0. The owner has authorized publication of Anceryx assets to the extent Anceryx holds the relevant rights, subject to the [separate asset policy](ASSETS_LICENSE.md) and [brand inventory](docs/brand/brand-assets.md). Review of the files found no concrete indicators of third-party material; this authorization does not extend to rights Anceryx does not hold.
 
 **API, database, and infrastructure:** remain private and outside this repository. **Third-party dependencies:** retain their own licenses and notices. See the [third-party notices](docs/legal/third-party-notices.md) and [licensing notes](docs/legal/licensing-notes.md). Apache 2.0 grants no rights to the Anceryx brand and does not imply that a derivative is an official Anceryx product or service.
 
