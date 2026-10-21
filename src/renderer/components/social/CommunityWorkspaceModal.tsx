@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   Hash,
   Loader2,
   MonitorUp,
@@ -933,6 +935,41 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
     } finally { setBusy(null) }
   }
 
+  const moveCategory = async (categoryId: string, direction: -1 | 1) => {
+    const categories = [...(state?.categories ?? [])].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+    const index = categories.findIndex((category) => category.id === categoryId)
+    const current = categories[index]
+    const targetIndex = index + direction
+    if (!current || targetIndex < 0 || targetIndex >= categories.length) return
+    ;[categories[index], categories[targetIndex]] = [categories[targetIndex], categories[index]]
+    setBusy(`category-order:${categoryId}`)
+    try {
+      await Promise.all(categories.map((category, position) => communityApi.updateCategory(communityId, category.id, { position })))
+      await refresh()
+    } catch (reason) {
+      addNotification(reason instanceof Error ? reason.message : 'Não foi possível reordenar as categorias.', 'error')
+      await refresh()
+    } finally { setBusy(null) }
+  }
+
+  const moveChannel = async (channelId: string, direction: -1 | 1) => {
+    const channel = state?.channels.find((item) => item.id === channelId)
+    if (!channel) return
+    const channels = state!.channels.filter((item) => item.categoryId === channel.categoryId).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+    const index = channels.findIndex((item) => item.id === channelId)
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= channels.length) return
+    ;[channels[index], channels[targetIndex]] = [channels[targetIndex], channels[index]]
+    setBusy(`channel-order:${channelId}`)
+    try {
+      await Promise.all(channels.map((item, position) => communityApi.updateChannel(communityId, item.id, { position })))
+      await refresh()
+    } catch (reason) {
+      addNotification(reason instanceof Error ? reason.message : 'Não foi possível reordenar os canais.', 'error')
+      await refresh()
+    } finally { setBusy(null) }
+  }
+
   const deleteCategory = async (categoryId: string) => {
     setBusy(`category:${categoryId}`)
     try {
@@ -1255,8 +1292,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-text-secondary"><Plus size={13} /> Canais</h3>
                 <Input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Categoria" />
                 <Button size="sm" variant="secondary" loading={busy === 'category'} onClick={() => void createCategory()}>Criar categoria</Button>
-                {state?.categories.map((category) => <div key={category.id} className="flex items-center gap-2 rounded-md border border-border p-2">
-                  {editingCategory?.id === category.id ? <><Input aria-label="Nome da categoria" value={editingCategory.name} onChange={(event) => setEditingCategory({ ...editingCategory, name: event.target.value })} /><Button size="sm" loading={busy === `category:${category.id}`} onClick={() => void saveCategory()} leftIcon={<Check size={13} />}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setEditingCategory(null)}>Cancelar</Button></> : <><span className="min-w-0 flex-1 truncate text-xs text-text-primary">{category.name}</span><button type="button" aria-label={`Editar categoria ${category.name}`} onClick={() => setEditingCategory({ id: category.id, name: category.name })} className="text-text-secondary"><Pencil size={13} /></button><button type="button" aria-label={`Excluir categoria ${category.name}`} onClick={() => setConfirmDelete({ type: 'category', id: category.id, name: category.name })} className="text-red-300"><Trash2 size={13} /></button></>}
+                {state?.categories.map((category, index, categories) => <div key={category.id} className="flex items-center gap-2 rounded-md border border-border p-2">
+                  {editingCategory?.id === category.id ? <><Input aria-label="Nome da categoria" value={editingCategory.name} onChange={(event) => setEditingCategory({ ...editingCategory, name: event.target.value })} /><Button size="sm" loading={busy === `category:${category.id}`} onClick={() => void saveCategory()} leftIcon={<Check size={13} />}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setEditingCategory(null)}>Cancelar</Button></> : <><span className="min-w-0 flex-1 truncate text-xs text-text-primary">{category.name}</span><button type="button" aria-label={`Mover categoria ${category.name} para cima`} disabled={index === 0 || Boolean(busy)} onClick={() => void moveCategory(category.id, -1)} className="text-text-secondary disabled:opacity-40"><ArrowUp size={13} /></button><button type="button" aria-label={`Mover categoria ${category.name} para baixo`} disabled={index === categories.length - 1 || Boolean(busy)} onClick={() => void moveCategory(category.id, 1)} className="text-text-secondary disabled:opacity-40"><ArrowDown size={13} /></button><button type="button" aria-label={`Editar categoria ${category.name}`} onClick={() => setEditingCategory({ id: category.id, name: category.name })} className="text-text-secondary"><Pencil size={13} /></button><button type="button" aria-label={`Excluir categoria ${category.name}`} onClick={() => setConfirmDelete({ type: 'category', id: category.id, name: category.name })} className="text-red-300"><Trash2 size={13} /></button></>}
                 </div>)}
                 <div className="flex gap-2">
                   <input value={newChannelName} onChange={(event) => setNewChannelName(event.target.value)} className="min-w-0 flex-1 rounded-md border border-border bg-background-secondary px-2 py-1.5 text-xs text-text-primary" placeholder="Canal" />
@@ -1270,9 +1307,13 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 <label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={newChannelPrivate} onChange={(event) => setNewChannelPrivate(event.target.checked)} />Canal privado</label>
                 {newChannelType === 'text' && <label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={newChannelAnnouncement} onChange={(event) => setNewChannelAnnouncement(event.target.checked)} />Canal de avisos</label>}
                 <Button size="sm" variant="secondary" loading={busy === 'channel'} onClick={() => void createChannel()}>Criar canal</Button>
-                {state?.channels.map((channel) => <div key={channel.id} className="flex items-center gap-2 rounded-md border border-border p-2">
-                  {editingChannel?.id === channel.id ? <div className="grid flex-1 gap-2"><Input aria-label="Nome do canal" value={editingChannel.name} onChange={(event) => setEditingChannel({ ...editingChannel, name: event.target.value })} /><label className="block text-xs text-text-secondary">Tipo <select value={editingChannel.type} onChange={(event) => setEditingChannel({ ...editingChannel, type: event.target.value as CommunityChannelType })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="text">Texto</option><option value="forum">Fórum</option><option value="voice">Voz</option></select></label><label className="block text-xs text-text-secondary">Categoria <select value={editingChannel.categoryId ?? ''} onChange={(event) => setEditingChannel({ ...editingChannel, categoryId: event.target.value || null })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="">Sem categoria</option>{state?.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isPrivate} onChange={(event) => setEditingChannel({ ...editingChannel, isPrivate: event.target.checked })} />Canal privado</label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isAnnouncement} onChange={(event) => setEditingChannel({ ...editingChannel, isAnnouncement: event.target.checked })} />Canal de avisos</label><div className="flex gap-2"><Button size="sm" loading={busy === `channel:${channel.id}`} onClick={() => void saveChannel()} leftIcon={<Check size={13} />}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setEditingChannel(null)}>Cancelar</Button></div></div> : <><span className="min-w-0 flex-1 truncate text-xs text-text-primary">#{channel.name}</span><button type="button" aria-label={`Editar canal ${channel.name}`} onClick={() => setEditingChannel({ ...channel })} className="text-text-secondary"><Pencil size={13} /></button><button type="button" aria-label={`Excluir canal ${channel.name}`} onClick={() => setConfirmDelete({ type: 'channel', id: channel.id, name: channel.name })} className="text-red-300"><Trash2 size={13} /></button></>}
-                </div>)}
+                {state?.channels.map((channel) => {
+                  const siblings = state.channels.filter((item) => item.categoryId === channel.categoryId).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+                  const channelIndex = siblings.findIndex((item) => item.id === channel.id)
+                  return <div key={channel.id} className="flex items-center gap-2 rounded-md border border-border p-2">
+                  {editingChannel?.id === channel.id ? <div className="grid flex-1 gap-2"><Input aria-label="Nome do canal" value={editingChannel.name} onChange={(event) => setEditingChannel({ ...editingChannel, name: event.target.value })} /><label className="block text-xs text-text-secondary">Tipo <select value={editingChannel.type} onChange={(event) => setEditingChannel({ ...editingChannel, type: event.target.value as CommunityChannelType })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="text">Texto</option><option value="forum">Fórum</option><option value="voice">Voz</option></select></label><label className="block text-xs text-text-secondary">Categoria <select value={editingChannel.categoryId ?? ''} onChange={(event) => setEditingChannel({ ...editingChannel, categoryId: event.target.value || null })} className="mt-1 w-full rounded-md border border-border bg-background-primary px-2 py-1.5 text-text-primary"><option value="">Sem categoria</option>{state?.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isPrivate} onChange={(event) => setEditingChannel({ ...editingChannel, isPrivate: event.target.checked })} />Canal privado</label><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={editingChannel.isAnnouncement} onChange={(event) => setEditingChannel({ ...editingChannel, isAnnouncement: event.target.checked })} />Canal de avisos</label><div className="flex gap-2"><Button size="sm" loading={busy === `channel:${channel.id}`} onClick={() => void saveChannel()} leftIcon={<Check size={13} />}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setEditingChannel(null)}>Cancelar</Button></div></div> : <><span className="min-w-0 flex-1 truncate text-xs text-text-primary">#{channel.name}</span><button type="button" aria-label={`Mover canal ${channel.name} para cima`} disabled={channelIndex === 0 || Boolean(busy)} onClick={() => void moveChannel(channel.id, -1)} className="text-text-secondary disabled:opacity-40"><ArrowUp size={13} /></button><button type="button" aria-label={`Mover canal ${channel.name} para baixo`} disabled={channelIndex === siblings.length - 1 || Boolean(busy)} onClick={() => void moveChannel(channel.id, 1)} className="text-text-secondary disabled:opacity-40"><ArrowDown size={13} /></button><button type="button" aria-label={`Editar canal ${channel.name}`} onClick={() => setEditingChannel({ ...channel })} className="text-text-secondary"><Pencil size={13} /></button><button type="button" aria-label={`Excluir canal ${channel.name}`} onClick={() => setConfirmDelete({ type: 'channel', id: channel.id, name: channel.name })} className="text-red-300"><Trash2 size={13} /></button></>}
+                </div>
+                })}
                 {state?.channels.filter((channel) => channel.isPrivate).map((channel) => <div key={channel.id} className="space-y-2 rounded-md border border-border p-2">
                   <p className="text-xs font-medium text-text-primary">Acesso · #{channel.name}</p>
                   <select value={accessSubjectType} onChange={(event) => setAccessSubjectType(event.target.value as 'role' | 'member')} className="w-full rounded-md border border-border bg-background-secondary px-2 py-1 text-xs text-text-primary"><option value="role">Cargo</option><option value="member">Membro</option></select>

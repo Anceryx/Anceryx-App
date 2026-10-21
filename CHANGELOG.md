@@ -23,6 +23,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - O canal de publicações agora lista tópicos reais, permite criar, abrir, editar e excluir publicações próprias e responder a tópicos existentes.
 - A tela inicial do fórum usa uma única ação para entrar/abrir a comunidade; o gerenciamento permanece dentro da experiência da comunidade.
 - Canais podem ser recolhidos, e participantes de voz aparecem junto ao canal correspondente. A área de voz mostra participantes, estado do microfone e transmissões ativas.
+- A organização da comunidade permite reordenar categorias e canais; os canais continuam herdando permissões da categoria, e permissões específicas do canal são preservadas.
 - O compartilhamento de tela no Electron permite escolher uma janela ou tela. A transmissão inclui vídeo; áudio do sistema não está habilitado.
 
 ### Aplicativo
