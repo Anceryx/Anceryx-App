@@ -17,7 +17,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout approved ref
+      - name: Checkout selected source ref
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.source_ref }}
@@ -56,6 +56,16 @@ jobs:
           } else {
             Write-Host "Selected source ref: $sourceRef"
           }
+
+      - name: Set artifact source label
+        id: source
+        shell: pwsh
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          $label = $env:SOURCE_REF -replace '^refs/tags/', ''
+          $label = $label -replace '[^A-Za-z0-9._-]', '-'
+          "label=$label" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8NoBOM
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -96,7 +106,7 @@ jobs:
       - name: Upload review artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: anceryx-windows-${{ github.ref_name }}
+          name: anceryx-windows-${{ steps.source.outputs.label }}
           retention-days: 3
           # Metadata/blockmaps are optional until an approved publish/feed
           # configuration is supplied; never turn a review build into a
