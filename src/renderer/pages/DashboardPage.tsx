@@ -9,6 +9,7 @@ import TitleBar from '@/components/layout/TitleBar'
 import NotificationToast from '@/components/layout/NotificationToast'
 import NotificationCenter from '@/components/layout/NotificationCenter'
 import AchievementToast from '@/components/layout/AchievementToast'
+import RealtimeConnectionNotice from '@/components/layout/RealtimeConnectionNotice'
 import { SettingsModal } from '@/components/settings/index'
 import MiniCallCard from '@/components/calls/MiniCallCard'
 import CallOverlay from '@/components/calls/CallOverlay'
@@ -138,6 +139,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="relative flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background-primary">
       <TitleBar />
+      <RealtimeConnectionNotice />
       <AchievementToast />
       <div className="absolute right-24 top-10 z-40 md:right-4">
         <NotificationCenter />

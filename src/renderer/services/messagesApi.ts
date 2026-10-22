@@ -46,7 +46,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const messagesApi = {
   openConversation: (recipientUserId: string) => request<{ conversation: DirectConversationDto }>('/dm/conversations', { method: 'POST', body: JSON.stringify({ recipientUserId }) }),
   listConversations: () => request<{ conversations: DirectConversationDto[] }>('/dm/conversations'),
-  listMessages: (conversationId: string) => request<{ messages: DirectMessageDto[] }>(`/dm/conversations/${conversationId}/messages`),
+  listMessages: (conversationId: string, options: { limit?: number; before?: string } = {}) => {
+    const query = new URLSearchParams({ limit: String(options.limit ?? 50) })
+    if (options.before) query.set('before', options.before)
+    return request<{ messages: DirectMessageDto[]; nextCursor?: string | null }>(`/dm/conversations/${conversationId}/messages?${query.toString()}`)
+  },
   createMessage: (input: { recipientUserId: string; text: string; contentType?: 'text' | 'gif' | 'sticker'; stickerKey?: string; mediaAssetId?: string; externalMedia?: { provider: 'klipy'; slug: string; url: string; mimeType: 'image/gif'; metadata?: { title?: string; width?: number; height?: number; previewUrl?: string } }; clientMessageId?: string; replyToMessageId?: string }) =>
     request<{ message: DirectMessageDto; clientMessageId: string | null }>('/dm/messages', {
       method: 'POST',
