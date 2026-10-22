@@ -30,6 +30,14 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - Mantém o atualizador integrado desativado. Os erros de assinatura inválida/ausente e de integridade passam a ter mensagens específicas, sem expor detalhes internos.
 - Atualiza os casos de segurança do atualizador para a nova versão base; a verificação criptográfica real de manifests e a atualização em Windows continuam pendentes.
 
+### Pesquisa e compartilhamento (implementação local)
+
+- O Explore consulta publicações acessíveis no endpoint paginado do backend; nas APIs anteriores, informa que a pesquisa completa não está disponível em vez de filtrar resultados carregados e apresentá-los como globais.
+- A pesquisa de pessoas e Fóruns no Explore carrega páginas adicionais; a busca de Fóruns na API também considera descrição, tags e categorias de canais.
+- A lista de Fóruns continua aceitando a resposta legada em array da API anterior; nesse modo, os resultados são exibidos sem paginação.
+- Links copiados de publicações, perfis e Fóruns usam o protocolo Windows `anceryx://`, validado no processo principal e no preload. A API local inclui paginação e autorização de visibilidade para pesquisa de publicações; ainda não publicada.
+- A API local adiciona pesquisa paginada de canais e mensagens comunitárias com autorização por participação, cargos, `viewChannel`/`readHistory` e moderação; a navegação abre o canal e tenta centralizar a mensagem. A descoberta local de Fóruns usa tags e métricas reais. Esses endpoints ainda dependem da implantação coordenada da API; 404 nas versões antigas é informado como recurso indisponível. QA real do protocolo no Electron Windows continua pendente.
+
 ### Comunidades
 
 - A criação de fóruns oferece modelos iniciais, revisão de categorias e canais, finalidade e visibilidade; o fórum e sua estrutura inicial são enviados em uma única operação.

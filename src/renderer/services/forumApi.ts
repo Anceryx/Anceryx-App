@@ -1,5 +1,6 @@
 import type { ForumMemberRole } from '@/types/social'
 import { apiRequest } from '@/services/apiClient'
+import { normalizeForumListResponse } from '@/utils/forumListCompatibility'
 
 type ForumVisibility = 'public' | 'private'
 type TopicFlag = 'isPinned' | 'isLocked' | 'isResolved'
@@ -78,6 +79,16 @@ export interface ApiForum {
   viewerForumRole: ForumMemberRole | null
 }
 
+export interface ForumDiscoveryDto {
+  categories: Array<{ name: string; forumCount: number }>
+  featuredForums: ApiForum[]
+  recentForums: ApiForum[]
+  suggestedForums: ApiForum[]
+  featuredRanking: 'topic_count_then_member_count'
+  suggestionBasis: 'joined_forum_tags_then_activity'
+  pages?: Partial<Record<'featured' | 'recent' | 'suggested', { nextCursor: string | null; countSemantics: 'has_more_only' }>>
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return apiRequest<T>(path, init)
 }
@@ -89,7 +100,19 @@ function flagPath(flag: TopicFlag): 'pin' | 'lock' | 'resolve' {
 }
 
 export const forumApi = {
-  listForums: (query = '') => request<{ forums: ApiForum[] }>(`/forums${query ? `?q=${encodeURIComponent(query)}` : ''}`),
+  discoverForums: (cursors: Partial<Record<'featured' | 'recent' | 'suggested', string>> = {}) => {
+    const params = new URLSearchParams({ limit: '8' })
+    if (cursors.featured) params.set('featuredCursor', cursors.featured)
+    if (cursors.recent) params.set('recentCursor', cursors.recent)
+    if (cursors.suggested) params.set('suggestedCursor', cursors.suggested)
+    return request<ForumDiscoveryDto>(`/forums/discovery?${params.toString()}`)
+  },
+  listForums: async (query = '', limit = 20, offset = 0) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+    if (query) params.set('q', query)
+    const response = await request<{ forums: ApiForum[]; nextOffset?: number | null } | ApiForum[]>(`/forums?${params.toString()}`)
+    return normalizeForumListResponse(response)
+  },
   profileForums: (userId: string, limit = 50, offset = 0) => request<{ forums: ApiForum[]; totalCount: number }>(`/users/${encodeURIComponent(userId)}/forums?limit=${limit}&offset=${offset}`),
   getForum: (forumId: string) => request<{ forum: ApiForum }>(`/forums/${forumId}`),
   createForum: (input: { name: string; description: string; visibility: ForumVisibility; iconUrl?: string | null; bannerUrl?: string | null; tags?: string[]; structure?: { categories: Array<{ name: string; channels: Array<{ name: string; type: 'text' | 'voice' }> }> } }) => request<{ forum: ApiForum }>('/forums', { method: 'POST', body: JSON.stringify(input) }),

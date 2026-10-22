@@ -65,7 +65,10 @@ export const socialApi = {
   updateBadgePreferences: (mode: 'all' | 'selected', selectedSlugs: string[]) => apiRequest('/users/me/badges', { method: 'PATCH', body: JSON.stringify({ mode, selectedSlugs }) }),
   setStatus: (text: string, expiresAt: string | null) => apiRequest('/users/me/status', { method: 'PUT', body: JSON.stringify({ text, expiresAt }) }),
   clearStatus: () => apiRequest('/users/me/status', { method: 'DELETE' }),
-  searchUsers: (query: string) => apiRequest<{ users: PublicProfileDto[] }>(`/users/search?q=${encodeURIComponent(query)}`),
+  searchUsers: (query: string, limit = 20, offset = 0) => {
+    const params = new URLSearchParams({ q: query, limit: String(limit), offset: String(offset) })
+    return apiRequest<{ users: PublicProfileDto[]; nextOffset?: number | null }>(`/users/search?${params.toString()}`)
+  },
   getUser: (username: string) => apiRequest<{ user: PublicProfileDto }>(`/users/${encodeURIComponent(username)}`),
   listFriends: () => apiRequest<{ friends: PublicProfileDto[] }>('/friends'),
   listIncomingRequests: () => apiRequest<{ requests: FriendRequestDto[] }>('/friends/requests/incoming'),

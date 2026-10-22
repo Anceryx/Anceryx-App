@@ -16,6 +16,25 @@ Este roteiro prepara a validação da versão de QA no Electron Windows. Todos o
 | Figurinhas e embeds | Enviar figurinha e links compartilhados; abrir e fechar os previews. | Conteúdo preservado e modais sem overflow ou bloqueio de interação. | Pendente |
 | Rascunhos cifrados | Salvar textos em DM, canal, tópico/resposta e Feed; fechar e reabrir o app e entrar com outra conta Anceryx. Descartar e enviar um texto. | O texto volta no mesmo usuário/contexto, não aparece em outra conta, apaga após envio/descarte e não inclui mídia temporária. | Smoke entre processos Electron aprovado; QA visual do aplicativo pendente |
 
+## Pesquisa, descoberta e links compartilhados (implementação local 0.17.0)
+
+Os endpoints novos de pesquisa e descoberta estão somente na API local. Em uma API anterior, o cliente deve indicar que o recurso ainda não está disponível; essa resposta não significa ausência permanente de suporte. A pesquisa de hashtags filtra publicações retornadas pela pesquisa de posts; não existe endpoint dedicado de hashtags.
+
+| Cenário | Procedimento | Resultado esperado | Estado |
+|---|---|---|---|
+| Pesquisa de publicações | Pesquisar termo presente em conteúdo antigo, além do feed já carregado; avançar duas páginas. | Resultados vêm do endpoint, seguem ordem estável e não repetem itens. | Pendente — cliente e API locais |
+| Privacidade na busca | Repetir a pesquisa com publicações de conta privada, visibilidade restrita, bloqueios e publicação excluída. | Nenhum conteúdo inacessível aparece, inclusive em snippets ou páginas seguintes. | Pendente — integração PostgreSQL e QA |
+| Pessoas | Pesquisar nomes/usuários, avançar páginas e repetir com bloqueios entre as contas. | Apenas perfis autorizados; paginação sem duplicações. | Pendente |
+| Fóruns e tags | Pesquisar por nome, descrição, tag e categoria; avançar páginas; incluir um Fórum privado. | Resultados públicos/acessíveis correspondem ao termo; Fórum privado não aparece para quem não tem acesso. | Pendente |
+| Descoberta de Fóruns | Conferir paginação independente de recentes, destaques e sugestões, além das tags com Fóruns públicos, privados e excluídos. | Nenhum privado/excluído aparece; ranking usa tópicos/membros, sugestões usam tags e cada seção informa `hasMore` sem apresentar total parcial como global. | Integração PostgreSQL descartável com 125 Fóruns aprovada; QA visual Windows continua necessário |
+| Hashtags | Pesquisar uma hashtag incluindo `#` e abrir a publicação encontrada. | Publicações acessíveis são pesquisadas pelo endpoint de posts, filtradas pela hashtag e paginadas com o mesmo cursor. | Implementação local; API não publicada e QA Windows pendente |
+| Busca global e mensagens comunitárias | Pesquisar canais e mensagens; testar membro, canal privado, cargo autorizado/negado, sem `readHistory`, conteúdo moderado e abrir resultado antigo. | API não retorna canais inacessíveis nem DMs; o resultado abre a comunidade, canal e contexto da mensagem. | Implementação local; API não publicada e QA Windows pendente |
+| Link de publicação | Copiar `anceryx://post/{id}`; abrir com o app fechado e aberto. Repetir com ID inválido. | App abre a publicação válida; destino inválido é ignorado com segurança. | Teste automatizado de validação aprovado; QA Windows pendente |
+| Link de perfil e Fórum | Copiar os links pelo menu e abrir com o aplicativo instalado, conectado e desconectado. | Perfil/Fórum válido abre; conteúdo privado mantém a autorização da API. | Teste automatizado de parser aprovado; QA Windows pendente |
+| Convite existente | Copiar e abrir `anceryx://invite/{token}` válido, expirado e malformado. | Fluxo atual continua preservado; token inválido não navega nem expõe dados. | Pendente |
+| Inicialização, autenticação e deep link | Abrir links de post, perfil e Fórum com o app fechado, aberto e na tela de login; concluir autenticação após receber o link. | O app abre/ganha foco e entrega o destino uma única vez após a interface autenticada estar pronta; destino removido, privado ou inválido não revela conteúdo. | Parser automatizado aprovado; ciclo instalado e entrega após autenticação pendentes |
+| Idioma e rede | Alterar idioma durante a pesquisa; simular desconexão e recuperar a rede. | Labels atualizam; erros e tentativas não deixam resultados antigos como se fossem atuais. | Pendente |
+
 ## Fóruns
 
 | Cenário | Procedimento | Resultado esperado | Estado |

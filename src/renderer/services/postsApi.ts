@@ -2,6 +2,11 @@ import { apiRequest } from '@/services/apiClient'
 import type { RealtimeCommentDto, RealtimePostDto } from '@/services/realtimeClient'
 
 export const postsApi = {
+  search: (query: string, limit = 20, cursor?: string) => {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    if (cursor) params.set('cursor', cursor)
+    return apiRequest<{ posts: RealtimePostDto[]; nextCursor: string | null }>(`/posts/search?${params.toString()}`)
+  },
   announcements: () => apiRequest<{ campaigns: Array<{ id: string; title: string | null; content: string; bannerTitle: string | null; bannerDescription: string | null; bannerImageUrl: string | null; accentColor: string; ctaLabel: string | null; ctaUrl: string | null }> }>('/home/official-announcements'),
   feed: (cursor?: string, scope: 'for-you' | 'following' = 'for-you') => {
     const query = new URLSearchParams({ scope })

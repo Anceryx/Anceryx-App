@@ -29,6 +29,29 @@ export interface CommunityChannelDto {
   userLimit: number | null
 }
 
+export interface CommunitySearchChannelDto {
+  communityId: string
+  communityName: string
+  channelId: string
+  channelName: string
+  channelType: CommunityChannelType
+  categoryName: string | null
+  description: string | null
+  isAnnouncement: boolean
+}
+
+export interface CommunitySearchMessageDto {
+  id: string
+  communityId: string
+  communityName: string
+  channelId: string
+  channelName: string
+  content: string
+  excerpt: string
+  createdAt: string
+  author: { id: string; username: string; displayName: string; avatarUrl: string | null }
+}
+
 export interface CommunityRoleDto {
   id: string
   name: string
@@ -292,7 +315,19 @@ export const communityApi = {
   cancelEvent: (communityId: string, eventId: string) => request<{ status: 'ok' }>(`/communities/${communityId}/events/${eventId}`, { method: 'DELETE' }),
   rsvpEvent: (communityId: string, eventId: string, reminderMinutes: number) => request<{ event: CommunityEventDto }>(`/communities/${communityId}/events/${eventId}/rsvp`, { method: 'PUT', body: JSON.stringify({ reminderMinutes }) }),
   cancelRsvp: (communityId: string, eventId: string) => request<{ event: CommunityEventDto }>(`/communities/${communityId}/events/${eventId}/rsvp`, { method: 'DELETE' }),
-  listMessages: (communityId: string, channelId: string) => request<{ messages: CommunityMessageDto[] }>(`/communities/${communityId}/channels/${channelId}/messages`),
+  searchChannels: (query: string, limit = 20, offset = 0) => {
+    const params = new URLSearchParams({ q: query, limit: String(limit), offset: String(offset) })
+    return request<{ channels: CommunitySearchChannelDto[]; nextOffset: number | null }>(`/search/community-channels?${params.toString()}`)
+  },
+  searchMessages: (query: string, limit = 20, cursor?: string) => {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    if (cursor) params.set('cursor', cursor)
+    return request<{ messages: CommunitySearchMessageDto[]; nextCursor: string | null }>(`/search/community-messages?${params.toString()}`)
+  },
+  listMessages: (communityId: string, channelId: string, options: { around?: string } = {}) => {
+    const query = options.around ? `?around=${encodeURIComponent(options.around)}` : ''
+    return request<{ messages: CommunityMessageDto[] }>(`/communities/${communityId}/channels/${channelId}/messages${query}`)
+  },
   createMessage: (communityId: string, channelId: string, input: { content: string; contentType?: 'text' | 'gif' | 'sticker'; stickerKey?: string; mediaAssetId?: string; replyToMessageId?: string }) => request<{ message: CommunityMessageDto }>(`/communities/${communityId}/channels/${channelId}/messages`, { method: 'POST', body: JSON.stringify(input) }),
   createCategory: (communityId: string, name: string, position = 0) => request<{ category: CommunityCategoryDto }>(`/communities/${communityId}/categories`, { method: 'POST', body: JSON.stringify({ name, position }) }),
   updateCategory: (communityId: string, categoryId: string, input: Partial<Pick<CommunityCategoryDto, 'name' | 'position'>>) => request<{ category: CommunityCategoryDto }>(`/communities/${communityId}/categories/${categoryId}`, { method: 'PATCH', body: JSON.stringify(input) }),
