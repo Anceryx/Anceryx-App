@@ -74,6 +74,7 @@ import { getCommunityMemberRoleLabels, groupCommunityMembersByRole } from '@/uti
 import { canLoadCommunityModerationHistory, getAvailableCommunityModerationActions, resolveCommunityModerationAction, shouldShowCommunityModerationPanel, type CommunityModerationAction } from '@/utils/communityModerationPermissions'
 import { mediaApi } from '@/services/mediaApi'
 import MessageComposer from '@/components/messages/MessageComposer'
+import { usePersistentDraft } from '@/hooks/usePersistentDraft'
 import type { KlipyGif } from '@/services/klipyApi'
 import { isSafeKlipyMediaUrl, registerKlipyShare } from '@/services/klipyApi'
 import { getKaoliSticker, type KaoliStickerKey } from '@/lib/kaoliStickers'
@@ -193,7 +194,6 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const [communityReportsLoading, setCommunityReportsLoading] = useState(false)
   const [communityReportsError, setCommunityReportsError] = useState<string | null>(null)
   const [reportDecisionNotes, setReportDecisionNotes] = useState<Record<string, string>>({})
-  const [messageDraft, setMessageDraft] = useState('')
   const [voiceChatOpen, setVoiceChatOpen] = useState(false)
   const [messageFile, setMessageFile] = useState<File | null>(null)
   const [messageFilePreview, setMessageFilePreview] = useState<string | null>(null)
@@ -292,6 +292,9 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
     () => state?.channels.find((channel) => channel.id === selectedChannelId) ?? null,
     [selectedChannelId, state?.channels]
   )
+  const channelDraft = usePersistentDraft(currentUserId, 'forum-channel', selectedChannel?.id ?? '')
+  const messageDraft = channelDraft.value
+  const setMessageDraft = channelDraft.setValue
   const groupedMemberEntries = useMemo(() => {
     return groupCommunityMembersByRole(state?.members ?? [])
   }, [state?.members])
@@ -932,7 +935,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
       })
       const message = withResolvedMessageMedia({ ...response.message, createdAt: String(response.message.createdAt) })
       setMessages((items) => items.some((item) => item.id === message.id) ? items : [...items, message])
-      if (!input) setMessageDraft('')
+      if (!input) void channelDraft.discard()
       if (!input && messageFilePreview) URL.revokeObjectURL(messageFilePreview)
       if (!input) { setMessageFile(null); setMessageFilePreview(null) }
       setReplyTarget(null)
@@ -1649,6 +1652,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               {selectedChannel?.isAnnouncement && !canPostAnnouncement ? <p className="rounded-lg border border-border p-3 text-xs text-text-secondary">Somente cargos autorizados podem publicar neste canal de avisos.</p> : <MessageComposer
                 value={messageDraft}
                 onChange={setMessageDraft}
+                onDraftBlur={() => { void channelDraft.persist() }}
+                onDiscardDraft={() => { void channelDraft.discard() }}
                 onSend={() => void createMessage()}
                 disabled={busy === 'message' || loading}
                 imagePreview={messageFile && messageFilePreview ? { url: messageFilePreview, previewUrl: messageFilePreview, mimeType: messageFile.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'video/mp4', sizeBytes: messageFile.size, name: messageFile.name } : null}

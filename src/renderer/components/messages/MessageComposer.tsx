@@ -11,6 +11,9 @@ import { MediaAttachment } from '@/components/ui/MediaAttachment'
 interface MessageComposerProps {
   value: string
   onChange: (v: string) => void
+  onDraftBlur?: () => void
+  onDiscardDraft?: () => void
+  discardDraftLabel?: string
   onSend: () => void
   disabled?: boolean
   imagePreview?: MessageImageAttachment | null
@@ -31,6 +34,9 @@ const MAX_ROWS = 6
 const MessageComposer: React.FC<MessageComposerProps> = ({
   value,
   onChange,
+  onDraftBlur,
+  onDiscardDraft,
+  discardDraftLabel = 'Descartar rascunho',
   onSend,
   disabled,
   imagePreview,
@@ -156,11 +162,14 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
           placeholder="Mensagem..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onDraftBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           aria-label="Campo de mensagem. Enter para enviar, Shift+Enter para nova linha."
           aria-multiline="true"
         />
+
+        {onDiscardDraft && value.trim() && <button type="button" onClick={onDiscardDraft} disabled={disabled} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-text-secondary hover:bg-background-tertiary hover:text-text-primary disabled:opacity-50" aria-label={discardDraftLabel} title={discardDraftLabel}><X size={15} /></button>}
 
         <ExpressionPicker
           isOpen={expressionOpen}

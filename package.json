@@ -25,6 +25,7 @@
     "test:connection-config": "node --experimental-strip-types scripts/connection-config-smoke.mjs",
     "test:api-config": "node --experimental-strip-types scripts/api-config.test.mjs",
     "test:electron-safe-storage": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/electron-safe-storage-two-process-smoke.ps1",
+    "test:encrypted-drafts": "node --experimental-strip-types scripts/encrypted-drafts.test.mjs",
     "test:session-revision": "node --experimental-strip-types scripts/session-revision.test.mjs",
     "test:image-crop": "node --experimental-strip-types scripts/image-crop.test.mjs",
     "test:image-crop:visual": "vite --config scripts/image-crop-visual-vite.config.ts",

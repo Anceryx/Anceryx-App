@@ -1,8 +1,10 @@
 import { app, BrowserWindow, desktopCapturer, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'fs'
 import { isAbsolute, join, relative, resolve } from 'path'
 import { pathToFileURL } from 'url'
+import { randomUUID } from 'crypto'
 import type { LicenseManifest } from '../shared/licenseTypes'
+import { createDraftStore, type DraftKey, type DraftScope } from './draftStoreCore'
 import { UpdateManager } from './updater/updateManager'
 import { registerUpdateIpc } from './updater/updateIpc'
 
@@ -104,6 +106,64 @@ function getWindowStatePath(): string {
 function getRefreshTokenPath(): string {
   return join(app.getPath('userData'), 'auth-session.bin')
 }
+
+function getDraftStorePath(): string { return join(app.getPath('userData'), 'drafts.enc') }
+
+const encryptedDraftStore = createDraftStore({
+  read: () => existsSync(getDraftStorePath()) ? readFileSync(getDraftStorePath()) : null,
+  write: (encrypted) => {
+    const target = getDraftStorePath()
+    const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`
+    try {
+      writeFileSync(temporary, encrypted)
+      renameSync(temporary, target)
+    } catch (error) {
+      if (existsSync(temporary)) unlinkSync(temporary)
+      throw error
+    }
+  },
+},
+(plain) => safeStorage.encryptString(Buffer.from(plain).toString('utf8')),
+(encrypted) => Buffer.from(safeStorage.decryptString(Buffer.from(encrypted)), 'utf8'))
+
+function isTrustedRenderer(event: Electron.IpcMainInvokeEvent): boolean {
+  if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) return false
+  try {
+    const actual = new URL(event.senderFrame.url)
+    if (actual.protocol === 'app:' && actual.hostname === RENDERER_HOST) return true
+    const rendererUrl = process.env['ELECTRON_RENDERER_URL']
+    return Boolean(rendererUrl && new URL(rendererUrl).origin === actual.origin)
+  } catch { return false }
+}
+
+function parseDraftKey(value: unknown): DraftKey | null {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Partial<DraftKey>
+  if (typeof candidate.userId !== 'string' || typeof candidate.resourceId !== 'string' || !['dm', 'forum-channel', 'forum-topic', 'forum-reply', 'post'].includes(String(candidate.scope))) return null
+  return { userId: candidate.userId, resourceId: candidate.resourceId, scope: candidate.scope as DraftScope }
+}
+
+ipcMain.handle('drafts:get', (event, input: unknown) => {
+  if (!isTrustedRenderer(event) || !safeStorage.isEncryptionAvailable()) return { ok: false, content: null }
+  const key = parseDraftKey(input)
+  if (!key) return { ok: false, content: null }
+  try { return { ok: true, content: encryptedDraftStore.get(key) } }
+  catch { return { ok: false, content: null } }
+})
+ipcMain.handle('drafts:save', (event, input: unknown, content: unknown) => {
+  if (!isTrustedRenderer(event) || !safeStorage.isEncryptionAvailable()) return false
+  const key = parseDraftKey(input)
+  if (!key) return false
+  try { encryptedDraftStore.save(key, content); return true }
+  catch { return false }
+})
+ipcMain.handle('drafts:delete', (event, input: unknown) => {
+  if (!isTrustedRenderer(event) || !safeStorage.isEncryptionAvailable()) return false
+  const key = parseDraftKey(input)
+  if (!key) return false
+  try { encryptedDraftStore.delete(key); return true }
+  catch { return false }
+})
 
 function resolveRendererAsset(requestUrl: string): string | null {
   const url = new URL(requestUrl)

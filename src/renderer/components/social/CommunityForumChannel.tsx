@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { ArrowLeft, FileText, MessageSquare, Pencil, Send } from 'lucide-react'
 import { Button, Input } from '@/components/ui/index'
 import { forumApi, type ApiForumReply, type ApiForumTopic } from '@/services/forumApi'
+import { usePersistentDraft } from '@/hooks/usePersistentDraft'
 import { formatDate, formatDateTime } from '@/utils/formatters'
 
 interface Props {
@@ -16,11 +17,32 @@ const CommunityForumChannel: React.FC<Props> = ({ forumId, canCreateTopics, curr
   const [replies, setReplies] = useState<ApiForumReply[]>([])
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [reply, setReply] = useState('')
+  const topicDraft = usePersistentDraft(currentUserId, 'forum-topic', forumId)
+  const replyDraft = usePersistentDraft(currentUserId, 'forum-reply', activeTopic?.id ?? '')
+  const reply = replyDraft.value
+  const setReply = replyDraft.setValue
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [topicHydratedKey, setTopicHydratedKey] = useState('')
+  const topicKey = `${currentUserId}:${forumId}`
+
+  useEffect(() => { setActiveTopic(null); setReplies([]); setTitle(''); setContent(''); setTopicHydratedKey('') }, [forumId, currentUserId])
+
+  useEffect(() => {
+    if (activeTopic || topicDraft.persistence !== 'ready' || topicHydratedKey === topicKey) return
+    setTopicHydratedKey(topicKey)
+    try {
+      const parsed = JSON.parse(topicDraft.value || '{}') as { title?: unknown; content?: unknown }
+      if (typeof parsed.title === 'string' && typeof parsed.content === 'string') { setTitle(parsed.title); setContent(parsed.content) }
+    } catch { /* Ignore an invalid old local draft and keep the editor usable. */ }
+  }, [activeTopic?.id, topicDraft.persistence, topicDraft.value, topicHydratedKey, topicKey])
+
+  useEffect(() => {
+    if (activeTopic || topicDraft.persistence !== 'ready' || topicHydratedKey !== topicKey) return
+    topicDraft.setValue(JSON.stringify({ title, content }))
+  }, [activeTopic?.id, title, content, topicDraft.persistence, topicHydratedKey, topicKey])
 
   const refresh = async () => {
     setError(null)
@@ -53,6 +75,7 @@ const CommunityForumChannel: React.FC<Props> = ({ forumId, canCreateTopics, curr
     setBusy(true); setError(null)
     try {
       const result = await forumApi.createTopic(forumId, { title: title.trim(), content: content.trim() })
+      await topicDraft.discard()
       setTitle(''); setContent(''); await refresh(); await openTopic(result.topic)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível criar a publicação.') }
     finally { setBusy(false) }
@@ -64,7 +87,7 @@ const CommunityForumChannel: React.FC<Props> = ({ forumId, canCreateTopics, curr
     setBusy(true); setError(null)
     try {
       await forumApi.createReply(forumId, activeTopic.id, reply.trim())
-      setReply('')
+      await replyDraft.discard()
       const [detail, result] = await Promise.all([forumApi.getTopic(forumId, activeTopic.id), forumApi.listReplies(forumId, activeTopic.id)])
       setActiveTopic(detail.topic); setReplies(result.replies); await refresh()
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível responder ao tópico.') }
@@ -103,14 +126,14 @@ const CommunityForumChannel: React.FC<Props> = ({ forumId, canCreateTopics, curr
     <div className="mt-4 space-y-2"><h3 className="flex items-center gap-2 text-sm font-semibold text-text-primary"><MessageSquare size={15} />Respostas ({replies.length})</h3>
       {replies.map((item) => <article key={item.id} className="rounded-lg border border-border bg-background-primary p-3"><p className="text-xs font-medium text-text-primary">{item.author.displayName} · {formatDateTime(new Date(item.createdAt))}</p><p className="mt-2 whitespace-pre-wrap break-words text-sm text-text-secondary">{item.content}</p></article>)}
       {replies.length === 0 && <p className="py-3 text-sm text-text-secondary">Esta publicação ainda não tem respostas.</p>}
-      {!activeTopic.isLocked && <form className="flex gap-2" onSubmit={(event) => void createReply(event)}><Input value={reply} onChange={(event) => setReply(event.target.value)} maxLength={4000} placeholder="Escreva uma resposta" aria-label="Escreva uma resposta" /><Button type="submit" disabled={busy || !reply.trim()} aria-label="Enviar resposta"><Send size={15} /></Button></form>}
+      {!activeTopic.isLocked && <form className="flex gap-2" onSubmit={(event) => void createReply(event)}><Input value={reply} onChange={(event) => setReply(event.target.value)} maxLength={4000} placeholder="Escreva uma resposta" aria-label="Escreva uma resposta" /><Button type="button" variant="ghost" disabled={!reply} onClick={() => void replyDraft.discard()} aria-label="Descartar rascunho de resposta">Limpar</Button><Button type="submit" disabled={busy || !reply.trim()} aria-label="Enviar resposta"><Send size={15} /></Button></form>}
       {activeTopic.isLocked && <p className="text-xs text-text-secondary">Este tópico está fechado para novas respostas.</p>}
     </div>
   </section>
 
   return <section className="min-h-0 flex-1 overflow-y-auto p-4" aria-label="Publicações da comunidade">
     <header className="mb-4"><h2 className="flex items-center gap-2 text-lg font-semibold text-text-primary"><FileText size={18} />Publicações</h2><p className="mt-1 text-xs text-text-secondary">Tópicos duráveis para organizar ideias e respostas; use os canais de texto para conversas contínuas.</p></header>
-    {canCreateTopics && <form onSubmit={(event) => void createTopic(event)} className="mb-4 space-y-2 rounded-xl border border-border bg-background-primary p-3" aria-label="Criar publicação"><Input value={title} onChange={(event) => setTitle(event.target.value)} minLength={3} maxLength={160} placeholder="Título da publicação" aria-label="Título da publicação" required /><textarea value={content} onChange={(event) => setContent(event.target.value)} maxLength={20000} required rows={3} placeholder="Conteúdo" aria-label="Conteúdo da publicação" className="w-full resize-y rounded-lg border border-border bg-background-secondary p-3 text-sm text-text-primary" /><Button type="submit" disabled={busy || !title.trim() || !content.trim()} loading={busy}>Criar publicação</Button></form>}
+    {canCreateTopics && <form onSubmit={(event) => void createTopic(event)} className="mb-4 space-y-2 rounded-xl border border-border bg-background-primary p-3" aria-label="Criar publicação"><Input value={title} onChange={(event) => setTitle(event.target.value)} minLength={3} maxLength={160} placeholder="Título da publicação" aria-label="Título da publicação" required /><textarea value={content} onChange={(event) => setContent(event.target.value)} maxLength={20000} required rows={3} placeholder="Conteúdo" aria-label="Conteúdo" className="w-full resize-y rounded-lg border border-border bg-background-secondary p-3 text-sm text-text-primary" /><div className="flex gap-2"><Button type="submit" disabled={busy || !title.trim() || !content.trim()} loading={busy}>Criar publicação</Button><Button type="button" variant="ghost" disabled={!title && !content} onClick={() => { setTitle(''); setContent(''); void topicDraft.discard() }}>Descartar rascunho</Button></div></form>}
     {error && <p role="alert" className="mb-3 rounded-lg border border-red-500/30 p-3 text-sm text-red-200">{error}</p>}
     {loading ? <p className="py-8 text-center text-sm text-text-secondary">Carregando publicações…</p> : topics.length === 0 ? <div className="rounded-xl border border-dashed border-border p-8 text-center"><FileText size={24} className="mx-auto mb-2 text-text-secondary" /><p className="text-sm font-medium text-text-primary">Ainda não há publicações</p><p className="mt-1 text-xs text-text-secondary">As publicações da comunidade aparecerão aqui.</p></div> : <div className="space-y-2">{topics.map((topic) => <button key={topic.id} type="button" disabled={busy} onClick={() => void openTopic(topic)} className="w-full rounded-xl border border-border bg-background-primary p-3 text-left transition hover:border-accent/50"><span className="block font-semibold text-text-primary">{topic.title}</span><span className="mt-1 line-clamp-2 block whitespace-pre-wrap text-sm text-text-secondary">{topic.content}</span><span className="mt-2 flex items-center gap-1 text-[11px] text-text-secondary"><MessageSquare size={12} />{topic.replyCount ?? 0} respostas · {topic.author?.displayName ?? 'Membro'} · {formatDate(new Date(topic.createdAt))}</span></button>)}</div>}
   </section>

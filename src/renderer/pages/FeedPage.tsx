@@ -3,6 +3,7 @@ import { AlertCircle, Hash, ImagePlus, Search, X } from 'lucide-react'
 import { Avatar, Button, EmojiPicker } from '@/components/ui/index'
 import { PostCard, PostDetailModal } from '@/components/social/index'
 import { useAuthStore } from '@/store/authStore'
+import { usePersistentDraft } from '@/hooks/usePersistentDraft'
 import { realtimePostToLocal, useSocialStore } from '@/store/socialStore'
 import { useUIStore } from '@/store/uiStore'
 import { FREE_TEXT_LIMIT, PREMIUM_TEXT_LIMIT, hasAnceryxPlus } from '@/lib/premium'
@@ -46,7 +47,9 @@ const FeedPage: React.FC = () => {
 
   const MAX_CHARS = hasAnceryxPlus(user?.subscription) ? PREMIUM_TEXT_LIMIT : FREE_TEXT_LIMIT
   const [expanded, setExpanded] = useState(false)
-  const [content, setContent] = useState('')
+  const postDraft = usePersistentDraft(user?.id ?? '', 'post', '00000000-0000-4000-8000-000000000001')
+  const content = postDraft.value
+  const setContent = postDraft.setValue
   const [media, setMedia] = useState<MediaState | null>(null)
   const [mediaLoading, setMediaLoading] = useState(false)
   const [mediaError, setMediaError] = useState<string | null>(null)
@@ -67,6 +70,8 @@ const FeedPage: React.FC = () => {
   const [officialBanners, setOfficialBanners] = useState<Awaited<ReturnType<typeof postsApi.announcements>>['campaigns']>([])
   const pendingPostId = useUIStore((state) => state.pendingPostId)
   const consumePendingPost = useUIStore((state) => state.consumePendingPost)
+
+  useEffect(() => { if (postDraft.value.trim()) setExpanded(true) }, [postDraft.persistence, postDraft.value])
 
   const mediaInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -186,7 +191,8 @@ const FeedPage: React.FC = () => {
       }
       await createPost(trimmed || ' ', mediaAssetId)
       if (media?.preview.startsWith('blob:')) URL.revokeObjectURL(media.preview)
-      setContent(''); setMedia(null); setMediaError(null); setExpanded(false)
+      await postDraft.discard()
+      setMedia(null); setMediaError(null); setExpanded(false)
     } catch (error) {
       if (mediaAssetId && error instanceof ApiError && error.status >= 400 && error.status < 500) void mediaApi.deleteUpload(mediaAssetId).catch(() => undefined)
       setMediaError(error instanceof Error ? error.message : 'Não foi possível publicar. Seu rascunho foi preservado.')
@@ -197,7 +203,7 @@ const FeedPage: React.FC = () => {
   const handleCancel = () => {
     uploadControllerRef.current?.abort()
     uploadControllerRef.current = null
-    setContent('')
+    void postDraft.discard()
     if (media?.preview.startsWith('blob:')) URL.revokeObjectURL(media.preview)
     setMedia(null)
     setMediaError(null)

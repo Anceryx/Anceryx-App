@@ -26,6 +26,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setRefreshToken: (token: string): Promise<boolean> => ipcRenderer.invoke('auth:refresh-token:set', token) as Promise<boolean>,
     clearRefreshToken: (): Promise<boolean> => ipcRenderer.invoke('auth:refresh-token:clear') as Promise<boolean>,
   },
+  drafts: {
+    get: (key: { userId: string; scope: 'dm' | 'forum-channel' | 'forum-topic' | 'forum-reply' | 'post'; resourceId: string }): Promise<{ ok: boolean; content: string | null }> => ipcRenderer.invoke('drafts:get', key) as Promise<{ ok: boolean; content: string | null }>,
+    save: (key: { userId: string; scope: 'dm' | 'forum-channel' | 'forum-topic' | 'forum-reply' | 'post'; resourceId: string }, content: string): Promise<boolean> => ipcRenderer.invoke('drafts:save', key, content) as Promise<boolean>,
+    delete: (key: { userId: string; scope: 'dm' | 'forum-channel' | 'forum-topic' | 'forum-reply' | 'post'; resourceId: string }): Promise<boolean> => ipcRenderer.invoke('drafts:delete', key) as Promise<boolean>,
+  },
   auth: {
     onGoogleHandoff: (callback: (payload: { code?: string; error?: string }) => void): (() => void) => {
       googleHandoffListeners.add(callback)

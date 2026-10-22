@@ -8,6 +8,11 @@ export interface ElectronAPI {
     setRefreshToken(token: string): Promise<boolean>
     clearRefreshToken(): Promise<boolean>
   }
+  drafts: {
+    get(key: { userId: string; scope: 'dm' | 'forum-channel' | 'forum-topic' | 'forum-reply' | 'post'; resourceId: string }): Promise<{ ok: boolean; content: string | null }>
+    save(key: { userId: string; scope: 'dm' | 'forum-channel' | 'forum-topic' | 'forum-reply' | 'post'; resourceId: string }, content: string): Promise<boolean>
+    delete(key: { userId: string; scope: 'dm' | 'forum-channel' | 'forum-topic' | 'forum-reply' | 'post'; resourceId: string }): Promise<boolean>
+  }
   auth: {
     onGoogleHandoff(callback: (payload: { code?: string; error?: string }) => void): () => void
   }

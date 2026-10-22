@@ -22,6 +22,8 @@ Este repositório contém o aplicativo cliente da Anceryx, desenvolvido com Elec
 
 Essas áreas fazem parte do produto em desenvolvimento. A lista não significa que todos os recursos estejam disponíveis em todos os ambientes.
 
+No aplicativo Electron, textos não enviados de DMs, canais, tópicos e publicações podem ser recuperados após reabrir o cliente. Eles são armazenados localmente em arquivo cifrado pelo `safeStorage`, separados por conta e contexto, com limite de 500 rascunhos e retenção de 30 dias. Anexos, previews temporários e sincronização entre dispositivos não fazem parte desse armazenamento.
+
 ## Tecnologias
 
 - Electron
