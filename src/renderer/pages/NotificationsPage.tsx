@@ -7,7 +7,7 @@ import { useSocialStore } from '@/store/socialStore'
 import { useUIStore } from '@/store/uiStore'
 import { realtimeClient } from '@/services/realtimeClient'
 import { UserProfileModal } from '@/components/social/index'
-import { formatDateTime } from '@/utils/formatters'
+import { formatDateSeparator, formatDateTime } from '@/utils/formatters'
 import { translate } from '@/i18n'
 
 const PAGE_SIZE = 30
@@ -112,6 +112,23 @@ const NotificationsPage: React.FC = () => {
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível responder à solicitação.') }
   }
 
+  const unreadItems = items.filter((item) => !item.readAt)
+  const readItems = items.filter((item) => Boolean(item.readAt))
+  const renderNotificationList = (list: NotificationDto[]) => list.map((item, index) => {
+    const previous = list[index - 1]
+    const showDate = !previous || new Date(previous.createdAt).toDateString() !== new Date(item.createdAt).toDateString()
+    return <React.Fragment key={item.id}>
+      {showDate && <div className="sticky top-0 z-10 border-b border-border/70 bg-background-secondary/95 px-4 py-2 text-[11px] font-medium text-text-secondary backdrop-blur">{formatDateSeparator(new Date(item.createdAt))}</div>}
+      <article className={`flex items-start gap-3 border-b border-border p-4 last:border-0 ${item.readAt ? '' : 'bg-accent/5'}`}>
+        <button type="button" onClick={() => void openNotification(item)} className="flex min-w-0 flex-1 items-start gap-3 rounded-lg text-left transition-colors hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-background-tertiary">{item.actor.avatarUrl ? <img src={mediaApi.resolvePublicUrl(item.actor.avatarUrl) || undefined} alt="" className="h-full w-full object-cover" /> : <span className="font-semibold text-text-secondary">{item.actor.displayName.slice(0, 1).toUpperCase()}</span>}</span>
+          <span className="min-w-0 flex-1"><span className="block text-sm text-text-primary"><b>{item.actor.displayName}</b> {description(item, locale)}</span><time className="mt-1 block text-xs text-text-secondary" dateTime={item.createdAt}>{formatDateTime(new Date(item.createdAt))}</time></span>
+        </button>
+        {item.type === 'follow.request' ? <div className="flex shrink-0 flex-col gap-1"><button type="button" onClick={() => void respond(item, true)} className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white">Aceitar</button><button type="button" onClick={() => void respond(item, false)} className="rounded-md px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary">Recusar</button></div> : item.readAt ? <Check size={15} aria-label="Lida" className="mt-2 shrink-0 text-text-secondary" /> : <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Não lida" />}
+      </article>
+    </React.Fragment>
+  })
+
   return <div className="h-full overflow-y-auto anceryx-scroll">
     <div className="mx-auto max-w-3xl p-4 sm:p-6">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -120,13 +137,10 @@ const NotificationsPage: React.FC = () => {
       </header>
       {error && <p role="alert" className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
       <section className="overflow-hidden rounded-2xl border border-border bg-background-secondary" aria-label="Histórico de notificações">
-        {loading && items.length === 0 ? <p className="p-6 text-sm text-text-secondary">Carregando notificações…</p> : items.length === 0 ? <div className="p-10 text-center"><Bell size={28} className="mx-auto mb-3 text-text-secondary"/><p className="font-medium text-text-primary">Você ainda não tem notificações</p><p className="mt-1 text-sm text-text-secondary">Novas atividades aparecerão aqui.</p></div> : items.map((item) => <article key={item.id} className={`flex items-start gap-3 border-b border-border p-4 last:border-0 ${item.readAt ? '' : 'bg-accent/5'}`}>
-          <button type="button" onClick={() => void openNotification(item)} className="flex min-w-0 flex-1 items-start gap-3 text-left hover:opacity-80">
-            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-background-tertiary">{item.actor.avatarUrl ? <img src={mediaApi.resolvePublicUrl(item.actor.avatarUrl) || undefined} alt="" className="h-full w-full object-cover"/> : <span className="font-semibold text-text-secondary">{item.actor.displayName.slice(0, 1).toUpperCase()}</span>}</span>
-            <span className="min-w-0 flex-1"><span className="block text-sm text-text-primary"><b>{item.actor.displayName}</b> {description(item, locale)}</span><time className="mt-1 block text-xs text-text-secondary" dateTime={item.createdAt}>{formatDateTime(new Date(item.createdAt))}</time></span>
-          </button>
-          {item.type === 'follow.request' ? <div className="flex shrink-0 flex-col gap-1"><button type="button" onClick={() => void respond(item, true)} className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white">Aceitar</button><button type="button" onClick={() => void respond(item, false)} className="rounded-md px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary">Recusar</button></div> : item.readAt ? <Check size={15} aria-label="Lida" className="mt-2 shrink-0 text-text-secondary"/> : <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Não lida"/>}
-        </article>)}
+        {loading && items.length === 0 ? <div className="space-y-3 p-6" role="status" aria-label="Carregando notificações"><div className="h-4 w-40 animate-pulse rounded bg-background-tertiary"/><div className="h-14 animate-pulse rounded-lg bg-background-tertiary"/><div className="h-14 animate-pulse rounded-lg bg-background-tertiary"/></div> : items.length === 0 ? <div className="p-10 text-center"><Bell size={28} className="mx-auto mb-3 text-text-secondary"/><p className="font-medium text-text-primary">Você ainda não tem notificações</p><p className="mt-1 text-sm text-text-secondary">Novas atividades aparecerão aqui.</p></div> : <>
+          {unreadItems.length > 0 && <section aria-labelledby="notifications-unread" className="border-b border-border"><h2 id="notifications-unread" className="sticky top-0 z-20 flex items-center gap-2 bg-background-secondary/95 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-accent backdrop-blur">Não lidas<span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px]">{unreadItems.length}</span></h2>{renderNotificationList(unreadItems)}</section>}
+          {readItems.length > 0 && <section aria-labelledby="notifications-read"><h2 id="notifications-read" className="sticky top-0 z-20 bg-background-secondary/95 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary backdrop-blur">Lidas</h2>{renderNotificationList(readItems)}</section>}
+        </>}
       </section>
       {hasMore && <button type="button" disabled={loading} onClick={() => void loadMore()} className="mx-auto mt-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-accent hover:bg-white/5 disabled:opacity-50">{loading ? 'Carregando…' : 'Carregar mais'}<ChevronDown size={16}/></button>}
     </div>
