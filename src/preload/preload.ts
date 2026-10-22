@@ -1,11 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { UpdateSnapshot } from '../shared/updateTypes'
 import type { LicenseManifest } from '../shared/licenseTypes'
+import { isAppDeepLink, type AppDeepLink } from '../shared/appDeepLink'
 
 const googleHandoffListeners = new Set<(payload: { code?: string; error?: string }) => void>()
 const pendingGoogleHandoffs: Array<{ code?: string; error?: string }> = []
 const communityInviteListeners = new Set<(token: string) => void>()
 const pendingCommunityInvites: string[] = []
+const appDeepLinkListeners = new Set<(payload: AppDeepLink) => void>()
+const pendingAppDeepLinks: AppDeepLink[] = []
 ipcRenderer.on('auth:google-handoff', (_event, payload: { code?: string; error?: string }) => {
   if (googleHandoffListeners.size === 0) pendingGoogleHandoffs.push(payload)
   else googleHandoffListeners.forEach((callback) => callback(payload))
@@ -16,6 +19,13 @@ ipcRenderer.on('community:invite', (_event, token: string) => {
     if (pendingCommunityInvites.length >= 20) pendingCommunityInvites.shift()
     pendingCommunityInvites.push(token)
   } else communityInviteListeners.forEach((callback) => callback(token))
+})
+ipcRenderer.on('app:deep-link', (_event, payload: unknown) => {
+  if (!isAppDeepLink(payload)) return
+  if (appDeepLinkListeners.size === 0) {
+    if (pendingAppDeepLinks.length >= 10) pendingAppDeepLinks.shift()
+    pendingAppDeepLinks.push(payload)
+  } else appDeepLinkListeners.forEach((callback) => callback(payload))
 })
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -43,6 +53,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       communityInviteListeners.add(callback)
       while (pendingCommunityInvites.length > 0) callback(pendingCommunityInvites.shift()!)
       return () => { communityInviteListeners.delete(callback) }
+    },
+  },
+  appLinks: {
+    onDeepLink: (callback: (payload: AppDeepLink) => void): (() => void) => {
+      appDeepLinkListeners.add(callback)
+      while (pendingAppDeepLinks.length > 0) callback(pendingAppDeepLinks.shift()!)
+      return () => { appDeepLinkListeners.delete(callback) }
     },
   },
   windowControls: {

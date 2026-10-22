@@ -60,6 +60,19 @@ const DashboardPage: React.FC = () => {
     setActiveSection: s.setActiveSection,
     userProfile: s.userProfile,
   }))
+  useEffect(() => window.electronAPI?.appLinks.onDeepLink((destination) => {
+    const ui = useUIStore.getState()
+    if (destination.type === 'post') {
+      setActiveSection('feed')
+      ui.openPost(destination.id)
+    } else if (destination.type === 'forum') {
+      setActiveSection('foruns')
+      ui.openForumById(destination.id)
+    } else {
+      setActiveSection('feed')
+      ui.openProfileByUsername(destination.username)
+    }
+  }), [setActiveSection])
   const user = useAuthStore((s) => s.user)
   const displayName = resolveAvatarName(userProfile.displayName, user?.name, user?.username)
   const callStatus = useCallStore((s) => s.callStatus)

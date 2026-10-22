@@ -1,5 +1,6 @@
 import type { UpdateSnapshot } from '../../shared/updateTypes'
 import type { LicenseManifest } from '../../shared/licenseTypes'
+import type { AppDeepLink } from '../../shared/appDeepLink'
 export interface ElectronAPI {
   platform: string
   getVersion(): Promise<string>
@@ -18,6 +19,9 @@ export interface ElectronAPI {
   }
   community: {
     onInvite(callback: (token: string) => void): () => void
+  }
+  appLinks: {
+    onDeepLink(callback: (payload: AppDeepLink) => void): () => void
   }
   windowControls: {
     minimize(): void

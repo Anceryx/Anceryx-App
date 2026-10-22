@@ -4,6 +4,7 @@ import { isAbsolute, join, relative, resolve } from 'path'
 import { pathToFileURL } from 'url'
 import { randomUUID } from 'crypto'
 import type { LicenseManifest } from '../shared/licenseTypes'
+import { parseAppDeepLink } from '../shared/appDeepLink'
 import { createDraftStore, type DraftKey, type DraftScope } from './draftStoreCore'
 import { UpdateManager } from './updater/updateManager'
 import { registerUpdateIpc } from './updater/updateIpc'
@@ -34,6 +35,7 @@ const OAUTH_HOST = 'oauth'
 let mainWindow: BrowserWindow | null = null
 let pendingGoogleHandoff: { code?: string; error?: string } | null = null
 let pendingCommunityInvite: string | null = null
+let pendingAppDeepLink: ReturnType<typeof parseAppDeepLink> = null
 let selectedScreenSourceId: string | null = null
 let selectedScreenSourceExpiresAt = 0
 
@@ -60,7 +62,20 @@ function handleAppProtocolUrl(rawUrl: string): void {
       }
       return
     }
-    if (parsed.hostname !== OAUTH_HOST || parsed.pathname !== '/google') return
+    if (parsed.hostname !== OAUTH_HOST || parsed.pathname !== '/google') {
+      pendingAppDeepLink = parseAppDeepLink(rawUrl)
+      if (pendingAppDeepLink && mainWindow && !mainWindow.isDestroyed()) {
+        const target = mainWindow
+        const deliver = () => {
+          if (!pendingAppDeepLink || target.isDestroyed()) return
+          target.webContents.send('app:deep-link', pendingAppDeepLink)
+          pendingAppDeepLink = null
+        }
+        if (target.webContents.isLoading()) target.webContents.once('did-finish-load', deliver)
+        else deliver()
+      }
+      return
+    }
     const code = parsed.searchParams.get('code')
     const error = parsed.searchParams.get('error')
     if ((code && !/^[A-Za-z0-9_-]{32,512}$/.test(code)) || (error && !/^[A-Za-z0-9_-]{3,64}$/.test(error))) return
@@ -389,6 +404,7 @@ function createWindow(): void {
   win.webContents.once('did-finish-load', () => {
     if (pendingGoogleHandoff) win.webContents.send('auth:google-handoff', pendingGoogleHandoff)
     if (pendingCommunityInvite) { win.webContents.send('community:invite', pendingCommunityInvite); pendingCommunityInvite = null }
+    if (pendingAppDeepLink) { win.webContents.send('app:deep-link', pendingAppDeepLink); pendingAppDeepLink = null }
     pendingGoogleHandoff = null
   })
 

@@ -172,7 +172,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
   }
 
   const handleShare = async () => {
-    try { await navigator.clipboard.writeText(`https://www.anceryx.site/posts/${postId}`); addNotification('Link do post copiado!', 'success') }
+    try { await navigator.clipboard.writeText(`anceryx://post/${postId}`); addNotification('Link do aplicativo copiado!', 'success') }
     catch { addNotification('Não foi possível copiar o link.', 'error') }
   }
 

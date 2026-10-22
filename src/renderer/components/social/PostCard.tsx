@@ -89,7 +89,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onOpen, onSave
 
   const handleShare = async (event: React.MouseEvent) => {
     event.stopPropagation()
-    try { await navigator.clipboard.writeText(`https://www.anceryx.site/posts/${post.id}`); addNotification('Link do post copiado!', 'success') }
+    try { await navigator.clipboard.writeText(`anceryx://post/${post.id}`); addNotification('Link do aplicativo copiado!', 'success') }
     catch { addNotification('Não foi possível copiar o link.', 'error') }
   }
 
