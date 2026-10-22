@@ -354,7 +354,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
   const viewerVoiceState = state?.voiceStates.find((participant) => participant.userId === currentUserId) ?? null
   const viewerVoiceChannel = viewerVoiceState ? state?.channels.find((channel) => channel.id === viewerVoiceState.channelId) ?? null : null
   const viewingConnectedVoice = Boolean(viewerInSelectedVoice && selectedChannel?.type === 'voice')
-  const voiceCallLayout = viewingConnectedVoice && voiceChatOpen
+  const voiceCallLayout = viewingConnectedVoice && !membersOpen
   const membersPanelClassName = voiceCallLayout
     ? 'hidden'
     : mobileView === 'members'
@@ -1559,8 +1559,8 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {selectedChannel?.type === 'voice' && canViewSelectedChannel && <Button variant={voiceChatOpen ? 'secondary' : 'ghost'} size="sm" onClick={() => setVoiceChatOpen((open) => !open)} leftIcon={<MessageCircle size={14} />} aria-pressed={voiceChatOpen}>Chat</Button>}
-              <button type="button" onClick={() => { setMembersOpen(true); setMobileView('members') }} className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-white/10 xl:hidden" aria-label="Mostrar membros" title="Mostrar membros"><Users size={16} /></button>
+              {selectedChannel?.type === 'voice' && canViewSelectedChannel && <Button variant={voiceChatOpen ? 'secondary' : 'ghost'} size="sm" onClick={() => { setVoiceChatOpen((open) => !open); if (!voiceChatOpen) setMembersOpen(false) }} leftIcon={<MessageCircle size={14} />} aria-pressed={voiceChatOpen}>Chat</Button>}
+              <button type="button" onClick={() => { setVoiceChatOpen(false); setMembersOpen(true); setMobileView('members') }} className={`grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-white/10 ${viewingConnectedVoice ? '' : 'xl:hidden'}`} aria-label="Mostrar membros" title="Mostrar membros"><Users size={16} /></button>
               <Button variant="ghost" size="sm" onClick={() => void refresh()} leftIcon={<RefreshCw size={14} />}>Atualizar</Button>
               <Button variant={showEvents ? 'secondary' : 'ghost'} size="sm" onClick={() => { setShowEvents((value) => !value); if (!showEvents) void refreshEvents() }} leftIcon={<CalendarDays size={14} />}>Eventos</Button>
             </div>
@@ -1691,7 +1691,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
               ))}</div>}
           </div>
         </aside>
-        {!membersOpen && <button type="button" onClick={() => setMembersOpen(true)} className="hidden place-items-center border-l border-border text-text-secondary hover:text-text-primary xl:grid" aria-label="Mostrar membros" title="Mostrar membros"><Users size={17} /></button>}
+        {!membersOpen && !viewingConnectedVoice && <button type="button" onClick={() => setMembersOpen(true)} className="hidden place-items-center border-l border-border text-text-secondary hover:text-text-primary xl:grid" aria-label="Mostrar membros" title="Mostrar membros"><Users size={17} /></button>}
       </div>
       {screenPickerOpen && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Escolher o que compartilhar"><section className="w-full max-w-2xl rounded-2xl border border-border bg-background-secondary p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-text-primary">Compartilhar tela</h2><p className="mt-1 text-sm text-text-secondary">Escolha uma tela ou janela. O compartilhamento transmite vídeo; o áudio do sistema não está habilitado.</p></div><button type="button" onClick={() => setScreenPickerOpen(false)} aria-label="Fechar seletor" className="rounded-md p-2 text-text-secondary hover:bg-background-tertiary"><X size={16} /></button></div><div className="mt-4 grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">{screenSources.map((source) => <button key={source.id} type="button" disabled={screenPickerLoading} onClick={() => void startScreenShareFromSource(source.id)} className="overflow-hidden rounded-xl border border-border bg-background-primary text-left transition hover:border-accent/60 disabled:opacity-60">{source.thumbnail ? <img src={source.thumbnail} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="grid aspect-video place-items-center bg-background-tertiary"><MonitorUp size={26} className="text-text-secondary" /></div>}<span className="block truncate px-3 py-2 text-sm font-medium text-text-primary">{source.name}</span></button>)}</div><div className="mt-4 flex justify-end"><Button variant="ghost" onClick={() => setScreenPickerOpen(false)}>Cancelar</Button></div></section></div>}
       {managementOpen && <CommunityManagementModal communityName={state?.community.name ?? forum?.name ?? 'Comunidade'} sections={managementSections} activeSection={managementSection} onSelectSection={setManagementSection} onClose={() => setManagementOpen(false)}>

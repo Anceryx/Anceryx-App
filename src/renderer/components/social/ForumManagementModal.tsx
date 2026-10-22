@@ -301,7 +301,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const deleteForum = () => {
     if (!isOwner || deleteConfirmation !== forum.name) return
-    void runBackendAction('forum:delete', 'Fórum excluído. O acesso foi encerrado.', async () => {
+    void runBackendAction('forum:delete', 'Fórum excluído permanentemente.', async () => {
       await communityApi.deleteCommunity(forum.id, forum.name)
       removeForum(forum.id)
       setDeleteDialogOpen(false)
@@ -310,7 +310,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     })
   }
 
-  const deleteConfirmationDialog = deleteDialogOpen && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/75 p-4" role="alertdialog" aria-modal="true" aria-labelledby="forum-delete-title" aria-describedby="forum-delete-description"><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5 shadow-2xl" onSubmit={(event) => { event.preventDefault(); deleteForum() }}><div><h2 id="forum-delete-title" className="text-lg font-semibold text-text-primary">Excluir fórum</h2><p id="forum-delete-description" className="mt-2 text-sm text-text-secondary">O acesso será encerrado para todos. O histórico será preservado para auditoria e não será possível reverter esta ação.</p><p className="mt-3 rounded-md bg-background-tertiary p-2 text-sm font-semibold text-text-primary">{forum.name}</p></div><label className="block text-sm text-text-secondary">Digite o nome do fórum para confirmar<Input autoFocus value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} className="mt-1" /></label>{apiError && <p role="alert" className="text-sm text-red-300">{apiError}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={pendingAction === 'forum:delete'} onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmation('') }}>Cancelar</Button><Button type="submit" variant="danger" loading={pendingAction === 'forum:delete'} disabled={deleteConfirmation !== forum.name}>Excluir fórum</Button></div></form></div>
+  const deleteConfirmationDialog = deleteDialogOpen && <div className="fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/75 p-4" role="alertdialog" aria-modal="true" aria-labelledby="forum-delete-title" aria-describedby="forum-delete-description"><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5 shadow-2xl" onSubmit={(event) => { event.preventDefault(); deleteForum() }}><div><h2 id="forum-delete-title" className="text-lg font-semibold text-text-primary">Excluir fórum</h2><p id="forum-delete-description" className="mt-2 text-sm text-text-secondary">O fórum e seus dados exclusivos serão removidos definitivamente para todos. Esta ação não pode ser desfeita.</p><p className="mt-3 rounded-md bg-background-tertiary p-2 text-sm font-semibold text-text-primary">{forum.name}</p></div><label className="block text-sm text-text-secondary">Digite o nome do fórum para confirmar<Input autoFocus value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} className="mt-1" /></label>{apiError && <p role="alert" className="text-sm text-red-300">{apiError}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={pendingAction === 'forum:delete'} onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmation('') }}>Cancelar</Button><Button type="submit" variant="danger" loading={pendingAction === 'forum:delete'} disabled={deleteConfirmation !== forum.name}>Excluir fórum</Button></div></form></div>
 
   const uploadIdentityImage = async (target: 'icon' | 'banner', file?: File) => {
     if (!file || !isOwner) return
@@ -544,7 +544,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
       {activeTab === 'critical' && <>
       <ContentSectionCard className="border-red-500/30">
-        <SectionHeader title="Ações da comunidade" description="A exclusão é restrita ao proprietário e encerra o acesso preservando o histórico para auditoria." />
+        <SectionHeader title="Ações da comunidade" description="A exclusão permanente é restrita ao proprietário e exige a confirmação do nome do fórum." />
         <div className="mt-4 grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
           <Button variant="secondary" disabled={!forum.isJoined || currentRole === 'owner'} loading={pendingAction === 'forum:leave'} onClick={leaveForum}>Sair do fórum</Button>
           <Button variant="danger" disabled={!isOwner || Boolean(pendingAction)} onClick={() => { setDeleteConfirmation(''); setApiError(null); setDeleteDialogOpen(true) }} leftIcon={<Trash2 size={14} />}>Excluir fórum</Button>
