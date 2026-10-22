@@ -10,6 +10,15 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
 
 ## [0.15.1] — preparação local (não publicada)
+- O chat lateral de voz agora reserva largura previsível, mantém a área de mensagens rolável e usa controles compactos acessíveis; cartões de participantes e prévias de compartilhamento se ajustam à janela.
+- A navegação do workspace destaca o canal selecionado, expõe a relação entre categorias expansíveis e seus canais e apresenta a quantidade de participantes conectados em canais de voz.
+- Mensagens agrupam mensagens consecutivas, mostram separadores de data, avatares e horários com adaptação para janelas estreitas; a tela ganhou estados de carregamento e erro mais claros.
+- Explore apresenta publicações em grade responsiva com miniaturas de imagens, cartões específicos para vídeo e conteúdo sem mídia. Notificações separam itens lidos e não lidos e agrupam visualmente por data.
+- A conexão em tempo real agora ignora eventos de sockets substituídos, usa reconexão com backoff e jitter e detecta heartbeat sem resposta; a interface informa conexão, reconexão e indisponibilidade.
+- Mensagens carregam o histórico apenas ao abrir uma conversa, deduplicam eventos fora de ordem e limitam o cache local. A paginação antiga só é oferecida quando a API responde com `nextCursor`; servidores anteriores continuam usando o histórico legado.
+- A matriz de QA Windows registra cenários pendentes de execução no aplicativo instalado; testes automatizados não contam como aprovação manual.
+- O Explore ganhou uma interface responsiva para publicações carregadas, pesquisa de pessoas e descoberta de Fóruns usando rotas já existentes; a busca de publicações permanece limitada ao feed carregado.
+- Rascunhos de DMs, mensagens de canais, tópicos/respostas de Fóruns e publicações usam armazenamento local cifrado pelo `safeStorage` do Electron, separados por conta e contexto; há retenção e limites, limpeza após envio ou descarte e aviso quando o armazenamento falha. O smoke real entre dois processos Electron 44.7.0 passou; a restauração visual no aplicativo instalado segue na matriz de QA.
 - O recorte de banners usa as dimensões do elemento carregado, mantém o quadro visível em telas menores e impede aplicar antes de validar a imagem e a exportação.
 - A política de mídia do Electron permite somente a API e os CDNs autorizados, e o diagnóstico registra eventos do player, status, MIME, tamanho, disposição, Range e falhas de rede sem guardar URLs ou tickets. Reprodução MP4 real no Windows continua pendente de QA.
 - A criação de Fórum aguarda 1,1 s entre uploads simples consecutivos e mantém uploads já concluídos para evitar reenvio; respostas 429 do Blob não são repetidas automaticamente.
