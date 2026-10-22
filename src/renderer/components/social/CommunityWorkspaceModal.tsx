@@ -35,6 +35,7 @@ import {
   LogOut,
   CalendarPlus,
   Copy as CopyIcon,
+  Share2,
 } from 'lucide-react'
 import { Button, Input } from '@/components/ui/index'
 import { Avatar } from '@/components/ui/index'
@@ -893,8 +894,28 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
       setError(null)
       return
     }
-    communityApi.listMessages(communityId, selectedChannel.id)
-      .then((response) => setMessages(response.messages.map(withResolvedMessageMedia)))
+    let targetMessageId: string | null = null
+    try {
+      const rawTarget = localStorage.getItem(`anceryx:forum-message:${communityId}`)
+      if (rawTarget) {
+        const target = JSON.parse(rawTarget) as { channelId?: unknown; messageId?: unknown }
+        if (target.channelId === selectedChannel.id && typeof target.messageId === 'string') targetMessageId = target.messageId
+      }
+    } catch { /* Ignore malformed navigation state and load the latest messages. */ }
+    communityApi.listMessages(communityId, selectedChannel.id, targetMessageId ? { around: targetMessageId } : {})
+      .then((response) => {
+        if (targetMessageId && !response.messages.some((message) => message.id === targetMessageId)) {
+          setMessages([])
+          setError('A navegação até mensagens antigas depende da versão atualizada da API.')
+          try { localStorage.removeItem(`anceryx:forum-message:${communityId}`) } catch { /* Ignore unavailable storage. */ }
+          return
+        }
+        setMessages(response.messages.map(withResolvedMessageMedia))
+        if (targetMessageId) window.setTimeout(() => {
+          document.getElementById(`community-message-${targetMessageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          try { localStorage.removeItem(`anceryx:forum-message:${communityId}`) } catch { /* Navigation remains usable without storage. */ }
+        }, 0)
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Não foi possível carregar as mensagens.'))
   }, [communityId, selectedChannel, canViewSelectedChannel])
 
@@ -1502,6 +1523,7 @@ const CommunityWorkspaceModal: React.FC<CommunityWorkspaceModalProps> = ({ commu
                 {hasCommunityPermission('createTopics') && <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); setSelectedChannelId(null); setShowCommunityPosts(true); setShowEvents(false); setMobileView('content') }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><MessageSquare size={15} />Criar publicação</button>}
                 {canManageEvents && <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); setShowEvents(true); setShowCommunityPosts(false); void refreshEvents() }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><CalendarPlus size={15} />Criar evento</button>}
                 <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); void navigator.clipboard.writeText(communityId).then(() => addNotification('ID do Fórum copiado.', 'success')).catch(() => addNotification('Não foi possível copiar o ID do Fórum.', 'error')) }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><CopyIcon size={15} />Copiar ID do Fórum</button>
+                <button role="menuitem" type="button" onClick={() => { setForumMenuOpen(false); void navigator.clipboard.writeText(`anceryx://forum/${communityId}`).then(() => addNotification('Link do aplicativo copiado.', 'success')).catch(() => addNotification('Não foi possível copiar o link.', 'error')) }} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-text-primary hover:bg-background-tertiary"><Share2 size={15} />Compartilhar Fórum</button>
                 {state && state.community.ownerUserId !== currentUserId && <><div className="my-1 border-t border-border" /><button role="menuitem" type="button" onClick={() => void leaveForum()} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-red-300 hover:bg-background-tertiary"><LogOut size={15} />Sair do Fórum</button></>}
               </div>}
             </div>
