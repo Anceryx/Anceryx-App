@@ -36,7 +36,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, dialogC
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="titlebar-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
@@ -50,7 +50,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, dialogC
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className={`motion-surface-in relative z-10 flex max-h-[100dvh] w-full flex-col overflow-y-auto border border-border bg-background-secondary p-4 shadow-2xl transition-[max-width] duration-200 sm:max-h-[90vh] sm:max-w-md sm:rounded-xl sm:p-6 ${dialogClassName ?? ''}`}
+        className={`motion-surface-in relative z-10 flex max-h-[calc(100dvh-var(--app-titlebar-height,0px)-1.5rem)] w-full flex-col overflow-y-auto border border-border bg-background-secondary p-4 shadow-2xl transition-[max-width] duration-200 sm:max-h-[calc(100dvh-var(--app-titlebar-height,0px)-2rem)] sm:max-w-md sm:rounded-xl sm:p-6 ${dialogClassName ?? ''}`}
       >
         {(title || true) && (
           <div className="flex items-center justify-between mb-4">

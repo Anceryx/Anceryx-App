@@ -31,7 +31,7 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      className="titlebar-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"

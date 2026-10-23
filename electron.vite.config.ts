@@ -37,12 +37,15 @@ export default defineConfig({
     plugins: [
       react(),
       {
-        name: 'anceryx-production-csp',
-        apply: 'build',
-        transformIndexHtml(html) {
+        name: 'anceryx-csp-environment',
+        transformIndexHtml(html, context) {
+          if (context.server) {
+            return html.replace("script-src 'self';", "script-src 'self' 'unsafe-inline' 'unsafe-eval';")
+          }
           return html
             .split(' http://localhost:3000').join('')
             .split(' ws://localhost:3000').join('')
+            .split(' ws://localhost:5173').join('')
         }
       }
     ],

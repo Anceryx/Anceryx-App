@@ -354,7 +354,7 @@ const LoginPage: React.FC = () => {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-stretch bg-background-primary overflow-hidden">
+    <div className="h-full min-h-0 flex items-stretch bg-background-primary overflow-hidden">
 
       {/* ── Coluna esquerda: formulário ──────────────────────────────────── */}
       <div className="flex flex-1 flex-col justify-center px-8 py-12 md:px-16 lg:px-20 lg:max-w-[520px] xl:max-w-[560px]">

@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore'
 import { useCallStore } from '@/store/callStore'
 import { useUIStore } from '@/store/uiStore'
 import { Avatar } from '@/components/ui/index'
-import TitleBar from '@/components/layout/TitleBar'
 import NotificationToast from '@/components/layout/NotificationToast'
 import NotificationCenter from '@/components/layout/NotificationCenter'
 import AchievementToast from '@/components/layout/AchievementToast'
@@ -150,14 +149,9 @@ const DashboardPage: React.FC = () => {
     }
   }
   return (
-    <div className="relative flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background-primary">
-      <TitleBar />
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background-primary">
       <RealtimeConnectionNotice />
       <AchievementToast />
-      <div className="absolute right-24 top-10 z-40 md:right-4">
-        <NotificationCenter />
-      </div>
-
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-background-secondary/95 px-3 py-2 md:hidden safe-area-top">
         {user && (
           <button
@@ -177,6 +171,10 @@ const DashboardPage: React.FC = () => {
           <button type="button" onClick={() => setActiveSection('cobranca')} className="motion-control grid h-10 w-10 place-items-center rounded-xl text-accent-secondary hover:bg-white/5" aria-label="Abrir Anceryx+"><Sparkles size={17} /></button>
           <button type="button" onClick={() => setSettingsOpen(true)} className="motion-control grid h-10 w-10 place-items-center rounded-xl text-text-secondary hover:bg-white/5" aria-label="Abrir configurações"><Settings size={18} /></button>
         </div>
+      </div>
+
+      <div role="group" aria-label="Acesso às notificações" className="flex h-11 shrink-0 items-center justify-end border-b border-border bg-background-primary px-3 md:px-4">
+        <NotificationCenter />
       </div>
 
       <div className="flex min-h-0 flex-1 gap-3 overflow-hidden p-0 md:p-3">

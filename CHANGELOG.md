@@ -1,5 +1,11 @@
-# Registro de alterações
+﻿# Registro de alterações
 
+## Ajustes locais — 22/10/2026
+
+- A barra de título do Electron agora aparece também no login e no cadastro, sem duplicação no Dashboard; o build web mantém a barra oculta.
+- Modais, gavetas e sobreposições respeitam a altura da barra de título, e o modal de configurações se ajusta ao espaço vertical disponível.
+- Os handlers IPC da janela são registrados uma vez e resolvem a janela pelo remetente validado.
+- Todos os canais IPC do renderer verificam a origem e o frame principal antes de operar, incluindo tokens de sessão e comandos do atualizador.
 
 Este arquivo registra versões preparadas a partir do histórico disponível no repositório. O snapshot independente não importa o histórico privado anterior; por isso, esta versão registra a linha de base do código-fonte e não atribui mudanças específicas a commits antigos.
 
@@ -11,6 +17,10 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 
 ## [0.15.1] — preparação local (não publicada)
 - O `.env.example` usa a API local para desenvolvimento; builds empacotados continuam limitados à API oficial de produção.
+- O sino de notificações agora tem uma faixa reservada no layout do Dashboard, separada dos controles das telas Feed, DMs e Fóruns.
+- Separadores de data em DMs deixam de ficar sticky, evitando que se sobreponham às mensagens durante a rolagem.
+- A URL de desenvolvimento do renderer só é considerada em builds não empacotados, preservando webSecurity, CSP, navegação, carregamento local e menu de produção.
+- A CSP passa a ter uma única política no HTML, com `connect-src` limitado às APIs, aos hosts de mídia necessários e às origens Klipy usadas para baixar GIFs.
 - O chat lateral de voz agora reserva largura previsível, mantém a área de mensagens rolável e usa controles compactos acessíveis; cartões de participantes e prévias de compartilhamento se ajustam à janela.
 - A navegação do workspace destaca o canal selecionado, expõe a relação entre categorias expansíveis e seus canais e apresenta a quantidade de participantes conectados em canais de voz.
 - Mensagens agrupam mensagens consecutivas, mostram separadores de data, avatares e horários com adaptação para janelas estreitas; a tela ganhou estados de carregamento e erro mais claros.
@@ -26,6 +36,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - Fóruns participados abrem em uma área integrada ao aplicativo, restauram o último canal acessível e preservam a sessão de voz ao alternar entre módulos. O painel separa organização, cargos/permissões e convites.
 - A criação de Fórum mantém uploads bem-sucedidos para evitar reenvio e oferece continuar sem a imagem opcional cujo envio falhou. O player registra estado de rede e decodificação para distinguir melhor falhas de reprodução.
 - Correções locais de interface: mensagens da comunidade agora usam avatares, emojis e figurinhas existentes; mensagens consecutivas são agrupadas, participantes de voz mostram avatar e estado de áudio, e janelas sobrepostas respeitam a barra de título do Windows.
+- Vídeos MP4 privados em DMs tentam uma única reprodução alternativa com ticket novo e download limitado a 25 MB; erros de permissão, limite temporário, rede, formato e tamanho têm mensagens distintas. A causa da falha observada ainda depende de coleta real no Electron Windows.
 
 - Prepara o cliente e o lockfile para a versão `0.15.1`, com `electron-builder` `26.18.0` e `electron-updater` `6.8.11` estáveis.
 - Mantém o atualizador integrado desativado. Os erros de assinatura inválida/ausente e de integridade passam a ter mensagens específicas, sem expor detalhes internos.

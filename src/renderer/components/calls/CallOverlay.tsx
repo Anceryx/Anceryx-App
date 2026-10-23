@@ -126,7 +126,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col overflow-hidden"
+      className="titlebar-overlay fixed inset-0 z-[100] flex flex-col overflow-hidden"
       style={{ background: '#0a0a0c' }}
       role="dialog"
       aria-modal="true"

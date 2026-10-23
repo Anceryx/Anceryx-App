@@ -45,6 +45,14 @@ O retorno HTTP 200 de `POST /media/stream-ticket` confirma somente a emissão do
 
 Na próxima QA, compare um único arquivo conhecido em Home e DM. Para a DM, confirme a sequência: ticket 200 → `private video ticket ready` → `[media] Video playback event` `loadstart` → GET para `/media/files/dm-image/...` com ticket (não copie nem compartilhe o valor do query) → 200/206 com `video/mp4` e bytes → `loadedmetadata` → `canplay`. Se o ticket for emitido sem `loadstart`, preserve a linha de console sanitizada e o `MediaError`; se houver `loadstart` sem GET no servidor, capture o erro de rede/CSP no Electron. A causa da falha observada em Windows ainda não está comprovada pelo código ou pelos logs atuais.
 
+### Fallback de reprodução para vídeo privado em DM
+
+Quando a reprodução direta de um MP4 privado falhar com `MediaError` 2, 3 ou 4, o cliente tenta uma única alternativa: solicita um ticket novo e faz um `GET` completo sem `Range`. A resposta precisa ser `2xx`, declarar `Content-Type: video/mp4` e ter no máximo 25 MB, tanto pelo `Content-Length` antes da leitura quanto pelo tamanho real do Blob depois. O vídeo alternativo usa uma URL `blob:` temporária; ela é revogada ao repetir, desmontar o componente ou substituir a reprodução. O fallback não altera a API nem comprova qual hipótese causou a falha original.
+
+Os erros são apresentados como falta de permissão (`401/403/404`), limite temporário (`429`), rede, formato ou arquivo maior que 25 MB. Os logs do fallback incluem somente status HTTP e categoria, sem URL, query, ticket ou token. Um `429` desabilita “Tentar novamente” por aproximadamente 15 segundos. Cada clique inicia uma única nova tentativa; não há repetição automática.
+
+Para a próxima coleta, reproduza o mesmo vídeo privado na DM e copie o log sanitizado da API correspondente à janela de reprodução. No Network, registre o status do ticket e da mídia, `Content-Type`, `Content-Length`, `Content-Range` e Range enviado, sem copiar a URL assinada nem seu query. Compare se o fallback chegou a iniciar o GET e se a resposta completa tem tamanho e MIME esperados. A causa no servidor segue sem comprovação até essa coleta.
+
 ## SquareCloud Blob
 
 O SDK instalado `@squarecloud/blob` v4 documenta orçamento de 5 chamadas de API por minuto sem plano e 30 por minuto no menor plano pago; a assinatura efetiva desta conta não está disponível no checkout. Uploads simples têm limite de 1 por segundo abaixo de Pro (sem limite por operação em Pro/Enterprise), não oferecem `Retry-After` e uma resposta `RATE_LIMITED` também pode sinalizar bloqueio de conta por 30 minutos. Por isso, não há retry automático. A criação de Fórum espaça uploads simples consecutivos em 1,1 s e preserva a URL do ícone após sucesso para não enviá-lo novamente. Esse espaçamento só cobre essa sequência no mesmo cliente; não coordena usuários ou processos da API. Um 429 agora retorna `MEDIA_STORAGE_RATE_LIMITED` sem repetir o envio.
