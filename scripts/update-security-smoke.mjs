@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict'
-import { createHash, generateKeyPairSync, sign } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { createHash, createPrivateKey, createPublicKey, generateKeyPairSync, sign } from 'node:crypto'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { generateUpdateKeyPair, verifyUpdateKeyPair } from './manage-update-keypair.mjs'
 import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, UPDATE_MANUAL_INSTALL_MESSAGE, releaseNotesToLines, resolveUpdateChannel, safeUpdaterError } from '../src/main/updater/updateUtils.ts'
 import { assertInstallerIntegrity, canonicalUpdateManifestPayload, isTrustedDownloadUrl, selectLatestBetaVersion, verifySignedUpdateManifest } from '../src/main/updater/manifestVerifier.ts'
+import { isAllowedUpdateRedirect, resolveAllowedUpdateRedirect, verifyDownloadedInstallerFile } from '../src/main/updater/updateTransport.ts'
 
 assert.equal(UPDATE_GITHUB_OWNER, 'Anceryx')
 assert.equal(UPDATE_GITHUB_REPOSITORY, 'Anceryx-App')
@@ -56,12 +60,47 @@ assert.throws(() => verifySignedUpdateManifest(signed, '0.17.2', 'stable', publi
 assert.throws(() => verifySignedUpdateManifest(signed, '0.17.0-beta.2', 'beta', publicPem), /UPDATE_CHANNEL_MISMATCH/)
 assert.throws(() => verifySignedUpdateManifest({ ...signed, channel: 'beta' }, '0.17.0', 'stable', publicPem), /UPDATE_CHANNEL_MISMATCH/)
 assert.throws(() => verifySignedUpdateManifest({ ...signed, unexpected: true }, '0.17.0', 'stable', publicPem), /UPDATE_MANIFEST_INVALID/)
+assert.throws(() => verifySignedUpdateManifest({ ...signed, version: '999999999999999999999.0.0' }, '0.17.0', 'stable', publicPem), /UPDATE_MANIFEST_INVALID/)
 assert.equal(isTrustedDownloadUrl('https://github.com/Anceryx/Anceryx-App/releases/download/v0.17.1/Anceryx-Setup-0.17.1.exe'), true)
 assert.equal(isTrustedDownloadUrl('https://evil.example/Anceryx-Setup-0.17.1.exe'), false)
 assert.equal(isTrustedDownloadUrl('http://github.com/file.exe'), false)
+assert.equal(isTrustedDownloadUrl('https://user:pass@github.com/file.exe'), false)
+assert.equal(isTrustedDownloadUrl('https://github.com:444/file.exe'), false)
+assert.equal(isAllowedUpdateRedirect('https://release-assets.githubusercontent.com/download/file', 0), true)
+assert.equal(isAllowedUpdateRedirect('https://evil.example/file', 0), false)
+assert.equal(isAllowedUpdateRedirect('https://github.com/file.exe', 4), false, 'a fifth redirect must be rejected')
+assert.equal(resolveAllowedUpdateRedirect('/Anceryx/Anceryx-App/releases/download/file.exe', new URL('https://github.com/Anceryx/Anceryx-App/'), 0).hostname, 'github.com')
+assert.throws(() => resolveAllowedUpdateRedirect('https://evil.example/file.exe', new URL('https://github.com/'), 0), /UPDATE_UNTRUSTED_URL/)
+assert.throws(() => resolveAllowedUpdateRedirect('/file.exe', new URL('https://github.com/'), 4), /UPDATE_REDIRECT_LIMIT/)
+assert.throws(() => resolveAllowedUpdateRedirect('https://[invalid', new URL('https://github.com/'), 0), /UPDATE_REDIRECT_INVALID/)
 assert.throws(() => assertInstallerIntegrity(installerBytes.length - 1, installerHash, installerBytes.length, installerHash), /UPDATE_SIZE_MISMATCH/)
 assert.throws(() => assertInstallerIntegrity(installerBytes.length, Buffer.alloc(64, 4).toString('base64'), installerBytes.length, installerHash), /UPDATE_HASH_MISMATCH/)
 assert.doesNotThrow(() => assertInstallerIntegrity(installerBytes.length, installerHash, installerBytes.length, installerHash))
+
+const tempDirectory = mkdtempSync(join(tmpdir(), 'anceryx-update-security-'))
+try {
+  const installerPath = join(tempDirectory, base.installer.name)
+  writeFileSync(installerPath, installerBytes, { flag: 'wx' })
+  await verifyDownloadedInstallerFile(base, installerPath)
+  writeFileSync(installerPath, Buffer.alloc(installerBytes.length, 7))
+  await assert.rejects(() => verifyDownloadedInstallerFile(base, installerPath), /UPDATE_HASH_MISMATCH/)
+  await assert.rejects(() => verifyDownloadedInstallerFile(base, join(tempDirectory, 'renamed.exe')), /UPDATE_INSTALLER_INVALID/)
+
+  const keyDirectory = join(tempDirectory, 'keys')
+  const { privatePath, publicPath } = await generateUpdateKeyPair(keyDirectory)
+  const privatePem = readFileSync(privatePath, 'utf8')
+  const generatedPublicPem = readFileSync(publicPath, 'utf8')
+  assert.equal(createPublicKey(createPrivateKey(privatePem)).export({ type: 'spki', format: 'der' }).equals(createPublicKey(generatedPublicPem).export({ type: 'spki', format: 'der' })), true)
+  await verifyUpdateKeyPair(privatePath, publicPath)
+  const mismatchedPublicPath = join(keyDirectory, 'mismatched-public.pem')
+  writeFileSync(mismatchedPublicPath, generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }))
+  await assert.rejects(() => verifyUpdateKeyPair(privatePath, mismatchedPublicPath), /does not match/)
+  await assert.rejects(() => generateUpdateKeyPair(keyDirectory), /Refusing to overwrite/)
+  const keyToolSource = readFileSync(new URL('./manage-update-keypair.mjs', import.meta.url), 'utf8')
+  assert.doesNotMatch(keyToolSource, /console\.log\([^\n]*(?:privatePem|privateKey)/)
+} finally {
+  rmSync(tempDirectory, { recursive: true, force: true })
+}
 
 const manager = readFileSync(new URL('../src/main/updater/updateManager.ts', import.meta.url), 'utf8')
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
@@ -71,6 +110,8 @@ assert.match(manager, /UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED/)
 assert.match(manager, /if \(!this\.snapshot\.configured\) return this\.getSnapshot\(\)/)
 assert.match(manager, /this\.snapshot\.state !== 'available'/)
 assert.match(manager, /this\.snapshot\.state !== 'downloaded'/)
+const restartMethod = manager.slice(manager.indexOf('async restart()'), manager.indexOf('private setSnapshot', manager.indexOf('async restart()')))
+assert.ok(restartMethod.indexOf('verifyDownloadedInstallerFile') >= 0 && restartMethod.indexOf('verifyDownloadedInstallerFile') < restartMethod.indexOf('shell.openPath'), 'installer integrity must be rechecked before NSIS is opened')
 assert.doesNotMatch(manager, /electron-updater|autoUpdater/)
 assert.equal(packageJson.dependencies['electron-updater'], undefined)
 assert.equal(packageLock.packages['node_modules/electron-updater'], undefined)

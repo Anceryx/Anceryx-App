@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { request } from 'node:https'
-import { createWriteStream } from 'node:fs'
-import { unlink } from 'node:fs/promises'
+import { createReadStream, createWriteStream } from 'node:fs'
+import { lstat, readFile, unlink } from 'node:fs/promises'
 import type { IncomingMessage } from 'node:http'
 import { basename } from 'node:path'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { assertInstallerIntegrity, isTrustedDownloadUrl, selectLatestBetaVersion, verifySignedUpdateManifest, type VerifiedUpdateManifest } from './manifestVerifier'
+import { assertInstallerIntegrity, isTrustedDownloadUrl, selectLatestBetaVersion, verifySignedUpdateManifest, type VerifiedUpdateManifest } from './manifestVerifier.ts'
 import type { UpdateChannel } from '../../shared/updateTypes'
 
 const MANIFEST_URL = 'https://github.com/Anceryx/Anceryx-App/releases/latest/download/update-manifest.json'
@@ -14,6 +14,17 @@ const MAX_MANIFEST_BYTES = 256 * 1024
 const MAX_INSTALLER_BYTES = 500 * 1024 * 1024
 const TRUSTED_DOWNLOAD_HOSTS = new Set(['github.com', 'release-assets.githubusercontent.com'])
 const TRUSTED_METADATA_HOSTS = new Set([...TRUSTED_DOWNLOAD_HOSTS, 'api.github.com'])
+
+export function isAllowedUpdateRedirect(value: string, followedRedirects: number): boolean {
+  return Number.isInteger(followedRedirects) && followedRedirects >= 0 && followedRedirects < 4 && isTrustedDownloadUrl(value)
+}
+
+export function resolveAllowedUpdateRedirect(location: string, source: URL, followedRedirects: number): URL {
+  let target: URL
+  try { target = new URL(location, source) } catch { throw new Error('UPDATE_REDIRECT_INVALID') }
+  if (!isAllowedUpdateRedirect(target.toString(), followedRedirects)) throw new Error(followedRedirects >= 4 ? 'UPDATE_REDIRECT_LIMIT' : 'UPDATE_UNTRUSTED_URL')
+  return target
+}
 
 function fetchHttps(url: URL, maxBytes: number, redirects = 0, onProgress?: (percent: number) => void): Promise<Buffer> {
   if (url.protocol !== 'https:' || !TRUSTED_METADATA_HOSTS.has(url.hostname) || url.username || url.password || url.port) return Promise.reject(new Error('UPDATE_UNTRUSTED_URL'))
@@ -25,8 +36,7 @@ function fetchHttps(url: URL, maxBytes: number, redirects = 0, onProgress?: (per
       if ([301, 302, 303, 307, 308].includes(status) && location) {
         response.resume()
         let next: URL
-        try { next = new URL(location, url) } catch { reject(new Error('UPDATE_REDIRECT_INVALID')); return }
-        if (next.protocol !== 'https:' || !TRUSTED_DOWNLOAD_HOSTS.has(next.hostname)) { reject(new Error('UPDATE_UNTRUSTED_URL')); return }
+        try { next = resolveAllowedUpdateRedirect(location, url, redirects) } catch (error) { reject(error); return }
         fetchHttps(next, maxBytes, redirects + 1, onProgress).then(resolve, reject)
         return
       }
@@ -82,13 +92,14 @@ export async function downloadVerifiedInstaller(manifest: VerifiedUpdateManifest
   try {
     await new Promise<void>((resolve, reject) => {
       const getStream = (target: URL, redirects: number): void => {
-        if (redirects > 4 || !isTrustedDownloadUrl(target.toString())) { reject(new Error('UPDATE_UNTRUSTED_URL')); return }
+        if (!isTrustedDownloadUrl(target.toString())) { reject(new Error('UPDATE_UNTRUSTED_URL')); return }
         const req = request(target, { method: 'GET', headers: { accept: 'application/octet-stream', 'user-agent': 'Anceryx-Updater' }, timeout: 30_000 }, (response) => {
           const status = response.statusCode ?? 0
           const location = response.headers.location
           if ([301, 302, 303, 307, 308].includes(status) && location) {
             response.resume()
-            try { getStream(new URL(location, target), redirects + 1) } catch { reject(new Error('UPDATE_REDIRECT_INVALID')) }
+            try { getStream(resolveAllowedUpdateRedirect(location, target, redirects), redirects + 1) }
+            catch (error) { reject(error) }
             return
           }
           if (status !== 200) { response.resume(); reject(new Error(`UPDATE_HTTP_${status}`)); return }
@@ -116,4 +127,18 @@ export async function downloadVerifiedInstaller(manifest: VerifiedUpdateManifest
     await unlink(destination).catch(() => undefined)
     throw error
   }
+}
+
+export async function verifyDownloadedInstallerFile(manifest: VerifiedUpdateManifest, filePath: string): Promise<void> {
+  if (basename(filePath) !== manifest.installer.name) throw new Error('UPDATE_INSTALLER_INVALID')
+  const metadata = await lstat(filePath)
+  if (!metadata.isFile() || metadata.size !== manifest.installer.size || metadata.size > MAX_INSTALLER_BYTES) throw new Error('UPDATE_SIZE_MISMATCH')
+  const hash = createHash('sha512')
+  let received = 0
+  for await (const chunk of createReadStream(filePath)) {
+    received += chunk.length
+    if (received > manifest.installer.size || received > MAX_INSTALLER_BYTES) throw new Error('UPDATE_SIZE_LIMIT')
+    hash.update(chunk)
+  }
+  assertInstallerIntegrity(received, hash.digest('base64'), manifest.installer.size, manifest.installer.sha512)
 }

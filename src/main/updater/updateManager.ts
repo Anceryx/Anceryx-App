@@ -1,11 +1,11 @@
 import { app, BrowserWindow, shell } from 'electron'
-import { mkdtemp } from 'node:fs/promises'
+import { chmod, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { UpdateSnapshot } from '../../shared/updateTypes'
 import { UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, UPDATE_MANUAL_INSTALL_MESSAGE, releaseNotesToLines, resolveUpdateChannel, safeUpdaterError } from './updateUtils'
 import { UPDATE_MANIFEST_PUBLIC_KEY_PEM } from './updateTrust'
-import { downloadVerifiedInstaller, fetchVerifiedUpdateManifest } from './updateTransport'
+import { downloadVerifiedInstaller, fetchVerifiedUpdateManifest, verifyDownloadedInstallerFile } from './updateTransport'
 
 const STARTUP_DELAY_MS = 10_000
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
@@ -21,6 +21,8 @@ export class UpdateManager {
   private startupTimer: NodeJS.Timeout | null = null
   private intervalTimer: NodeJS.Timeout | null = null
   private installerPath: string | null = null
+  private installerDirectory: string | null = null
+  private verifiedInstaller: Awaited<ReturnType<typeof fetchVerifiedUpdateManifest>> | null = null
 
   constructor() {
     if (!app.isPackaged) this.snapshot.message = 'As atualizações ficam desativadas no ambiente de desenvolvimento.'
@@ -72,20 +74,32 @@ export class UpdateManager {
       const manifest = await fetchVerifiedUpdateManifest(app.getVersion(), this.channel, UPDATE_MANIFEST_PUBLIC_KEY_PEM)
       if (manifest.version !== this.snapshot.latestVersion) throw new Error('UPDATE_MANIFEST_CHANGED')
       const directory = await mkdtemp(join(tmpdir(), 'anceryx-update-'))
+      this.installerDirectory = directory
       const target = join(directory, manifest.installer.name)
       this.installerPath = await downloadVerifiedInstaller(manifest, target, (progress) => this.setSnapshot({ progress }))
+      await chmod(this.installerPath, 0o400)
+      this.verifiedInstaller = manifest
       this.setSnapshot({ state: 'downloaded', latestVersion: manifest.version, releaseNotes: releaseNotesToLines(manifest.notes), progress: 100, message: 'A atualização foi verificada e está pronta para instalar.' })
     } catch (error) {
+      await this.discardInstaller()
       this.setSnapshot({ state: 'error', progress: null, message: safeUpdaterError(error) })
     }
     return this.getSnapshot()
   }
 
   async restart(): Promise<UpdateSnapshot> {
-    if (!this.snapshot.configured || this.snapshot.state !== 'downloaded' || !this.installerPath) return this.getSnapshot()
+    if (!this.snapshot.configured || this.snapshot.state !== 'downloaded' || !this.installerPath || !this.verifiedInstaller) return this.getSnapshot()
+    try {
+      await verifyDownloadedInstallerFile(this.verifiedInstaller, this.installerPath)
+    } catch (error) {
+      await this.discardInstaller()
+      this.setSnapshot({ state: 'error', progress: null, message: safeUpdaterError(error) })
+      return this.getSnapshot()
+    }
     this.setSnapshot({ state: 'installing', message: 'O instalador abrirá para você confirmar a atualização.' })
     const error = await shell.openPath(this.installerPath)
     if (error) {
+      await this.discardInstaller()
       this.setSnapshot({ state: 'error', message: 'Não foi possível abrir o instalador verificado. Você pode instalar a versão manualmente.' })
       return this.getSnapshot()
     }
@@ -96,5 +110,13 @@ export class UpdateManager {
   private setSnapshot(patch: Partial<UpdateSnapshot>): void {
     this.snapshot = { ...this.snapshot, ...patch, currentVersion: app.getVersion() }
     for (const win of BrowserWindow.getAllWindows()) if (!win.isDestroyed()) win.webContents.send('updater:state', this.getSnapshot())
+  }
+
+  private async discardInstaller(): Promise<void> {
+    if (this.installerPath) await chmod(this.installerPath, 0o600).catch(() => undefined)
+    if (this.installerDirectory) await rm(this.installerDirectory, { recursive: true, force: true }).catch(() => undefined)
+    this.installerPath = null
+    this.installerDirectory = null
+    this.verifiedInstaller = null
   }
 }

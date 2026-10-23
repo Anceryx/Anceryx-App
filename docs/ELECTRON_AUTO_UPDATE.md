@@ -18,4 +18,4 @@ O workflow manual `publish-windows-release.yml` exige que o tag corresponda à v
 
 A primeira atualização automática, quando autorizada, deve ser testada sobre a instalação `0.17.0` em Windows isolado. Confirme que `app.getPath('userData')`, SafeStorage, sessões, preferências e anexos continuam presentes. Não desinstale nem apague dados durante o teste. Até a aprovação, instale manualmente somente uma versão aprovada nas Releases oficiais.
 
-Consulte o [modelo de segurança](UPDATE_SECURITY_MODEL.md), o [checklist de QA](UPDATE_QA_CHECKLIST.md) e o [pipeline Windows](WINDOWS_RELEASE_PIPELINE.md).
+Consulte o [modelo de segurança](UPDATE_SECURITY_MODEL.md), o [checklist de QA](UPDATE_QA_CHECKLIST.md), o [gerenciamento de chaves](UPDATE_KEY_MANAGEMENT.md) e o [pipeline Windows](WINDOWS_RELEASE_PIPELINE.md).

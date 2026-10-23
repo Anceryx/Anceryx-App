@@ -6,6 +6,8 @@
 - Adicionadas validações de canal, versão, URL oficial, tamanho e SHA-512, com teste de assinatura adulterada, chave incorreta, downgrade, redirecionamento e integridade.
 - Preparado o workflow manual para gerar e verificar manifest assinado; publicação permanece bloqueada até a chave de produção e o QA Windows serem aprovados.
 - Mantido o atualizador desativado, sem chave de produção, sem download automático e sem instalação silenciosa.
+- O atualizador revalida SHA-512, tipo e tamanho do instalador imediatamente antes de abrir o NSIS, rejeita substituições do arquivo e limita redirecionamentos a quatro saltos confiáveis.
+- Adicionada ferramenta local para gerar e conferir pares Ed25519 sem exibir a chave privada, além de workflow manual de validação Windows com Node 22.
 
 ## Alterações anteriores registradas
 - A auditoria final removeu literais antigos não utilizados dos dados de cobrança/notas, localizou o selo Popular e documentou os candidatos restantes da métrica como símbolos, marcas, identificadores ou conteúdo de teste. O teste de publicações comunitárias agora aceita um caminho explícito para o checkout separado da API.

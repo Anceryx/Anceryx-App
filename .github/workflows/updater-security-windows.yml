@@ -1,0 +1,55 @@
+name: Updater security Windows validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install the Windows Electron runtime
+        run: node node_modules/electron/install.js
+      - name: Typecheck and build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Validate updater, IPC, and secure storage
+        run: |
+          npm run test:update-security
+          npm run test:updater-ui-state
+          npm run test:ipc-security
+          npm run test:electron-safe-storage
+      - name: Audit licenses and dependencies
+        run: |
+          npm run audit:licenses
+          npm run test:license-audit
+          npm audit --audit-level=moderate
+          npm audit --omit=dev --audit-level=moderate
+      - name: Build unsigned NSIS package without publishing
+        run: npx electron-builder --win nsis --publish never
+      - name: Verify QA installer exists
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          if ($version -ne '0.17.1') { throw "Updater QA workflow only packages version 0.17.1; found $version." }
+          $installer = "dist/Anceryx-Setup-$version.exe"
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) { throw "Expected QA installer was not produced: $installer" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anceryx-windows-updater-qa-${{ github.sha }}
+          path: dist/Anceryx-Setup-0.17.1.exe
+          if-no-files-found: error
+          retention-days: 5

@@ -48,7 +48,8 @@ function canonicalJson(value: unknown): string {
 }
 
 function validVersion(value: string): boolean {
-  return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-beta\.(0|[1-9]\d*))?$/.test(value)
+  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-beta\.(0|[1-9]\d*))?$/.test(value)) return false
+  return value.split(/[.-]/).filter((part) => /^\d+$/.test(part)).every((part) => Number.isSafeInteger(Number(part)))
 }
 
 export function compareUpdateVersions(a: string, b: string): number {
