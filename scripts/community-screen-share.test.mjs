@@ -9,7 +9,7 @@ const workspace = await readFile(new URL('../src/renderer/components/social/Comm
 assert.match(main, /setDisplayMediaRequestHandler/)
 assert.match(main, /request\.frame !== mainWindow\?\.webContents\.mainFrame/)
 assert.match(main, /selectedScreenSourceExpiresAt = Date\.now\(\) \+ 30_000/)
-assert.match(main, /event\.senderFrame !== event\.sender\.mainFrame/)
+assert.match(main, /if \(!isTrustedRendererEvent\(event\)\) throw new Error\('Ação indisponível para esta janela\.'\)/)
 assert.match(main, /desktopCapturer\.getSources/)
 assert.match(main, /sources\.find\(\(item\) => item\.id === requestedSourceId\)/)
 assert.match(preload, /screen-capture:list-sources/)

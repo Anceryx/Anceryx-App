@@ -27,6 +27,7 @@ jobs:
       - run: npm run test:connection-config
       - run: npm run test:encoding
       - run: npm run test:dialog-accessibility
+      - run: npm run test:ipc-security
       - run: npm run test:session-revision
       - run: npm run test:image-crop
       - run: npm run test:shared-post-link

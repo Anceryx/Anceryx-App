@@ -32,6 +32,7 @@
     "test:shared-post-link": "node --experimental-strip-types scripts/shared-post-link.test.mjs",
     "test:forum-list-compatibility": "node --experimental-strip-types scripts/forum-list-compatibility.test.mjs",
     "test:app-deep-link": "node --experimental-strip-types scripts/deep-link.test.mjs",
+    "test:ipc-security": "node --experimental-strip-types scripts/ipc-security.test.mjs",
     "test:dialog-accessibility": "node --experimental-strip-types scripts/dialog-accessibility.test.mjs",
     "test:theme-entitlement": "node --experimental-strip-types scripts/theme-entitlement.test.mjs",
     "test:community-member-groups": "node --experimental-strip-types scripts/community-member-groups.test.mjs",

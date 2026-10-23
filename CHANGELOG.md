@@ -4,6 +4,8 @@
 
 - A barra de título do Electron agora aparece também no login e no cadastro, sem duplicação no Dashboard; o build web mantém a barra oculta.
 - Modais, gavetas e sobreposições respeitam a altura da barra de título, e o modal de configurações se ajusta ao espaço vertical disponível.
+- Os handlers IPC da janela são registrados uma vez e resolvem a janela pelo remetente validado.
+- Todos os canais IPC do renderer verificam a origem e o frame principal antes de operar, incluindo tokens de sessão e comandos do atualizador.
 
 Este arquivo registra versões preparadas a partir do histórico disponível no repositório. O snapshot independente não importa o histórico privado anterior; por isso, esta versão registra a linha de base do código-fonte e não atribui mudanças específicas a commits antigos.
 

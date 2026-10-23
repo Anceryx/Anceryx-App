@@ -8,6 +8,7 @@ import { parseAppDeepLink } from '../shared/appDeepLink'
 import { createDraftStore, type DraftKey, type DraftScope } from './draftStoreCore'
 import { UpdateManager } from './updater/updateManager'
 import { registerUpdateIpc } from './updater/updateIpc'
+import { isTrustedRenderer, type RendererIpcEvent } from './ipcSecurity'
 
 // ── Protocolos permitidos para links externos ─────────────────────────────────
 const SAFE_EXTERNAL_PROTOCOLS = new Set(['https:'])
@@ -29,7 +30,6 @@ const OAUTH_SCHEME = 'anceryx'
 app.setName('Anceryx')
 
 const updateManager = new UpdateManager()
-registerUpdateIpc(updateManager)
 
 const OAUTH_HOST = 'oauth'
 let mainWindow: BrowserWindow | null = null
@@ -141,15 +141,55 @@ const encryptedDraftStore = createDraftStore({
 (plain) => safeStorage.encryptString(Buffer.from(plain).toString('utf8')),
 (encrypted) => Buffer.from(safeStorage.decryptString(Buffer.from(encrypted)), 'utf8'))
 
-function isTrustedRenderer(event: Electron.IpcMainInvokeEvent): boolean {
-  if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) return false
-  try {
-    const actual = new URL(event.senderFrame.url)
-    if (actual.protocol === 'app:' && actual.hostname === RENDERER_HOST) return true
-    const rendererUrl = process.env['ELECTRON_RENDERER_URL']
-    return Boolean(rendererUrl && new URL(rendererUrl).origin === actual.origin)
-  } catch { return false }
+function isTrustedRendererEvent(event: RendererIpcEvent): boolean {
+  const developmentRendererUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
+  return isTrustedRenderer(event, mainWindow?.webContents ?? null, developmentRendererUrl)
 }
+
+function getTrustedMainWindow(event: RendererIpcEvent): BrowserWindow | null {
+  if (!isTrustedRendererEvent(event)) return null
+  const senderWindow = BrowserWindow.fromWebContents(event.sender)
+  return senderWindow && senderWindow === mainWindow && !senderWindow.isDestroyed() ? senderWindow : null
+}
+
+function registerMainWindowIpc(): void {
+  ipcMain.on('win:minimize', (event) => { getTrustedMainWindow(event)?.minimize() })
+  ipcMain.on('win:maximize', (event) => {
+    const win = getTrustedMainWindow(event)
+    if (!win) return
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+  })
+  ipcMain.on('win:close', (event) => { getTrustedMainWindow(event)?.close() })
+  ipcMain.handle('win:isMaximized', (event) => getTrustedMainWindow(event)?.isMaximized() ?? false)
+  ipcMain.handle('app:getVersion', (event) => {
+    if (!isTrustedRendererEvent(event)) throw new Error('Ação indisponível para esta janela.')
+    return app.getVersion()
+  })
+  ipcMain.handle('licenses:get-manifest', (event): LicenseManifest => {
+    if (!isTrustedRendererEvent(event)) throw new Error('Ação indisponível para esta janela.')
+    const licensePath = join(__dirname, '../licenses/licenses.json')
+    if (!existsSync(licensePath)) return { generatedAt: '', source: 'package-lock.json', records: [], warnings: [], legalNotes: ['O inventário de licenças será gerado durante o build.'] }
+    return JSON.parse(readFileSync(licensePath, 'utf8')) as LicenseManifest
+  })
+  ipcMain.on('shell:openExternal', (event, url: unknown) => {
+    if (!isTrustedRendererEvent(event) || typeof url !== 'string' || url.length > 2048) return
+    try {
+      const parsed = new URL(url)
+      if (
+        SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol) &&
+        ['www.anceryx.site', 'checkout.stripe.com', 'billing.stripe.com', 'accounts.google.com'].includes(parsed.hostname)
+      ) {
+        void shell.openExternal(url)
+      }
+    } catch {
+      console.warn('[main] shell:openExternal bloqueado para URL inválida.')
+    }
+  })
+}
+
+registerMainWindowIpc()
+registerUpdateIpc(updateManager, isTrustedRendererEvent)
 
 function parseDraftKey(value: unknown): DraftKey | null {
   if (!value || typeof value !== 'object') return null
@@ -159,21 +199,21 @@ function parseDraftKey(value: unknown): DraftKey | null {
 }
 
 ipcMain.handle('drafts:get', (event, input: unknown) => {
-  if (!isTrustedRenderer(event) || !safeStorage.isEncryptionAvailable()) return { ok: false, content: null }
+  if (!isTrustedRendererEvent(event) || !safeStorage.isEncryptionAvailable()) return { ok: false, content: null }
   const key = parseDraftKey(input)
   if (!key) return { ok: false, content: null }
   try { return { ok: true, content: encryptedDraftStore.get(key) } }
   catch { return { ok: false, content: null } }
 })
 ipcMain.handle('drafts:save', (event, input: unknown, content: unknown) => {
-  if (!isTrustedRenderer(event) || !safeStorage.isEncryptionAvailable()) return false
+  if (!isTrustedRendererEvent(event) || !safeStorage.isEncryptionAvailable()) return false
   const key = parseDraftKey(input)
   if (!key) return false
   try { encryptedDraftStore.save(key, content); return true }
   catch { return false }
 })
 ipcMain.handle('drafts:delete', (event, input: unknown) => {
-  if (!isTrustedRenderer(event) || !safeStorage.isEncryptionAvailable()) return false
+  if (!isTrustedRendererEvent(event) || !safeStorage.isEncryptionAvailable()) return false
   const key = parseDraftKey(input)
   if (!key) return false
   try { encryptedDraftStore.delete(key); return true }
@@ -191,7 +231,8 @@ function resolveRendererAsset(requestUrl: string): string | null {
   return target
 }
 
-ipcMain.handle('auth:refresh-token:get', () => {
+ipcMain.handle('auth:refresh-token:get', (event) => {
+  if (!isTrustedRendererEvent(event)) return null
   try {
     const tokenPath = getRefreshTokenPath()
     if (!safeStorage.isEncryptionAvailable() || !existsSync(tokenPath)) return null
@@ -200,12 +241,14 @@ ipcMain.handle('auth:refresh-token:get', () => {
     return null
   }
 })
-ipcMain.handle('auth:refresh-token:set', (_event, token: unknown) => {
+ipcMain.handle('auth:refresh-token:set', (event, token: unknown) => {
+  if (!isTrustedRendererEvent(event)) return false
   if (typeof token !== 'string' || token.length < 32 || !safeStorage.isEncryptionAvailable()) return false
   writeFileSync(getRefreshTokenPath(), safeStorage.encryptString(token))
   return true
 })
-ipcMain.handle('auth:refresh-token:clear', () => {
+ipcMain.handle('auth:refresh-token:clear', (event) => {
+  if (!isTrustedRendererEvent(event)) return false
   const tokenPath = getRefreshTokenPath()
   if (existsSync(tokenPath)) unlinkSync(tokenPath)
   return true
@@ -408,23 +451,6 @@ function createWindow(): void {
     pendingGoogleHandoff = null
   })
 
-  // ── IPC: controles de janela ──────────────────────────────────────────────
-  // Apenas os três canais mínimos necessários são registrados.
-  // Nenhum canal expõe APIs arbitrárias do Node ou do sistema.
-  ipcMain.on('win:minimize', (_event) => { win.minimize() })
-  ipcMain.on('win:maximize', (_event) => {
-    if (win.isMaximized()) { win.unmaximize() } else { win.maximize() }
-  })
-  ipcMain.on('win:close',    (_event) => { win.close() })
-  ipcMain.handle('win:isMaximized', () => win.isMaximized())
-  ipcMain.handle('app:getVersion', () => app.getVersion())
-  ipcMain.handle('licenses:get-manifest', (): LicenseManifest => {
-    const licensePath = join(__dirname, '../licenses/licenses.json')
-    if (!existsSync(licensePath)) return { generatedAt: '', source: 'package-lock.json', records: [], warnings: [], legalNotes: ['O inventário de licenças será gerado durante o build.'] }
-    return JSON.parse(readFileSync(licensePath, 'utf8')) as LicenseManifest
-  })
-  updateManager.start()
-
   win.on('maximize', () => {
     win.webContents.send('win:maximized-change', true)
   })
@@ -434,23 +460,10 @@ function createWindow(): void {
   win.on('close', () => {
     saveWindowState(win)
   })
-
-  ipcMain.on('shell:openExternal', (_event, url: string) => {
-    try {
-      const parsed = new URL(url)
-      if (
-        SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol) &&
-        ['www.anceryx.site', 'checkout.stripe.com', 'billing.stripe.com', 'accounts.google.com'].includes(parsed.hostname)
-      ) {
-        void shell.openExternal(url)
-      }
-    } catch {
-      console.warn('[main] shell:openExternal bloqueado para URL inválida:', url)
-    }
-  })
 }
 
 app.whenReady().then(() => {
+  updateManager.start()
   session.defaultSession.setDisplayMediaRequestHandler(async (request, callback) => {
     if (!request.frame || request.frame !== request.frame.top || request.frame !== mainWindow?.webContents.mainFrame) { callback({}); return }
     const requestedSourceId = selectedScreenSourceId
@@ -467,12 +480,12 @@ app.whenReady().then(() => {
     }
   })
   ipcMain.handle('screen-capture:list-sources', async (event) => {
-    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) throw new Error('Ação indisponível para esta janela.')
+    if (!isTrustedRendererEvent(event)) throw new Error('Ação indisponível para esta janela.')
     const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 320, height: 180 } })
     return sources.map(({ id, name, thumbnail }) => ({ id, name, thumbnail: thumbnail.isEmpty() ? null : thumbnail.toDataURL() }))
   })
   ipcMain.handle('screen-capture:select-source', async (event, sourceId: unknown) => {
-    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame || typeof sourceId !== 'string') throw new Error('Fonte de captura inválida.')
+    if (!isTrustedRendererEvent(event) || typeof sourceId !== 'string') throw new Error('Fonte de captura inválida.')
     const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 0, height: 0 } })
     if (!sources.some((source) => source.id === sourceId)) throw new Error('A fonte de captura não está mais disponível.')
     selectedScreenSourceId = sourceId
