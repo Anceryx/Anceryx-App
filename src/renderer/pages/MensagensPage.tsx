@@ -81,19 +81,19 @@ const MensagensPage: React.FC = () => {
         setMessageCursors((current) => ({ ...current, [conversationId]: nextCursor ?? null }))
         setMessagePaginationSupport((current) => ({ ...current, [conversationId]: nextCursor !== undefined }))
       })
-      .catch((reason) => { setError(reason instanceof Error ? reason.message : 'Falha ao carregar as mensagens.') })
+      .catch((reason) => { setError(reason instanceof Error ? reason.message : t('messages.loadConversationFailed')) })
       .finally(() => { messageLoadsRef.current.delete(conversationId); setLoadingConversationId((current) => current === conversationId ? null : current) })
     messageLoadsRef.current.set(conversationId, request)
     return request
-  }, [])
+  }, [t])
 
   const load = useCallback(async () => {
     setError(null)
     try {
       const result = await messagesApi.listConversations()
       setConversations(result.conversations)
-    } catch (err) { setError(err instanceof Error ? err.message : 'Falha ao carregar mensagens.') }
-  }, [])
+    } catch (err) { setError(err instanceof Error ? err.message : t('messages.loadFailed')) }
+  }, [t])
   useEffect(() => { if (!user) return; void hydrateSocial(); void load() }, [hydrateSocial, load, user])
   useEffect(() => {
     const pending = consumePendingDm()
@@ -107,9 +107,9 @@ const MensagensPage: React.FC = () => {
         setSelectedUserId(profile.id)
         setError(null)
         await loadConversationMessages(conversation.conversationId)
-      } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível abrir esta conversa.') }
+      } catch (reason) { setError(reason instanceof Error ? reason.message : t('messages.openConversationFailed')) }
     })()
-  }, [consumePendingDm, loadConversationMessages])
+  }, [consumePendingDm, loadConversationMessages, t])
   useEffect(() => {
     realtimeClient.connect(token)
     const unsubs = [
@@ -140,7 +140,7 @@ const MensagensPage: React.FC = () => {
     let active = true
     const timer = window.setTimeout(() => { void socialApi.searchUsers(query).then(({ users: found }) => { if (active) { setSearchResults(found); setSearchError(null) } }).catch((reason) => { if (active) setSearchError(reason instanceof Error ? reason.message : 'Não foi possível pesquisar usuários.') }) }, 250)
     return () => { active = false; window.clearTimeout(timer) }
-  }, [conversationQuery])
+  }, [conversationQuery, t])
   const selectableUsers = useMemo(() => { const merged = new Map(knownUsers.map((profile) => [profile.id, profile])); for (const profile of searchResults) merged.set(profile.id, profile); return [...merged.values()] }, [knownUsers, searchResults])
   const visibleKnownUsers = useMemo(() => { const needle = conversationQuery.trim().replace(/^@+/, '').toLocaleLowerCase(); if (!needle) return knownUsers; return selectableUsers.filter((profile) => profile.username.toLocaleLowerCase().includes(needle) || profile.displayName.toLocaleLowerCase().includes(needle) || profile.publicUserId.includes(needle)) }, [conversationQuery, knownUsers, selectableUsers])
   const peer = selectableUsers.find((profile) => profile.id === selectedUserId) ?? null
@@ -240,7 +240,7 @@ const MensagensPage: React.FC = () => {
   }
   const selectPeer = async (profile: { id: string; publicUserId: string; username: string; displayName: string; avatarUrl: string | null }) => {
     let conversation = conversationByUser.get(profile.id)
-    if (!conversation) { try { conversation = (await messagesApi.openConversation(profile.id)).conversation; setConversations((current) => [conversation!, ...current.filter((item) => item.conversationId !== conversation!.conversationId)]) } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível iniciar a conversa.'); return } }
+    if (!conversation) { try { conversation = (await messagesApi.openConversation(profile.id)).conversation; setConversations((current) => [conversation!, ...current.filter((item) => item.conversationId !== conversation!.conversationId)]) } catch (reason) { setError(reason instanceof Error ? reason.message : t('messages.startConversationFailed')); return } }
     setSelectedUserId(profile.id)
     if (!messages[conversation.conversationId]) void loadConversationMessages(conversation.conversationId)
   }
@@ -256,8 +256,8 @@ const MensagensPage: React.FC = () => {
     if (!file) return
     try {
       const max = await mediaApi.getUploadLimit('dm-image', { recipientUserId: selectedUserId ?? undefined })
-      if (file.size > max) { setError('O anexo ultrapassa o limite de ' + Math.floor(max / 1_000_000) + ' MB da sua conta.'); return }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível verificar o limite de envio.'); return }
+      if (file.size > max) { setError(t('messages.uploadTooLarge', { count: Math.floor(max / 1_000_000) })); return }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('messages.uploadLimitFailed')); return }
     const url = URL.createObjectURL(file)
     setAttachmentFile(file); setAttachment({ url, previewUrl: url, mimeType: file.type as MessageImageAttachment['mimeType'], sizeBytes: file.size, name: file.name }); setError(null)
   }
@@ -273,7 +273,7 @@ const MensagensPage: React.FC = () => {
       if (attachmentFile && !mediaAssetId) { const controller = new AbortController(); uploadControllerRef.current = controller; mediaAssetId = (await mediaApi.uploadFile('dm-image', attachmentFile, undefined, { recipientUserId: selectedUserId }, { signal: controller.signal, onProgress: (progress) => setUploadProgress(progress.percent) })).id; setUploadedAttachmentId(mediaAssetId) }
       const result = await messagesApi.createMessage({ recipientUserId: selectedUserId, text: text.trim(), contentType: stickerKey ? 'sticker' : klipyGif ? 'gif' : 'text', stickerKey, mediaAssetId, externalMedia: klipyGif ? { provider: 'klipy', slug: klipyGif.slug, url: klipyGif.url, mimeType: 'image/gif', metadata: { title: klipyGif.title, width: klipyGif.width, height: klipyGif.height, previewUrl: klipyGif.previewUrl } } : undefined, clientMessageId: draftMessageId, replyToMessageId: replyTarget?.messageId })
       const message = result.message
-      if (klipyGif) void registerKlipyShare(klipyGif).catch((err) => { if (err instanceof Error && 'status' in err && (err as { status?: number }).status === 429) notify('A KLIPY está no limite de testes. O GIF foi enviado.', 'error') })
+      if (klipyGif) void registerKlipyShare(klipyGif).catch((err) => { if (err instanceof Error && 'status' in err && (err as { status?: number }).status === 429) notify(t('messages.klipyRateLimited'), 'error') })
       setConversations((current) => current.some((item) => item.conversationId === message.conversationId) ? current : [{ conversationId: message.conversationId, participantIds: [user!.id, selectedUserId], participants: [peer!], updatedAt: message.createdAt, lastMessage: message }, ...current])
       setMessages((current) => updateDirectMessageCache(current, message.conversationId, [message]))
       setRecentMessageId(message.messageId)
@@ -294,15 +294,15 @@ const MensagensPage: React.FC = () => {
   const submitMessageReport = async () => {
     if (!reportTarget || (reportReason === 'other' && !reportDetails.trim())) return
     setReportBusy(true)
-    try { await messagesApi.reportMessage(reportTarget.messageId, { reason: reportReason, details: reportDetails.trim() || undefined }); notify('Denúncia enviada para análise.', 'success'); setReportTarget(null) }
-    catch (err) { notify(err instanceof Error ? err.message : 'Não foi possível enviar a denúncia.', 'error') }
+    try { await messagesApi.reportMessage(reportTarget.messageId, { reason: reportReason, details: reportDetails.trim() || undefined }); notify(t('messages.sentReport'), 'success'); setReportTarget(null) }
+    catch (err) { notify(err instanceof Error ? err.message : t('messages.reportFailed'), 'error') }
     finally { setReportBusy(false) }
   }
 
   if (!user) return null
   return <div className="flex h-full min-h-0">
-    <aside className={`${selectedUserId ? 'hidden md:block' : 'block'} w-full shrink-0 border-r border-border bg-background-secondary md:w-[240px]`}><label className="flex h-14 items-center gap-2 border-b border-border px-3"><Search size={15} className="shrink-0 text-text-secondary" /><input value={conversationQuery} onChange={(event) => setConversationQuery(event.target.value)} placeholder="Buscar conversa ou usuário" aria-label="Buscar conversa ou usuário" className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary" /></label><div className="anceryx-scroll overflow-y-auto">{(searchError || (!selectedUserId && error)) && <p role="alert" className="p-3 text-xs text-accent-red">{searchError || error}</p>}{visibleKnownUsers.map((profile) => { const last = conversationByUser.get(profile.id)?.lastMessage; return <button key={profile.id} onClick={() => void selectPeer(profile)} className={`flex w-full items-center gap-3 p-3 text-left ${selectedUserId === profile.id ? 'bg-background-tertiary' : 'hover:bg-background-tertiary/60'}`}><Avatar src={profile.avatarUrl} name={profile.displayName} size="sm" /><span className="min-w-0"><b className="block truncate text-sm" title={profile.displayName}>{profile.displayName}</b><small className="block truncate text-text-secondary">{last?.text || `@${profile.username}`}</small></span></button> })}{visibleKnownUsers.length === 0 && <p className="p-4 text-xs text-text-secondary">{conversationQuery.trim().length >= 2 ? 'Nenhum usuário encontrado.' : 'Nenhuma conversa ou amizade encontrada.'}</p>}</div></aside>
-    <main className={`${selectedUserId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col`}>{!peer ? <div className="grid flex-1 place-items-center text-sm text-text-secondary">Selecione um amigo ou uma conversa.</div> : <><header className="flex h-14 items-center gap-3 border-b border-border px-4"><button className="md:hidden" onClick={() => setSelectedUserId(null)} aria-label="Voltar para conversas"><ArrowLeft size={18} /></button><Avatar src={peer.avatarUrl} name={peer.displayName} size="sm" /><div className="flex-1"><b className="block truncate text-sm" title={peer.displayName}>{peer.displayName}</b><small className="text-text-secondary">@{peer.username}</small></div><button onClick={() => startCall('voice')} aria-label="Chamada de voz"><Phone size={18} /></button><button onClick={() => startCall('video')} aria-label="Chamada de vídeo"><Video size={18} /></button></header>
+    <aside className={`${selectedUserId ? 'hidden md:block' : 'block'} w-full shrink-0 border-r border-border bg-background-secondary md:w-[240px]`}><label className="flex h-14 items-center gap-2 border-b border-border px-3"><Search size={15} className="shrink-0 text-text-secondary" /><input value={conversationQuery} onChange={(event) => setConversationQuery(event.target.value)} placeholder={t('messages.searchConversations')} aria-label={t('messages.searchConversations')} className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary" /></label><div className="anceryx-scroll overflow-y-auto">{(searchError || (!selectedUserId && error)) && <p role="alert" className="p-3 text-xs text-accent-red">{searchError || error}</p>}{visibleKnownUsers.map((profile) => { const last = conversationByUser.get(profile.id)?.lastMessage; return <button key={profile.id} onClick={() => void selectPeer(profile)} className={`flex w-full items-center gap-3 p-3 text-left ${selectedUserId === profile.id ? 'bg-background-tertiary' : 'hover:bg-background-tertiary/60'}`}><Avatar src={profile.avatarUrl} name={profile.displayName} size="sm" /><span className="min-w-0"><b className="block truncate text-sm" title={profile.displayName}>{profile.displayName}</b><small className="block truncate text-text-secondary">{last?.text || `@${profile.username}`}</small></span></button> })}{visibleKnownUsers.length === 0 && <p className="p-4 text-xs text-text-secondary">{conversationQuery.trim().length >= 2 ? t('messages.noUserFound') : t('messages.noConversationFound')}</p>}</div></aside>
+    <main className={`${selectedUserId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col`}>{!peer ? <div className="grid flex-1 place-items-center text-sm text-text-secondary">{t('messages.selectConversation')}</div> : <><header className="flex h-14 items-center gap-3 border-b border-border px-4"><button className="md:hidden" onClick={() => setSelectedUserId(null)} aria-label={t('messages.backToConversations')}><ArrowLeft size={18} /></button><Avatar src={peer.avatarUrl} name={peer.displayName} size="sm" /><div className="flex-1"><b className="block truncate text-sm" title={peer.displayName}>{peer.displayName}</b><small className="text-text-secondary">@{peer.username}</small></div><button onClick={() => startCall('voice')} aria-label={t('messages.voiceCall')}><Phone size={18} /></button><button onClick={() => startCall('video')} aria-label={t('messages.videoCall')}><Video size={18} /></button></header>
        <div ref={messageListRef} className="anceryx-scroll flex-1 space-y-2 overflow-y-auto p-3 sm:p-4">
          {selectedConversation && selectedMessages.length >= 50 && (!messagePaginationSupport[selectedConversation.conversationId]
            ? <p className="text-center text-xs text-text-secondary">{t('messages.paginationUnavailable')}</p>
@@ -312,7 +312,7 @@ const MensagensPage: React.FC = () => {
                : <button type="button" onClick={() => void loadOlderMessages()} disabled={olderMessagesLoading} className="mx-auto block rounded-lg px-3 py-2 text-xs text-accent-secondary hover:bg-background-tertiary disabled:opacity-60">{olderMessagesLoading ? t('messages.loadingOlder') : t('messages.loadOlder')}</button>)
              : null)}
          {selectedConversation && !messages[selectedConversation.conversationId] && loadingConversationId === selectedConversation.conversationId && <div role="status" aria-label={t('common.loading')} className="space-y-3 py-3"><div className="h-10 w-2/3 animate-pulse rounded-2xl bg-background-tertiary"/><div className="ml-auto h-12 w-1/2 animate-pulse rounded-2xl bg-background-tertiary"/><div className="h-10 w-3/5 animate-pulse rounded-2xl bg-background-tertiary"/></div>}
-         {error && <div role="alert" className="rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">{error} <button className="ml-2 underline underline-offset-2" onClick={() => void load()}>Tentar novamente</button></div>}
+         {error && <div role="alert" className="rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">{error} <button className="ml-2 underline underline-offset-2" onClick={() => void load()}>{t('messages.retry')}</button></div>}
          {selectedMessages.map((message, index) => {
            const sentAt = new Date(message.createdAt)
            const { showDate, startsGroup, endsGroup } = getDirectMessageGroupPosition(selectedMessages, index)
@@ -326,7 +326,7 @@ const MensagensPage: React.FC = () => {
                 {!mine && (startsGroup ? <Avatar src={message.sender.avatarUrl} name={message.sender.displayName} size="xs" /> : <span aria-hidden="true" className="w-5 shrink-0" />)}
                <div className={`min-w-0 w-fit max-w-[84%] break-words px-3 py-2 text-sm shadow-sm sm:max-w-[72%] ${message.contentType === 'sticker' ? 'bg-transparent shadow-none' : mine ? `bg-accent text-white ${startsGroup ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-tr-md'} ${endsGroup ? 'rounded-2xl rounded-tr-md' : ''}` : `bg-background-tertiary text-text-primary ${startsGroup ? 'rounded-2xl rounded-bl-md' : 'rounded-2xl rounded-tl-md'} ${endsGroup ? 'rounded-2xl rounded-tl-md' : ''}`}`}>
                  {message.replyTo && <button type="button" onClick={() => document.getElementById(`dm-message-${message.replyTo!.messageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="mb-2 block max-w-full truncate border-l-2 border-current/50 pl-2 text-left text-xs opacity-75">{message.replyTo.deleted ? t('messages.deleted') : `${message.replyTo.sender?.displayName ?? 'Usuário'}: ${message.replyTo.excerpt ?? ''}`}</button>}
-                 {message.contentType === 'sticker' ? sticker ? <img src={sticker.asset} alt={sticker.name} className="h-32 w-32 object-contain sm:h-36 sm:w-36" draggable={false} /> : <span className="text-xs text-text-secondary">Figurinha indisponível</span> : <><span className="whitespace-pre-wrap">{renderAnceryxText(message.text)}</span>{extractSharedPostId(message.text) && <SharedPostPreview text={message.text} onOpen={setSharedPostId} />}{image && (image.mimeType === 'video/mp4' ? <MediaAttachment src={image.url} mimeType={image.mimeType} privateMedia={!isSafeKlipyMediaUrl(image.url)} alt={image.name} className="mt-2 block h-auto w-full max-w-[32rem] rounded-lg" /> : <button type="button" className="mt-2 block" onClick={() => setViewerImage(image)}><MediaAttachment src={image.url} mimeType={image.mimeType} privateMedia={!isSafeKlipyMediaUrl(image.url)} className="max-h-64 max-w-full rounded-lg" alt={image.name} /></button>)}{message.contentType === 'gif' && image && <span className="mt-1 block text-[10px] opacity-60">Powered by KLIPY</span>}</>}
+                 {message.contentType === 'sticker' ? sticker ? <img src={sticker.asset} alt={sticker.name} className="h-32 w-32 object-contain sm:h-36 sm:w-36" draggable={false} /> : <span className="text-xs text-text-secondary">{t('messages.stickerUnavailable')}</span> : <><span className="whitespace-pre-wrap">{renderAnceryxText(message.text)}</span>{extractSharedPostId(message.text) && <SharedPostPreview text={message.text} onOpen={setSharedPostId} />}{image && (image.mimeType === 'video/mp4' ? <MediaAttachment src={image.url} mimeType={image.mimeType} privateMedia={!isSafeKlipyMediaUrl(image.url)} alt={image.name} className="mt-2 block h-auto w-full max-w-[32rem] rounded-lg" /> : <button type="button" className="mt-2 block" onClick={() => setViewerImage(image)}><MediaAttachment src={image.url} mimeType={image.mimeType} privateMedia={!isSafeKlipyMediaUrl(image.url)} className="max-h-64 max-w-full rounded-lg" alt={image.name} /></button>)}{message.contentType === 'gif' && image && <span className="mt-1 block text-[10px] opacity-60">Powered by KLIPY</span>}</>}
                  {endsGroup && <small className="mt-1 block text-right text-[10px] opacity-60" title={formatDateTime(sentAt)}>{formatTime(sentAt)}</small>}
                </div>
                <div className={`flex shrink-0 items-center gap-0.5 ${startsGroup ? 'opacity-60' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
@@ -336,11 +336,11 @@ const MensagensPage: React.FC = () => {
              </div>
            </React.Fragment>
          })}
-         {typing.has(peer.id) && <p className="ml-9 text-xs text-text-secondary">{peer.displayName} está digitando...</p>}
+         {typing.has(peer.id) && <p className="ml-9 text-xs text-text-secondary">{t('messages.userTyping', { name: peer.displayName })}</p>}
        </div>
-      {replyTarget && <div className="mx-3 flex items-center gap-2 border-l-2 border-accent bg-background-secondary px-3 py-2 text-xs text-text-secondary"><span className="min-w-0 flex-1 truncate">Respondendo a {replyTarget.sender.displayName}: {replyTarget.text || (replyTarget.contentType === 'sticker' ? 'Figurinha' : 'Mídia')}</span><button type="button" onClick={() => setReplyTarget(null)} aria-label="Cancelar resposta"><X size={14} /></button></div>}
+      {replyTarget && <div className="mx-3 flex items-center gap-2 border-l-2 border-accent bg-background-secondary px-3 py-2 text-xs text-text-secondary"><span className="min-w-0 flex-1 truncate">{t('messages.replyingTo', { name: replyTarget.sender.displayName, value: replyTarget.text || (replyTarget.contentType === 'sticker' ? t('messages.sticker') : t('messages.media')) })}</span><button type="button" onClick={() => setReplyTarget(null)} aria-label={t('messages.cancelReply')}><X size={14} /></button></div>}
       <MessageComposer value={text} onChange={updateDraftText} onDraftBlur={persistCurrentDraft} onDiscardDraft={discardCurrentDraft} discardDraftLabel={t('messages.discardDraft')} onSend={() => void send()} disabled={uploading} imagePreview={attachment} imageLoading={uploading} imageProgress={uploadProgress} onCancelUpload={cancelUpload} imageError={error} onPickImage={pickImage} onRemoveImage={discardAttachment} onRetryImage={() => void send()} onPickGif={(gif) => void send({ klipyGif: gif })} onPickSticker={(key) => void send({ stickerKey: key })} /></>}</main>
-    {reportTarget && <Modal isOpen onClose={() => { if (!reportBusy) setReportTarget(null) }} title="Denunciar mensagem"><div className="space-y-4"><p className="text-sm text-text-secondary">Selecione o motivo da denúncia. A mensagem foi enviada por <strong className="text-text-primary">{reportTarget.sender.displayName}</strong> em {formatDateTime(new Date(reportTarget.createdAt))}.</p><label className="block text-sm text-text-primary">Motivo<select value={reportReason} onChange={(event) => setReportReason(event.target.value as typeof reportReason)} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2"><option value="spam">Spam</option><option value="harassment">Assédio</option><option value="inappropriate_content">Conteúdo inadequado</option><option value="scam_or_fraud">Golpe ou fraude</option><option value="violence_or_threat">Violência ou ameaça</option><option value="personal_information">Exposição de dados pessoais</option><option value="other">Outro</option></select></label><label className="block text-sm text-text-primary">Detalhes opcionais<textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={1000} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2" /></label><div className="flex justify-end gap-2"><Button variant="ghost" disabled={reportBusy} onClick={() => setReportTarget(null)}>Cancelar</Button><Button loading={reportBusy} disabled={reportReason === 'other' && !reportDetails.trim()} onClick={() => void submitMessageReport()}>Enviar denúncia</Button></div></div></Modal>}
+    {reportTarget && <Modal isOpen onClose={() => { if (!reportBusy) setReportTarget(null) }} title={t('messages.reportTitle')}><div className="space-y-4"><p className="text-sm text-text-secondary">{t('messages.reportPrompt', { name: reportTarget.sender.displayName, time: formatDateTime(new Date(reportTarget.createdAt)) })}</p><label className="block text-sm text-text-primary">{t('messages.reportReason')}<select value={reportReason} onChange={(event) => setReportReason(event.target.value as typeof reportReason)} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2"><option value="spam">{t('messages.reportSpam')}</option><option value="harassment">{t('messages.reportHarassment')}</option><option value="inappropriate_content">{t('messages.reportInappropriate')}</option><option value="scam_or_fraud">{t('messages.reportScam')}</option><option value="violence_or_threat">{t('messages.reportViolence')}</option><option value="personal_information">{t('messages.reportPersonalInfo')}</option><option value="other">{t('messages.reportOther')}</option></select></label><label className="block text-sm text-text-primary">{t('messages.reportDetails')}<textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={1000} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2" /></label><div className="flex justify-end gap-2"><Button variant="ghost" disabled={reportBusy} onClick={() => setReportTarget(null)}>{t('messages.cancel')}</Button><Button loading={reportBusy} disabled={reportReason === 'other' && !reportDetails.trim()} onClick={() => void submitMessageReport()}>{t('messages.submitReport')}</Button></div></div></Modal>}
     {viewerImage && <MessageImageViewer image={viewerImage} onClose={() => setViewerImage(null)} />}
     {sharedPostId && <PostDetailModal postId={sharedPostId} onClose={() => setSharedPostId(null)} />}
   </div>

@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { Bookmark, RefreshCw } from 'lucide-react'
 import { PostCard, PostDetailModal } from '@/components/social/index'
 import { useAuthStore } from '@/store/authStore'
 import { realtimePostToLocal } from '@/store/socialStore'
 import { postsApi } from '@/services/postsApi'
 import type { Post } from '@/types/social'
+import { useTranslation } from '@/i18n'
 
 const SavedPostsPage: React.FC = () => {
+  const t = useTranslation()
   const user = useAuthStore((state) => state.user)
   const [posts, setPosts] = useState<Post[]>([])
   const [detailPostId, setDetailPostId] = useState<string | null>(null)
@@ -25,7 +27,7 @@ const SavedPostsPage: React.FC = () => {
       setNextOffset(result.posts.length)
       setHasMore(result.posts.length === 50)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível carregar as publicações salvas.')
+      setError(cause instanceof Error ? cause.message : t('savedPosts.loadFailed'))
     } finally { setLoading(false) }
   }
 
@@ -38,11 +40,11 @@ const SavedPostsPage: React.FC = () => {
       setNextOffset((current) => current + result.posts.length)
       setHasMore(result.posts.length === 50)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível carregar mais publicações.')
+      setError(cause instanceof Error ? cause.message : t('savedPosts.loadMoreFailed'))
     } finally { setLoadingMore(false) }
   }
 
-  useEffect(() => { void loadSaved() }, [])
+  useEffect(() => { void loadSaved() }, [t])
   if (!user) return null
 
   return (
@@ -51,16 +53,16 @@ const SavedPostsPage: React.FC = () => {
         <header className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/15 text-accent"><Bookmark size={20} /></div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-text-primary">Salvos</h1>
-            <p className="text-sm text-text-secondary">Suas publicações salvas ficam visíveis somente para você.</p>
+            <h1 className="text-xl font-bold text-text-primary">{t('savedPosts.title')}</h1>
+            <p className="text-sm text-text-secondary">{t('savedPosts.privacy')}</p>
           </div>
-          <button type="button" onClick={() => void loadSaved()} disabled={loading} aria-label="Atualizar publicações salvas" className="rounded-xl p-2 text-text-secondary hover:bg-background-tertiary disabled:opacity-50"><RefreshCw size={17} /></button>
+          <button type="button" onClick={() => void loadSaved()} disabled={loading} aria-label={t('savedPosts.refresh')} className="rounded-xl p-2 text-text-secondary hover:bg-background-tertiary disabled:opacity-50"><RefreshCw size={17} /></button>
         </header>
-        {error && <div role="alert" className="anceryx-card flex items-center justify-between gap-3 p-4 text-sm text-accent-red"><span>{error}</span><button type="button" onClick={() => void loadSaved()} className="underline">Tentar novamente</button></div>}
-        {loading && <div className="anceryx-card p-4 text-sm text-text-secondary">Carregando publicações salvas…</div>}
-        {!loading && !error && posts.length === 0 && <div className="anceryx-card flex min-h-52 flex-col items-center justify-center gap-2 p-8 text-center"><Bookmark size={22} className="text-text-secondary" /><p className="font-medium text-text-primary">Nenhuma publicação salva</p><p className="text-sm text-text-secondary">Use o ícone de marcador em uma publicação para guardá-la aqui.</p></div>}
+        {error && <div role="alert" className="anceryx-card flex items-center justify-between gap-3 p-4 text-sm text-accent-red"><span>{error}</span><button type="button" onClick={() => void loadSaved()} className="underline">{t('savedPosts.retry')}</button></div>}
+        {loading && <div className="anceryx-card p-4 text-sm text-text-secondary">{t('savedPosts.loading')}</div>}
+        {!loading && !error && posts.length === 0 && <div className="anceryx-card flex min-h-52 flex-col items-center justify-center gap-2 p-8 text-center"><Bookmark size={22} className="text-text-secondary" /><p className="font-medium text-text-primary">{t('savedPosts.empty')}</p><p className="text-sm text-text-secondary">{t('savedPosts.emptyHint')}</p></div>}
         {!loading && posts.map((post) => <PostCard key={post.id} post={post} currentUserId={user.id} onOpen={(opened) => setDetailPostId(opened.id)} onSavedChange={(postId, saved) => { if (!saved) setPosts((current) => current.filter((item) => item.id !== postId)) }} />)}
-        {!loading && hasMore && <button type="button" disabled={loadingMore} onClick={() => void loadMore()} className="anceryx-card p-3 text-sm text-accent hover:bg-background-tertiary disabled:opacity-60">{loadingMore ? 'Carregando…' : 'Carregar mais'}</button>}
+        {!loading && hasMore && <button type="button" disabled={loadingMore} onClick={() => void loadMore()} className="anceryx-card p-3 text-sm text-accent hover:bg-background-tertiary disabled:opacity-60">{loadingMore ? t('savedPosts.loadingMore') : t('savedPosts.loadMore')}</button>}
       </div>
       {detailPostId && <PostDetailModal postId={detailPostId} onClose={() => setDetailPostId(null)} />}
     </div>

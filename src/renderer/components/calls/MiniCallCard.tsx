@@ -18,6 +18,7 @@ import {
 import { useCallStore } from '@/store/callStore'
 import { useCall } from '@/hooks/useCall'
 import { Avatar } from '@/components/ui/index'
+import { useTranslation } from '@/i18n'
 
 /** Formata segundos em MM:SS (ou HH:MM:SS se ≥ 1h) */
 function formatDuration(secs: number): string {
@@ -78,6 +79,7 @@ const AnimatedDots: React.FC = () => {
 // ── MiniCallCard ──────────────────────────────────────────────────────────────
 
 const MiniCallCard: React.FC = () => {
+  const t = useTranslation()
   const {
     callStatus,
     callType,
@@ -123,7 +125,7 @@ const MiniCallCard: React.FC = () => {
       <div
         role="dialog"
         aria-modal="false"
-        aria-label={`Chamada com ${name}`}
+        aria-label={t('calls.withUser', { name })}
         className={[
           'mini-call-enter',
           'fixed top-[72px] left-1/2 z-[90]',
@@ -147,15 +149,15 @@ const MiniCallCard: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-text-primary font-semibold text-sm truncate">{name}</p>
                 <p className="text-text-secondary text-xs">
-                  Chamada de {isVideo ? 'vídeo' : 'voz'}
+                  {t(isVideo ? 'calls.incomingVideo' : 'calls.incomingVoice')}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={call.reject}
-                  title="Recusar chamada"
-                  aria-label="Recusar chamada"
+                  title={t('calls.reject')}
+                  aria-label={t('calls.reject')}
                   className="w-9 h-9 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-500 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   <PhoneOff size={16} />
@@ -163,8 +165,8 @@ const MiniCallCard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => { void call.accept() }}
-                  title="Atender chamada"
-                  aria-label="Atender chamada"
+                  title={t('calls.answer')}
+                  aria-label={t('calls.answer')}
                   className="w-9 h-9 flex items-center justify-center rounded-full bg-green-600 hover:bg-green-500 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
                 >
                   <PhoneIncoming size={16} />
@@ -180,13 +182,13 @@ const MiniCallCard: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-text-primary font-semibold text-sm truncate">{name}</p>
                 <p className="text-text-secondary text-xs">
-                  Chamando<AnimatedDots />
+                  {t('calls.dialing')}<AnimatedDots />
                 </p>
               </div>
               <CtrlBtn
                 onClick={call.hangUp}
-                title="Cancelar chamada"
-                ariaLabel="Cancelar chamada"
+                title={t('calls.cancel')}
+                ariaLabel={t('calls.cancel')}
                 danger
               >
                 <PhoneOff size={16} />
@@ -201,13 +203,13 @@ const MiniCallCard: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-text-primary font-semibold text-sm truncate">{name}</p>
                 <p className="text-text-secondary text-xs">
-                  Conectando<AnimatedDots />
+                  {t('calls.connecting')}<AnimatedDots />
                 </p>
               </div>
               <CtrlBtn
                 onClick={call.hangUp}
-                title="Cancelar"
-                ariaLabel="Cancelar chamada"
+                title={t('common.cancel')}
+                ariaLabel={t('calls.cancel')}
                 danger
               >
                 <PhoneOff size={16} />
@@ -224,7 +226,7 @@ const MiniCallCard: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-text-primary font-semibold text-sm truncate">{name}</p>
                   <p className="text-accent text-xs font-mono">
-                    Em chamada • {formatDuration(duration)}
+                    {t('calls.inCall')} • {formatDuration(duration)}
                   </p>
                 </div>
               </div>
@@ -232,12 +234,12 @@ const MiniCallCard: React.FC = () => {
               <div
                 className="flex items-center justify-center gap-2"
                 role="toolbar"
-                aria-label="Controles da chamada"
+                aria-label={t('calls.controls')}
               >
                 <CtrlBtn
                   onClick={call.toggleMic}
-                  title={micEnabled ? 'Silenciar microfone' : 'Ativar microfone'}
-                  ariaLabel={micEnabled ? 'Silenciar microfone' : 'Ativar microfone'}
+                  title={micEnabled ? t('calls.muteMic') : t('calls.unmuteMic')}
+                  ariaLabel={micEnabled ? t('calls.muteMic') : t('calls.unmuteMic')}
                   active={micEnabled}
                 >
                   {micEnabled ? <Mic size={16} /> : <MicOff size={16} />}
@@ -246,8 +248,8 @@ const MiniCallCard: React.FC = () => {
                 {isVideo && (
                   <CtrlBtn
                     onClick={call.toggleCam}
-                    title={camEnabled ? 'Desligar câmera' : 'Ligar câmera'}
-                    ariaLabel={camEnabled ? 'Desligar câmera' : 'Ligar câmera'}
+                    title={camEnabled ? t('calls.cameraOff') : t('calls.cameraOn')}
+                    ariaLabel={camEnabled ? t('calls.cameraOff') : t('calls.cameraOn')}
                     active={camEnabled}
                   >
                     {camEnabled ? <Video size={16} /> : <VideoOff size={16} />}
@@ -256,8 +258,8 @@ const MiniCallCard: React.FC = () => {
 
                 <CtrlBtn
                   onClick={() => { void call.toggleScreen() }}
-                  title={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
-                  ariaLabel={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
+                  title={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
+                  ariaLabel={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
                   active={screenEnabled}
                 >
                   {screenEnabled ? <MonitorOff size={16} /> : <Monitor size={16} />}
@@ -265,8 +267,8 @@ const MiniCallCard: React.FC = () => {
 
                 <CtrlBtn
                   onClick={() => useCallStore.getState().setExpanded(true)}
-                  title="Expandir chamada"
-                  ariaLabel="Expandir chamada"
+                  title={t('calls.expand')}
+                  ariaLabel={t('calls.expand')}
                   active
                 >
                   <Maximize2 size={16} />
@@ -274,8 +276,8 @@ const MiniCallCard: React.FC = () => {
 
                 <CtrlBtn
                   onClick={call.hangUp}
-                  title="Encerrar chamada"
-                  ariaLabel="Encerrar chamada"
+                  title={t('calls.end')}
+                  ariaLabel={t('calls.end')}
                   danger
                 >
                   <PhoneOff size={16} />
@@ -290,7 +292,7 @@ const MiniCallCard: React.FC = () => {
               <div className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white/50">
                 <Phone size={16} />
               </div>
-              <p className="text-text-secondary text-sm">Chamada encerrada</p>
+              <p className="text-text-secondary text-sm">{t('calls.ended')}</p>
             </div>
           )}
 
@@ -300,7 +302,7 @@ const MiniCallCard: React.FC = () => {
               <div className="w-9 h-9 flex items-center justify-center rounded-full bg-red-600/20 text-red-400">
                 <PhoneOff size={16} />
               </div>
-              <p className="text-text-secondary text-sm">Não foi possível conectar</p>
+              <p className="text-text-secondary text-sm">{t('calls.connectFailed')}</p>
             </div>
           )}
 
@@ -310,12 +312,12 @@ const MiniCallCard: React.FC = () => {
               <div className="w-9 h-9 flex items-center justify-center rounded-full bg-red-600/20 text-red-400">
                 <PhoneOff size={16} />
               </div>
-              <p className="text-text-secondary text-sm">Chamada não atendida</p>
+              <p className="text-text-secondary text-sm">{t('calls.missed')}</p>
             </div>
           )}
-          {callStatus === 'rejected' && <div className="px-4 py-3 text-sm text-text-secondary">Chamada recusada</div>}
-          {callStatus === 'cancelled' && <div className="px-4 py-3 text-sm text-text-secondary">Chamada cancelada</div>}
-          {callStatus === 'timeout' && <div className="px-4 py-3 text-sm text-text-secondary">Tempo de chamada esgotado</div>}
+          {callStatus === 'rejected' && <div className="px-4 py-3 text-sm text-text-secondary">{t('calls.rejected')}</div>}
+          {callStatus === 'cancelled' && <div className="px-4 py-3 text-sm text-text-secondary">{t('calls.cancelled')}</div>}
+          {callStatus === 'timeout' && <div className="px-4 py-3 text-sm text-text-secondary">{t('calls.timeout')}</div>}
         </div>
       </div>
     </>

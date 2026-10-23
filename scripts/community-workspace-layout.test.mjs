@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { getCommunityVoiceControlLabels } from '../src/renderer/utils/communityVoiceControls.ts'
 
@@ -66,13 +66,13 @@ assert.match(mediaAttachment, /canPlayAacLc/)
 assert.match(mediaAttachment, /resolvePrivatePlaybackUrl/)
 assert.match(mediaAttachment, /private video ticket ready/)
 assert.deepEqual(getCommunityVoiceControlLabels({ muted: false, deafened: false, sharingScreen: false }), {
-  microphone: { ariaLabel: 'Silenciar microfone', text: 'Silenciar' },
-  audio: { ariaLabel: 'Desativar áudio', text: 'Desativar áudio' },
-  screen: { ariaLabel: 'Compartilhar tela', text: 'Compartilhar tela', compactText: 'Compartilhar' },
+  microphone: { ariaLabel: 'calls.muteMic', text: 'communityVoice.micDisableShort' },
+  audio: { ariaLabel: 'communityVoice.audioDisable', text: 'communityVoice.audioDisable' },
+  screen: { ariaLabel: 'calls.shareScreen', text: 'calls.shareScreen', compactText: 'communityVoice.shareScreenShort' },
 })
-assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).microphone.ariaLabel, 'Ativar microfone')
-assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).audio.ariaLabel, 'Ativar áudio')
-assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).screen.compactText, 'Parar live')
+assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).microphone.ariaLabel, 'calls.unmuteMic')
+assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).audio.ariaLabel, 'communityVoice.audioEnable')
+assert.equal(getCommunityVoiceControlLabels({ muted: true, deafened: true, sharingScreen: true }).screen.compactText, 'communityVoice.stopStreamShort')
 assert.match(forums, /onOpenWorkspace\(forum\)/)
 assert.match(forumCreation, /Criar sem \{failedOptionalImage === 'banner' \? 'o banner' : 'o ícone'\}/)
 assert.match(forumCreation, /uploadedIconUrl \?\? iconDataUrl/)

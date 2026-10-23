@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CallHistoryMessage.tsx
  *
  * Exibe um evento de chamada no histórico da conversa.
@@ -9,6 +9,7 @@ import React from 'react'
 import { Phone, Video } from 'lucide-react'
 import type { CallHistoryEntry } from '@/types/calls'
 import { formatTime } from '@/utils/formatters'
+import { useTranslation } from '@/i18n'
 
 export interface CallHistoryMessageProps {
   entry: CallHistoryEntry
@@ -28,26 +29,28 @@ function formatCallDuration(secs: number): string {
 }
 
 const CallHistoryMessage: React.FC<CallHistoryMessageProps> = ({ entry }) => {
+  const t = useTranslation()
   const Icon = entry.callType === 'video' ? Video : Phone
-  const typeLabel = entry.callType === 'video' ? 'vídeo' : 'voz'
+  const typeLabel = entry.callType === 'video' ? t('calls.historyVideo') : t('calls.historyVoice')
   const time = formatTime(new Date(entry.startedAt))
+  const duration = formatCallDuration(entry.durationSeconds ?? 0)
 
   let label: string
   switch (entry.status) {
     case 'completed':
-      label = `Chamada de ${typeLabel} • ${formatCallDuration(entry.durationSeconds ?? 0)} • ${time}`
+      label = t('calls.historyCompleted', { type: typeLabel, duration, time })
       break
     case 'missed':
-      label = `Chamada não atendida • ${time}`
+      label = t('calls.historyMissed', { time })
       break
     case 'rejected':
-      label = `Chamada recusada • ${time}`
+      label = t('calls.historyRejected', { time })
       break
     case 'cancelled':
-      label = `Chamada cancelada • ${time}`
+      label = t('calls.historyCancelled', { time })
       break
     default:
-      label = `Chamada • ${time}`
+      label = t('calls.historyGeneric', { time })
   }
 
   return (

@@ -2,6 +2,23 @@
 
 # Em desenvolvimento
 
+- A área de mensagens diretas localiza busca, estados vazios, acessibilidade, chamadas, envio de denúncias e textos do próprio aplicativo, mantendo intactos o conteúdo das mensagens e os erros dinâmicos recebidos da API.
+
+## Internacionalização — chamadas e componentes compartilhados
+
+- Localizados em português, inglês e espanhol os estados e controles do cartão de chamada, o histórico de chamadas, os indicadores de presença e os seletores de emojis e figurinhas.
+- Os avisos de conquistas e os rótulos acessíveis do visualizador de imagens acompanham o idioma ativo; nomes de conquistas, figurinhas e conteúdos recebidos permanecem intactos.
+- A seção de voz das configurações agora localiza controles de dispositivos, volumes, permissões e testes de áudio.
+- O seletor de recorte de imagens localiza instruções, mensagens de erro, zoom e ações sem substituir o título fornecido pelo fluxo que o abriu.
+- A página de publicações salvas e a lista de pessoas seguidas localizam estados vazios, busca, ações e carregamento sem traduzir conteúdo dos membros.
+- A página de descoberta de fóruns localiza busca, abas, estados vazios, convites e notificações geradas pelo aplicativo.
+- As notas de versão e os estados da janela de atualização agora usam o catálogo; mensagens dinâmicas de erro do processo principal continuam sendo exibidas sem interpretação arbitrária.
+- A área de cobrança localiza informações do plano e do portal do Stripe e formata a data de renovação conforme a preferência regional selecionada.
+- Os controles de voz comunitária e a estrutura reutilizável do modal de gerenciamento de fóruns também acompanham o idioma, preservando os rótulos de seções enviados por seus chamadores.
+- As categorias dos emojis Unicode e os rótulos de acessibilidade de emojis e figurinhas agora são localizados sem traduzir os nomes das figurinhas.
+- As seções de conta e conexões de login localizam os campos, ações e estados do Google, mantendo intactas as mensagens livres do servidor e formatando datas na região escolhida.
+- A lista de sessões e dispositivos agora localiza seus estados e ações e formata horários conforme a região, preservando os nomes de dispositivo e método informados pelo servidor.
+
 ## Internacionalização — autenticação e navegação global
 
 - Adicionadas 96 chaves de interface em português brasileiro, inglês e espanhol para autenticação, recuperação de senha, MFA, navegação e componentes compartilhados.
