@@ -2,6 +2,8 @@
 
 # Em desenvolvimento
 
+- A área do perfil agora localiza navegação, cabeçalho, estatísticas e edição de perfil; nomes, biografias, badges e status personalizados continuam sendo conteúdo de usuário.
+- A seção de segurança localiza a verificação de e-mail, senha e etapas principais da configuração de autenticação em duas etapas. Mensagens de erro livres da API permanecem sem tradução automática.
 - A área de mensagens diretas localiza busca, estados vazios, acessibilidade, chamadas, envio de denúncias e textos do próprio aplicativo, mantendo intactos o conteúdo das mensagens e os erros dinâmicos recebidos da API.
 
 ## Internacionalização — chamadas e componentes compartilhados

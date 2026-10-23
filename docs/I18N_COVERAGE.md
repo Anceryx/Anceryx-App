@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **882**.
-- Strings visíveis fixas detectadas: **945**.
-- Cobertura medida neste subconjunto: **48.3%**.
+- Chamadas de tradução detectadas: **977**.
+- Strings visíveis fixas detectadas: **872**.
+- Cobertura medida neste subconjunto: **52.8%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -38,7 +38,7 @@
 | `components/settings/sections/ExperienciaSection.tsx` | 72 | 8 | 90.0% |
 | `components/settings/sections/NotificacoesSection.tsx` | 0 | 21 | 0.0% |
 | `components/settings/sections/PerfilSection.tsx` | 0 | 17 | 0.0% |
-| `components/settings/sections/SegurancaSection.tsx` | 0 | 58 | 0.0% |
+| `components/settings/sections/SegurancaSection.tsx` | 57 | 18 | 76.0% |
 | `components/settings/sections/SessoesDispositivosSection.tsx` | 15 | 0 | 100.0% |
 | `components/settings/sections/SobreSection.tsx` | 0 | 12 | 0.0% |
 | `components/settings/sections/UltimosLoginsSection.tsx` | 0 | 7 | 0.0% |
@@ -80,7 +80,7 @@
 | `pages/LoginPage.tsx` | 29 | 4 | 87.9% |
 | `pages/MensagensPage.tsx` | 49 | 2 | 96.1% |
 | `pages/NotificationsPage.tsx` | 32 | 0 | 100.0% |
-| `pages/PerfilPage.tsx` | 0 | 53 | 0.0% |
+| `pages/PerfilPage.tsx` | 38 | 20 | 65.5% |
 | `pages/RegisterPage.tsx` | 25 | 2 | 92.6% |
 | `pages/SavedPostsPage.tsx` | 11 | 0 | 100.0% |
 | `pages/WebOAuthCallbackPage.tsx` | 0 | 3 | 0.0% |
