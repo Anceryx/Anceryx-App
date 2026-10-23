@@ -5,6 +5,7 @@ import { messages } from '../src/renderer/i18nCatalog.ts'
 const profile = await readFile(new URL('../src/renderer/components/social/UserProfileModal.tsx', import.meta.url), 'utf8')
 const forumManagement = await readFile(new URL('../src/renderer/components/social/ForumManagementModal.tsx', import.meta.url), 'utf8')
 const communityWorkspace = await readFile(new URL('../src/renderer/components/social/CommunityWorkspaceModal.tsx', import.meta.url), 'utf8')
+const communityForumChannel = await readFile(new URL('../src/renderer/components/social/CommunityForumChannel.tsx', import.meta.url), 'utf8')
 
 for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
   for (const key of [
@@ -14,6 +15,9 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'forumManage.status.pending', 'forumManage.status.reviewing', 'forumManage.status.resolved',
     'workspaceModeration.bannedMembers', 'workspaceModeration.messageReports',
     'workspaceModeration.moderationAction', 'workspaceModeration.history',
+    'communityForum.topic', 'communityForum.topicTitle', 'communityForum.topicContent',
+    'communityForum.writeReply', 'communityForum.noPosts', 'communityForum.postsDescription',
+    'communityForum.loadTopicsFailed', 'communityForum.repliesCount',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -38,6 +42,15 @@ assert.match(forumManagement, /\{topic\.title\}/)
 assert.match(forumManagement, /\{topic\.content\}/)
 assert.match(forumManagement, /\{report\.reason\}/)
 assert.match(communityWorkspace, /renderAnceryxText\(message\.content\)/)
+assert.match(communityForumChannel, /t\('communityForum\.postsDescription'\)/)
+assert.match(communityForumChannel, /t\('communityForum\.loadTopicsFailed'\)/)
+
+// Member-created topic/reply content and names stay in their original language.
+assert.match(communityForumChannel, /\{activeTopic\.title\}/)
+assert.match(communityForumChannel, /\{activeTopic\.content\}/)
+assert.match(communityForumChannel, /\{item\.content\}/)
+assert.match(communityForumChannel, /\{topic\.title\}/)
+assert.match(communityForumChannel, /\{topic\.content\}/)
 
 // Localization must not bypass the existing owner permission checks.
 assert.match(forumManagement, /disabled=\{!isOwner\}/)

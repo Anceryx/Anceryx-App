@@ -1,19 +1,10 @@
 # Relatório de cobertura de internacionalização
 
-## Estado desta etapa
-
-- A cobertura estática subiu de 53,5% (992 chamadas traduzidas e 863 rótulos fixos) para 59,6% (1.111 chamadas e 753 rótulos fixos).
-- `UserProfileModal.tsx` foi parcialmente localizado (81,7% no subconjunto medido); rótulos dinâmicos, status de moderação e revisão visual seguem pendentes.
-- `ForumManagementModal.tsx` localiza abas, cargos e alguns estados conhecidos (5,8% medidos); a interface principal de gerenciamento ainda precisa de tradução.
-- `CommunityWorkspaceModal.tsx` localiza a área inicial de moderação (13,5% medidos), mas 352 rótulos fixos permanecem detectados.
-- Configurações de dados/privacidade, notificações, perfil, sobre, últimos logins e outros módulos abaixo ainda têm texto fixo.
-- O percentual mede somente padrões estáticos reconhecidos pelo script e não representa a cobertura integral da interface.
-
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **1111**.
-- Strings visíveis fixas detectadas: **753**.
-- Cobertura medida neste subconjunto: **59.6%**.
+- Chamadas de tradução detectadas: **1149**.
+- Strings visíveis fixas detectadas: **724**.
+- Cobertura medida neste subconjunto: **61.3%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -54,7 +45,7 @@
 | `components/settings/sections/VozSection.tsx` | 27 | 3 | 90.0% |
 | `components/settings/SettingsModal.tsx` | 7 | 0 | 100.0% |
 | `components/settings/SettingsNav.tsx` | 5 | 2 | 71.4% |
-| `components/social/CommunityForumChannel.tsx` | 0 | 33 | 0.0% |
+| `components/social/CommunityForumChannel.tsx` | 38 | 4 | 90.5% |
 | `components/social/CommunityManagementModal.tsx` | 7 | 0 | 100.0% |
 | `components/social/CommunityVoiceActionButtons.tsx` | 14 | 0 | 100.0% |
 | `components/social/CommunityWorkspaceModal.tsx` | 55 | 352 | 13.5% |

@@ -2,6 +2,7 @@
 
 # Em desenvolvimento
 
+- O canal de publicações da comunidade agora localiza controles, estados vazios e mensagens de erro genéricas nos três idiomas; títulos, respostas, conteúdo e nomes de membros continuam intactos.
 - A área inicial de moderação do workspace localiza filtros de denúncias e rótulos de ações em pt-BR, inglês e espanhol, preservando mensagens, motivos e conteúdo fornecido por membros.
 - O modal de perfil passou a localizar os principais estados, navegação, ações, listas, recursos de moderação e metadados de data; nomes, biografias, nomes de Fóruns e justificativas livres permanecem intactos. As abas e rótulos de cargos do gerenciamento de Fóruns agora acompanham o idioma ativo.
 - A área do perfil agora localiza navegação, cabeçalho, estatísticas e edição de perfil; nomes, biografias, badges e status personalizados continuam sendo conteúdo de usuário.
