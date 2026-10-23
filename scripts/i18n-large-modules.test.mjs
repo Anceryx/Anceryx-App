@@ -8,6 +8,8 @@ const communityWorkspace = await readFile(new URL('../src/renderer/components/so
 const communityForumChannel = await readFile(new URL('../src/renderer/components/social/CommunityForumChannel.tsx', import.meta.url), 'utf8')
 const forumDetail = await readFile(new URL('../src/renderer/components/social/ForumDetailModal.tsx', import.meta.url), 'utf8')
 const createForum = await readFile(new URL('../src/renderer/components/social/CreateForumModal.tsx', import.meta.url), 'utf8')
+const feedPage = await readFile(new URL('../src/renderer/pages/FeedPage.tsx', import.meta.url), 'utf8')
+const postDetail = await readFile(new URL('../src/renderer/components/social/PostDetailModal.tsx', import.meta.url), 'utf8')
 const privacySettings = await readFile(new URL('../src/renderer/components/settings/sections/DadosPrivacidadeSection.tsx', import.meta.url), 'utf8')
 const notificationSettings = await readFile(new URL('../src/renderer/components/settings/sections/NotificacoesSection.tsx', import.meta.url), 'utf8')
 const profileSettings = await readFile(new URL('../src/renderer/components/settings/sections/PerfilSection.tsx', import.meta.url), 'utf8')
@@ -46,7 +48,10 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'createForum.template.friends.title', 'createForum.template.community.title',
     'createForum.templateCounts', 'createForum.visibility.public', 'createForum.visibility.private',
     'createForum.validation.nameMin', 'createForum.validation.descriptionRequired',
-    'createForum.validation.tagInvalid', 'createForum.validation.fileType', 'createForum.created',
+    'createForum.validation.tagInvalid', 'validation.fileType', 'createForum.created',
+    'feed.followingLoadFailed', 'feed.searchFailed', 'feed.newComment', 'feed.newReaction',
+    'feed.uploadLimitFailed', 'feed.createDraftFailed', 'feed.createFailed', 'feed.loadMoreFailed',
+    'post.commentFailed', 'post.retryComment',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -131,6 +136,13 @@ assert.match(createForum, /t\(category\.nameKey\)/)
 assert.match(createForum, /t\(channel\.nameKey\)/)
 assert.match(createForum, /validateForumTags\(tags, t\)/)
 assert.match(createForum, /validateUpload\(file, ICON_MIMES, ICON_MAX, t\)/)
+for (const key of ['feed.followingLoadFailed', 'feed.searchFailed', 'feed.newComment', 'feed.newReaction', 'feed.uploadLimitFailed', 'feed.createDraftFailed', 'feed.createFailed', 'feed.loadMoreFailed']) {
+  assert.ok(feedPage.includes(`t('${key}')`), `FeedPage does not use ${key}`)
+}
+assert.match(postDetail, /setError\(t\('post\.commentFailed'\)\)/)
+assert.match(postDetail, /t\('post\.retryComment'\)/)
+assert.match(postDetail, /renderAnceryxText\(comment\.content\)/)
+assert.match(postDetail, /renderPostText\(post\.content\)/)
 assert.match(privacySettings, /\{user\.displayName\}/)
 assert.match(privacySettings, /\{user\.username\}/)
 assert.match(profileSettings, /\{request\.user\.displayName\}/)

@@ -81,7 +81,7 @@ const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
       await addComment(postId, trimmed)
       setValue('')
     } catch {
-      setError('Não foi possível comentar agora.')
+      setError(t('post.commentFailed'))
     } finally {
       submittingRef.current = false
       setSubmitting(false)
@@ -96,7 +96,7 @@ const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
             <AlertCircle size={14} /> {error}
           </span>
           <button type="button" className="font-semibold text-red-100 hover:text-white" onClick={handleSubmit}>
-            Tentar novamente
+            {t('post.retryComment')}
           </button>
         </div>
       )}

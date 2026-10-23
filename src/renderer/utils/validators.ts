@@ -180,14 +180,14 @@ export function validateUpload(
     const readable = allowedMimes
       .map((m) => m.split('/')[1].toUpperCase())
       .join(', ')
-    return translate?.('createForum.validation.fileType', { types: readable }) ?? `Tipo de arquivo não suportado. Aceitos: ${readable}.`
+    return translate?.('validation.fileType', { types: readable }) ?? `Tipo de arquivo não suportado. Aceitos: ${readable}.`
   }
   if (file.size > maxBytes) {
     const maxMB = (maxBytes / (1024 * 1024)).toFixed(0)
-    return translate?.('createForum.validation.fileSize', { size: maxMB }) ?? `Arquivo muito grande. Tamanho máximo: ${maxMB} MB.`
+    return translate?.('validation.fileSize', { size: maxMB }) ?? `Arquivo muito grande. Tamanho máximo: ${maxMB} MB.`
   }
   if (file.size === 0) {
-    return translate?.('createForum.validation.fileEmpty') ?? 'O arquivo está vazio.'
+    return translate?.('validation.fileEmpty') ?? 'O arquivo está vazio.'
   }
   return null
 }

@@ -88,10 +88,10 @@ const FeedPage: React.FC = () => {
     setPageLoading(true); setPageError(null); setFollowingPosts([])
     void postsApi.feed(undefined, 'following').then(({ posts: rows, nextCursor }) => {
       if (active) { setFollowingPosts(rows.map(realtimePostToLocal)); setPageCursor(nextCursor) }
-    }).catch((error) => { if (active) setPageError(error instanceof Error ? error.message : 'Não foi possível carregar o feed de quem você segue.') })
+    }).catch((error) => { if (active) setPageError(error instanceof Error ? error.message : t('feed.followingLoadFailed')) })
       .finally(() => { if (active) setPageLoading(false) })
     return () => { active = false }
-  }, [feedTab, token])
+  }, [feedTab, t, token])
 
   useEffect(() => { if (feedTab === 'for-you') setPageCursor(feedCursor) }, [feedCursor, feedTab])
 
@@ -123,11 +123,11 @@ const FeedPage: React.FC = () => {
       setSearchError(null)
       void socialApi.searchUsers(query)
         .then(({ users }) => { if (active) setSearchUsers(users) })
-        .catch((error: unknown) => { if (active) setSearchError(error instanceof Error ? error.message : 'Não foi possível pesquisar agora.') })
+        .catch((error: unknown) => { if (active) setSearchError(error instanceof Error ? error.message : t('feed.searchFailed')) })
         .finally(() => { if (active) setSearching(false) })
     }, 250)
     return () => { active = false; window.clearTimeout(timer) }
-  }, [searchQuery])
+  }, [searchQuery, t])
 
   useEffect(() => {
     if (!token) return
@@ -141,12 +141,12 @@ const FeedPage: React.FC = () => {
       realtimeClient.subscribe('post.comment.updated', (event) => upsertRealtimeComment(event.payload)),
       realtimeClient.subscribe('post.comment.deleted', (event) => deleteRealtimeComment(event.payload.postId, event.payload.commentId)),
       realtimeClient.subscribe('notification.created', (event) => {
-        if (event.payload.type === 'post.comment') addNotification('Novo comentário em uma publicação sua.', 'info')
-        if (event.payload.type === 'post.reaction') addNotification('Nova reação em uma publicação sua.', 'info')
+        if (event.payload.type === 'post.comment') addNotification(t('feed.newComment'), 'info')
+        if (event.payload.type === 'post.reaction') addNotification(t('feed.newReaction'), 'info')
       }),
     ]
     return () => unsubs.forEach((unsubscribe) => unsubscribe())
-  }, [addNotification, deleteRealtimeComment, deleteRealtimePost, setRealtimePostLike, token, upsertRealtimeComment, upsertRealtimePost])
+  }, [addNotification, deleteRealtimeComment, deleteRealtimePost, setRealtimePostLike, t, token, upsertRealtimeComment, upsertRealtimePost])
 
   if (!user) return null
 
@@ -158,7 +158,7 @@ const FeedPage: React.FC = () => {
     setMediaError(null)
     try {
       const limit = await mediaApi.getUploadLimit('post-image')
-      const err = validateUpload(file, ACCEPTED_IMAGE_MIMES, limit)
+      const err = validateUpload(file, ACCEPTED_IMAGE_MIMES, limit, t)
       if (err) {
         setMediaError(err)
         return
@@ -166,7 +166,7 @@ const FeedPage: React.FC = () => {
       if (media?.preview.startsWith('blob:')) URL.revokeObjectURL(media.preview)
       setMedia({ name: file.name, type: file.type, preview: URL.createObjectURL(file), file })
     } catch (error) {
-      setMediaError(error instanceof Error ? error.message : 'Não foi possível verificar o limite de envio.')
+      setMediaError(error instanceof Error ? error.message : t('feed.uploadLimitFailed'))
     }
   }
 
@@ -197,8 +197,8 @@ const FeedPage: React.FC = () => {
       setMedia(null); setMediaError(null); setExpanded(false)
     } catch (error) {
       if (mediaAssetId && error instanceof ApiError && error.status >= 400 && error.status < 500) void mediaApi.deleteUpload(mediaAssetId).catch(() => undefined)
-      setMediaError(error instanceof Error ? error.message : 'Não foi possível publicar. Seu rascunho foi preservado.')
-      addNotification('Falha ao publicar. Tente novamente.', 'error')
+      setMediaError(error instanceof Error ? error.message : t('feed.createDraftFailed'))
+      addNotification(t('feed.createFailed'), 'error')
     } finally { uploadControllerRef.current = null; setMediaLoading(false) }
   }
 
@@ -261,7 +261,7 @@ const FeedPage: React.FC = () => {
       if (feedTab === 'following') setFollowingPosts((current) => [...new Map([...current, ...rows.map(realtimePostToLocal)].map((post) => [post.id, post])).values()])
       else rows.forEach((post) => upsertRealtimePost(post))
       setPageCursor(nextCursor)
-    } catch (error) { setPageError(error instanceof Error ? error.message : 'Não foi possível carregar mais publicações.') }
+    } catch (error) { setPageError(error instanceof Error ? error.message : t('feed.loadMoreFailed')) }
     finally { setPageLoading(false) }
   }
 

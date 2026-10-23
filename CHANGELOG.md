@@ -4,6 +4,7 @@
 - O modal de detalhes do Fórum agora localiza ações, contadores, descrição acessível e estados nos três idiomas; nomes e descrições do fórum continuam sendo conteúdo original.
 - A criação de fóruns localiza os modelos iniciais, configurações, validações, upload de imagens e controles em português, inglês e espanhol. Os campos digitados e erros livres da API continuam preservados.
 - A descoberta do Explore localiza os rótulos de fallback de mídia e mantém a página inicial, pesquisa contextual, filtros e conteúdo público existente.
+- O feed localiza notificações de interação e mensagens genéricas de falha; a validação de upload reaproveita mensagens localizadas sem substituir erros específicos da API. O detalhe da publicação localiza o estado de nova tentativa.
 
 # Em desenvolvimento
 

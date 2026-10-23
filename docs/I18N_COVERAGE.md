@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2154**.
-- Strings visíveis fixas detectadas: **129**.
-- Cobertura medida neste subconjunto: **94.3%**.
+- Chamadas de tradução detectadas: **2164**.
+- Strings visíveis fixas detectadas: **128**.
+- Cobertura medida neste subconjunto: **94.4%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -54,7 +54,7 @@
 | `components/social/ForumDetailModal.tsx` | 11 | 1 | 91.7% |
 | `components/social/ForumManagementModal.tsx` | 147 | 3 | 98.0% |
 | `components/social/PostCard.tsx` | 44 | 2 | 95.7% |
-| `components/social/PostDetailModal.tsx` | 15 | 5 | 75.0% |
+| `components/social/PostDetailModal.tsx` | 17 | 4 | 81.0% |
 | `components/social/ProfileMenu.tsx` | 27 | 1 | 96.4% |
 | `components/social/SetStatusModal.tsx` | 19 | 0 | 100.0% |
 | `components/social/StatusBubble.tsx` | 1 | 0 | 100.0% |
@@ -75,7 +75,7 @@
 | `pages/CobrancaPage.tsx` | 20 | 1 | 95.2% |
 | `pages/DashboardPage.tsx` | 20 | 4 | 83.3% |
 | `pages/ExplorePage.tsx` | 73 | 12 | 85.9% |
-| `pages/FeedPage.tsx` | 32 | 4 | 88.9% |
+| `pages/FeedPage.tsx` | 40 | 4 | 90.9% |
 | `pages/ForunsPage.tsx` | 20 | 0 | 100.0% |
 | `pages/LoginPage.tsx` | 29 | 4 | 87.9% |
 | `pages/MensagensPage.tsx` | 49 | 2 | 96.1% |
@@ -88,13 +88,15 @@
 | `utils/communityMemberGroups.ts` | 5 | 0 | 100.0% |
 | `utils/communityVoiceControls.ts` | 0 | 6 | 0.0% |
 
-## Revisão manual das superfícies de fórum e Explore
+## Revisão manual dos módulos trabalhados
 
-- `components/social/CreateForumModal.tsx`: nenhum texto de interface conhecido permanece fixo. O contador automatizado registra `*`, `*` e `#`, que são marcadores visuais de campo obrigatório, tag e canal. Modelos iniciais e labels são localizados; campos do usuário e mensagens livres da API permanecem originais.
-- `components/social/ForumDetailModal.tsx`: o conteúdo do fórum, incluindo nome e descrição, permanece intacto. Os itens fixos remanescentes são pontuação de apresentação e conteúdo dinâmico.
-- `pages/ExplorePage.tsx`: fallback de mídia agora usa chaves do catálogo. Os 12 itens restantes são símbolos de apresentação e separadores (`·`, `@`, `#`) junto a nomes e conteúdo social dinâmico; categorias, estados, pesquisa e paginação usam traduções.
+- `components/social/CreateForumModal.tsx`: os três itens detectados (`*`, `*`, `#`) são símbolos obrigatórios e marcadores visuais. Os textos do fluxo e os modelos iniciais são localizados. Campos do usuário e erros livres da API permanecem originais.
+- `components/social/ForumDetailModal.tsx`: nomes e descrições do fórum são conteúdo dinâmico; o item fixo residual é pontuação de apresentação.
+- `pages/ExplorePage.tsx`: os 12 itens detectados são separadores e marcadores (`·`, `@`, `#`) associados a nomes ou conteúdo de publicações. Fallbacks de mídia, pesquisa, categorias e estados têm tradução.
+- `pages/FeedPage.tsx`: os quatro itens são `@`, `•` e aspas tipográficas usados como marcadores; notificações, erros genéricos e mensagens de validação são localizados. Erros livres recebidos de serviços permanecem inalterados.
+- `components/social/PostDetailModal.tsx`: os quatro itens restantes são os marcadores `@` e `·` exibidos junto a nomes/identificadores; controles e estado de nova tentativa são localizados. O conteúdo de publicações e comentários permanece intacto.
 
-## Pendências para revisão manual
+## Módulos ainda na fila
 
-O inventário não classifica automaticamente todos os literais. Continuam na fila de inspeção: `FeedPage.tsx` e componentes de post, `PerfilPage.tsx`, `DashboardPage.tsx`, componentes de mensagens, controles de chamadas, páginas de autenticação e superfícies Electron. Os percentuais são estimativas de padrões estáticos e não comprovam cobertura total.
+O relatório estático não determina sozinho se cada literal restante é interface, conteúdo do usuário, identificador técnico ou símbolo. A revisão deve continuar pelos módulos com contagens residuais na tabela, priorizando `PerfilPage.tsx`, `DashboardPage.tsx`, `ForumManagementModal.tsx`, `UserProfileModal.tsx`, `CommunityWorkspaceModal.tsx`, componentes de mensagens e chamadas, e as telas de autenticação. O percentual geral é uma estimativa parcial e não prova tradução total.
 | `utils/validators.ts` | 11 | 0 | 100.0% |
