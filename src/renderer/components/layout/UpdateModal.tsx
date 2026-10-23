@@ -64,7 +64,7 @@ const UpdateModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
             <p className="text-sm font-semibold text-text-primary">{t('updates.title')}</p>
-            <p className="text-xs text-text-secondary">{t('updates.currentVersion', { name: info.currentVersion || 'dev', value: info.channel })}</p>
+            <p className="text-xs text-text-secondary">{t('updates.currentVersion', { name: info.currentVersion || 'dev', value: t(info.channel === 'beta' ? 'updates.channelBeta' : 'updates.channelStable') })}</p>
           </div>
           <button type="button" onClick={onClose} className="rounded p-1 text-text-secondary hover:text-text-primary" aria-label={t('common.close')}><X size={16} /></button>
         </div>

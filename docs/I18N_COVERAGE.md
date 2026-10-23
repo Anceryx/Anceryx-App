@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2213**.
-- Strings visíveis fixas detectadas: **104**.
-- Cobertura medida neste subconjunto: **95.5%**.
+- Chamadas de tradução detectadas: **2216**.
+- Strings visíveis fixas detectadas: **100**.
+- Cobertura medida neste subconjunto: **95.7%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -20,7 +20,7 @@
 | `components/layout/RealtimeConnectionNotice.tsx` | 1 | 0 | 100.0% |
 | `components/layout/ReleaseNotesModal.tsx` | 5 | 0 | 100.0% |
 | `components/layout/TitleBar.tsx` | 6 | 2 | 75.0% |
-| `components/layout/UpdateModal.tsx` | 14 | 0 | 100.0% |
+| `components/layout/UpdateModal.tsx` | 15 | 0 | 100.0% |
 | `components/messages/CallHistoryMessage.tsx` | 7 | 0 | 100.0% |
 | `components/messages/ConversationHeader.tsx` | 9 | 1 | 90.0% |
 | `components/messages/EmptyConversation.tsx` | 3 | 0 | 100.0% |
@@ -40,7 +40,7 @@
 | `components/settings/sections/PerfilSection.tsx` | 19 | 1 | 95.0% |
 | `components/settings/sections/SegurancaSection.tsx` | 79 | 0 | 100.0% |
 | `components/settings/sections/SessoesDispositivosSection.tsx` | 15 | 0 | 100.0% |
-| `components/settings/sections/SobreSection.tsx` | 18 | 1 | 94.7% |
+| `components/settings/sections/SobreSection.tsx` | 19 | 1 | 95.0% |
 | `components/settings/sections/UltimosLoginsSection.tsx` | 15 | 0 | 100.0% |
 | `components/settings/sections/VozSection.tsx` | 30 | 0 | 100.0% |
 | `components/settings/SettingsModal.tsx` | 7 | 0 | 100.0% |
@@ -68,11 +68,9 @@
 | `components/ui/Spinner.tsx` | 1 | 0 | 100.0% |
 | `hooks/usePersistentDraft.ts` | 1 | 0 | 100.0% |
 | `image-crop-visual-test.tsx` | 0 | 5 | 0.0% |
-| `lib/billingData.ts` | 0 | 3 | 0.0% |
-| `lib/releaseNotes.ts` | 0 | 1 | 0.0% |
 | `pages/AmigosPage.tsx` | 16 | 1 | 94.1% |
 | `pages/BillingResultPage.tsx` | 8 | 0 | 100.0% |
-| `pages/CobrancaPage.tsx` | 20 | 1 | 95.2% |
+| `pages/CobrancaPage.tsx` | 21 | 1 | 95.5% |
 | `pages/DashboardPage.tsx` | 20 | 4 | 83.3% |
 | `pages/ExplorePage.tsx` | 73 | 12 | 85.9% |
 | `pages/FeedPage.tsx` | 40 | 4 | 90.9% |
@@ -107,7 +105,7 @@
 - `pages/LoginPage.tsx` e `pages/RegisterPage.tsx`: estados locais de configuração e abertura do acesso Google usam chaves do catálogo junto com os demais erros de autenticação.
 - `services/apiClient.ts`, `services/mediaApi.ts`, `services/realtimeClient.ts` e `services/webrtc/*`: mensagens próprias do cliente para falhas de conexão, upload, mídia, tela e voz usam erros que consultam o idioma ativo no momento da leitura. Mensagens livres recebidas da API continuam preservadas.
 - `services/apiConfig.ts`: erros locais de URL, protocolo e exigência de HTTPS em produção usam o catálogo; a lista de origens permitidas permanece a mesma.
-- `components/layout/UpdateModal.tsx`: os estados de atualização e falhas seguras são localizados no renderer; textos de notas de versão fornecidos junto com a versão mantêm o idioma original do publicador.
+- `components/layout/UpdateModal.tsx`: os estados de atualização, os canais stable/beta e falhas seguras são localizados no renderer; textos de notas de versão fornecidos junto com a versão mantêm o idioma original do publicador.
 
 ## Ocorrências restantes e classificação
 
@@ -121,9 +119,13 @@
 - `components/social/UserProfileModal.tsx`: `✦` é ícone decorativo acessível como oculto; nomes, biografias e conteúdo do perfil permanecem originais.
 - `components/ui/EmojiPicker.tsx`, `pages/ExplorePage.tsx` e `pages/PerfilPage.tsx`: parâmetros dinâmicos/símbolos e marcadores de nomes; os dados recebidos não são traduzidos.
 - `image-crop-visual-test.tsx`: textos pertencem ao harness de teste visual e não são incluídos na interface distribuída.
-- `lib/billingData.ts` e `lib/releaseNotes.ts`: literais residuais são dados não renderizados diretamente; as páginas/modal consomem as traduções do catálogo.
+- `lib/billingData.ts` agora mantém somente os identificadores dos planos; o selo popular usa o catálogo. `lib/releaseNotes.ts` mantém chaves de tradução, resolvidas pelo modal.
 - `pages/FeedPage.tsx`: resíduos são aspas e marcadores tipográficos ao redor de texto de usuário.
 - `utils/communityVoiceControls.ts`: os literais são chaves tipadas do catálogo, consumidas por `t()` no componente de controles de voz.
 - `main/updater/*`: mensagens internas ainda chegam no snapshot em português, mas o renderer agora exibe rótulos localizados pelo estado; o texto é usado apenas como marcador interno para identificar a pausa de segurança, sem mostrar a frase original.
 
-A tabela automatizada tem falsos positivos e não consegue medir arrays dinâmicos, strings de serviço ou o conteúdo efetivamente renderizado. O valor de 95,5% é apenas a razão do subconjunto estático contabilizado, não uma declaração de cobertura total. QA visual dos três idiomas ainda é necessário.
+## Revisão final dos candidatos estáticos
+
+A execução de 23/10/2026 encontrou 2.216 chamadas de tradução e 100 candidatos fixos (95,7% neste subconjunto). A revisão individual identificou zero frases de interface conhecidas que ainda precisem de uma chave de tradução. Os 100 candidatos restantes são exceções: CSS de animação e separadores visuais em `MiniCallCard.tsx`; marcas e nomes próprios (Anceryx, Anceryx+, Kaoli, Google); pontuação e símbolos de handles, hashtags, datas e contadores; resoluções de vídeo e amostra tipográfica `Aa`; o identificador de ação `community.role.update`, o prefixo `ID:` e o esquema `anceryx://invite/`; as chaves tipadas de `utils/communityVoiceControls.ts`; e os cinco rótulos do harness `image-crop-visual-test.tsx`, que não é importado pela interface distribuída. Textos de nomes, biografias, posts, respostas, motivos, mensagens e notas livres do publicador são conteúdo externo e permanecem no idioma de origem.
+
+Os textos obsoletos de cobrança e release notes foram removidos dos dados não utilizados; a badge de cobrança foi conectada ao catálogo. O teste da comunidade agora verifica a chave traduzida do estado vazio. A métrica automatizada não inspeciona toda expressão/estado renderizado, portanto a conclusão de zero pendências conhecidas baseia-se também nessa inspeção manual e ainda requer QA visual de cada idioma no aplicativo Windows.

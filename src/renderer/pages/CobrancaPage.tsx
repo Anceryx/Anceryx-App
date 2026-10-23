@@ -3,7 +3,7 @@ import { Check, Crown, Sparkles, Star } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useUIStore } from '@/store/uiStore'
 import { Button, ContentSectionCard, WidePage } from '@/components/ui/index'
-import { PREMIUM_BENEFITS, PREMIUM_PLANS } from '@/lib/billingData'
+import { PREMIUM_PLANS } from '@/lib/billingData'
 import { type PremiumPlan, hasAnceryxPlus, PREMIUM_TEXT_LIMIT, PREMIUM_UPLOAD_MAX_BYTES } from '@/lib/premium'
 import { billingApi } from '@/services/billingApi'
 import { openExternalUrl } from '@/platform/platform'
@@ -72,7 +72,7 @@ const CobrancaPage: React.FC = () => {
       </section>
 
       <section className="grid grid-cols-3 gap-4 max-[980px]:grid-cols-1">
-        {PREMIUM_BENEFITS.slice(0, 6).map((benefit, index) => (
+        {Array.from({ length: 6 }, (_, index) => index).map((index) => (
           <ContentSectionCard key={index} className="flex min-h-[158px] items-start gap-4 p-4">
             <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border border-accent/15 bg-accent/10">
               <img src={BENEFIT_MASCOTS[index]} alt="" className="h-16 w-16 object-contain" draggable={false} aria-hidden="true" />
@@ -95,7 +95,7 @@ const CobrancaPage: React.FC = () => {
           <div className="mt-5 grid grid-cols-3 gap-4 max-[900px]:grid-cols-1">
             {Object.values(PREMIUM_PLANS).map((plan) => (
               <article key={plan.id} className={['relative rounded-2xl border p-4 transition-colors', activePlan === plan.id ? 'border-accent bg-accent/10 shadow-[0_0_24px_rgba(139,92,246,0.14)]' : 'border-border bg-background-secondary'].join(' ')}>
-                {plan.badge && <span className="absolute right-4 top-4 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{plan.badge}</span>}
+                {plan.isPopular && <span className="absolute right-4 top-4 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">{t('billing.popular')}</span>}
                 <p className="text-sm font-semibold text-text-primary">{t(`billing.plan.${plan.id}` as Parameters<typeof t>[0])}</p>
                 <p className="mt-3 text-2xl font-bold text-text-primary">{t(`billing.period.${plan.id}` as Parameters<typeof t>[0])}</p>
                 <p className="mt-2 text-xs leading-relaxed text-text-secondary">{t('billing.backendPricing')}</p>
@@ -115,7 +115,7 @@ const CobrancaPage: React.FC = () => {
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">{t('billing.included')}</p>
           <h2 className="text-xl font-semibold text-text-primary">{t('billing.personalizeTitle')}</h2>
           <p className="mt-1 text-sm leading-relaxed text-text-secondary">{t('billing.entitlementDescription')}</p>
-          <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1">{PREMIUM_BENEFITS.map((_, index) => <div key={index} className="flex items-start gap-3 rounded-xl border border-border bg-background-secondary p-3 text-sm text-text-secondary"><Check size={16} className="mt-0.5 shrink-0 text-accent" /><span>{t(`billing.benefit.${index + 1}` as Parameters<typeof t>[0], { textLimit: PREMIUM_TEXT_LIMIT.toLocaleString(locale), uploadLimit: PREMIUM_UPLOAD_MAX_BYTES / 1024 / 1024 })}</span></div>)}</div>
+          <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1">{Array.from({ length: 6 }, (_, index) => index).map((index) => <div key={index} className="flex items-start gap-3 rounded-xl border border-border bg-background-secondary p-3 text-sm text-text-secondary"><Check size={16} className="mt-0.5 shrink-0 text-accent" /><span>{t(`billing.benefit.${index + 1}` as Parameters<typeof t>[0], { textLimit: PREMIUM_TEXT_LIMIT.toLocaleString(locale), uploadLimit: PREMIUM_UPLOAD_MAX_BYTES / 1024 / 1024 })}</span></div>)}</div>
         </ContentSectionCard>
       </section>
     </WidePage>

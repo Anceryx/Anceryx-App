@@ -1,4 +1,7 @@
 # Registro de alterações
+- A auditoria final removeu literais antigos não utilizados dos dados de cobrança/notas, localizou o selo Popular e documentou os candidatos restantes da métrica como símbolos, marcas, identificadores ou conteúdo de teste. O teste de publicações comunitárias agora aceita um caminho explícito para o checkout separado da API.
+- Os nomes dos canais stable e beta do atualizador agora acompanham o idioma selecionado no modal e nas configurações.
+- A preparação da v0.17.0 permanece bloqueada para publicação estável: o lockfile usa electron-builder 26.x/electron-updater 6.x, enquanto o workflow exige 27.x/7.x e assinatura Ed25519; o pacote continua na versão 0.15.1 até que os requisitos sejam resolvidos.
 - O workspace comunitário agora localiza controles, moderação, recursos, convites, canais, mensagens, eventos e voz em pt-BR, inglês e espanhol. Permissões, conteúdo enviado por membros e mensagens de erro livres da API permanecem preservados.
 - O modal de publicações do Fórum também localiza seus controles e estados, mantendo títulos, respostas e conteúdo dos membros no idioma original.
 - O modal de detalhes do Fórum agora localiza ações, contadores, descrição acessível e estados nos três idiomas; nomes e descrições do fórum continuam sendo conteúdo original.

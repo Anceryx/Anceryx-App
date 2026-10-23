@@ -36,9 +36,9 @@ const ReleaseNotesModal: React.FC = () => {
           </div>
         </div>
         <ul className="space-y-2">
-          {CURRENT_RELEASE_NOTES.highlights.map((_item, index) => (
-            <li key={t((['releaseNotes.gifKlipy', 'releaseNotes.emojiCursor', 'releaseNotes.kaoliStickers'] as const)[index] ?? 'common.translationUnavailable')} className="rounded-lg border border-border bg-background-secondary px-3 py-2 text-sm text-text-primary">
-              {t((['releaseNotes.gifKlipy', 'releaseNotes.emojiCursor', 'releaseNotes.kaoliStickers'] as const)[index] ?? 'common.translationUnavailable')}
+          {CURRENT_RELEASE_NOTES.highlights.map((key) => (
+            <li key={t(key)} className="rounded-lg border border-border bg-background-secondary px-3 py-2 text-sm text-text-primary">
+              {t(key)}
             </li>
           ))}
         </ul>

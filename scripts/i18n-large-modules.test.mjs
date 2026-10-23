@@ -50,7 +50,7 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'workspaceUi.inviteUseCount', 'workspaceUi.microphoneMuted', 'workspaceUi.speaking',
     'settings.privacy.blockedAccounts', 'settings.notifications.privateMessageSound',
     'settings.profile.whoCanMessage', 'settings.about.securePaused', 'settings.loginHistory.currentSession',
-    'billing.heroTitle', 'billing.benefit.1', 'billing.result.successTitle',
+    'billing.heroTitle', 'billing.benefit.1', 'billing.popular', 'billing.result.successTitle',
     'forumManage.delete.title', 'forumManage.reportsDescription', 'forumManage.accessDescription',
     'forumManage.removeMemberDescription', 'forumManage.error.imageType', 'forumManage.notice.settingsSaved',
     'forumManage.memberJoined', 'forumManage.decisionRecorded', 'forumManage.removeTagAria',
@@ -76,6 +76,7 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'auth.invalidCredentials', 'auth.sessionExpired', 'auth.tooManyAttempts', 'auth.serviceUnavailable',
     'auth.authenticationFailed', 'auth.apiConnectionFailed', 'auth.browserCannotOpenGoogle',
     'common.apiConnectionFailed', 'common.apiAttachmentConnectionFailed', 'common.apiUrlInvalid',
+    'updates.channelStable', 'updates.channelBeta',
     'common.productionApiHttpsRequired', 'common.apiProtocolInvalid', 'common.realtimeUnavailable',
     'media.invalidLocalFile', 'media.uploadCanceled', 'media.invalidResponse', 'media.uploadSizeExceeded',
     'media.premiumUploadExpired', 'media.uploadInterrupted', 'media.updateRequired', 'media.uploadUnconfirmed',
@@ -134,8 +135,10 @@ assert.match(privacySettings, /t\('settings\.privacy\.blockedAccounts'\)/)
 assert.match(notificationSettings, /t\('settings\.notifications\.privateMessageSound'\)/)
 assert.match(profileSettings, /t\('settings\.profile\.whoCanMessage'\)/)
 assert.match(aboutSettings, /t\(statusKey\[info\.state\]\)/)
+assert.match(aboutSettings, /t\(info\.channel === 'beta' \? 'updates\.channelBeta' : 'updates\.channelStable'\)/)
 assert.match(loginHistorySettings, /formatDateTime\(new Date\(login\.occurredAt\)\)/)
 assert.match(billing, /t\('billing\.heroTitle'\)/)
+assert.match(billing, /t\('billing\.popular'\)/)
 assert.match(billing, /t\(`billing\.benefit\.\$\{index \+ 1\}`/)
 assert.match(billingResult, /t\('billing\.result\.successTitle'\)/)
 assert.match(forumManagement, /t\('forumManage\.delete\.title'\)/)
