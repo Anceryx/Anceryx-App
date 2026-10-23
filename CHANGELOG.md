@@ -5,6 +5,7 @@
 - A criação de fóruns localiza os modelos iniciais, configurações, validações, upload de imagens e controles em português, inglês e espanhol. Os campos digitados e erros livres da API continuam preservados.
 - A descoberta do Explore localiza os rótulos de fallback de mídia e mantém a página inicial, pesquisa contextual, filtros e conteúdo público existente.
 - O feed localiza notificações de interação e mensagens genéricas de falha; a validação de upload reaproveita mensagens localizadas sem substituir erros específicos da API. O detalhe da publicação localiza o estado de nova tentativa.
+- O perfil próprio localiza mensagens de conta, imagens, badges, fóruns públicos e listas; nomes, biografias, status e descrições de membros permanecem no idioma de origem. A busca de conexões agora respeita a região ativa.
 
 # Em desenvolvimento
 

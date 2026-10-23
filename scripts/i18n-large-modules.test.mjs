@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { messages } from '../src/renderer/i18nCatalog.ts'
 
 const profile = await readFile(new URL('../src/renderer/components/social/UserProfileModal.tsx', import.meta.url), 'utf8')
+const profilePage = await readFile(new URL('../src/renderer/pages/PerfilPage.tsx', import.meta.url), 'utf8')
 const forumManagement = await readFile(new URL('../src/renderer/components/social/ForumManagementModal.tsx', import.meta.url), 'utf8')
 const communityWorkspace = await readFile(new URL('../src/renderer/components/social/CommunityWorkspaceModal.tsx', import.meta.url), 'utf8')
 const communityForumChannel = await readFile(new URL('../src/renderer/components/social/CommunityForumChannel.tsx', import.meta.url), 'utf8')
@@ -52,6 +53,11 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'feed.followingLoadFailed', 'feed.searchFailed', 'feed.newComment', 'feed.newReaction',
     'feed.uploadLimitFailed', 'feed.createDraftFailed', 'feed.createFailed', 'feed.loadMoreFailed',
     'post.commentFailed', 'post.retryComment',
+    'profile.loadForumsFailed', 'profile.invalidBannerColor', 'profile.updated', 'profile.updateFailed',
+    'profile.bannerPlusRequired', 'profile.imageFormatUnsupported', 'profile.imageSizeLimit',
+    'profile.imageUpdated', 'profile.imageUploadFailed', 'profile.imageProcessingFailed',
+    'profile.bannerRemoved', 'profile.removeBannerFailed', 'profile.badgePreferenceFailed',
+    'profile.featuredBadgesHeader', 'profile.featuredBadgesFailed',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -143,6 +149,16 @@ assert.match(postDetail, /setError\(t\('post\.commentFailed'\)\)/)
 assert.match(postDetail, /t\('post\.retryComment'\)/)
 assert.match(postDetail, /renderAnceryxText\(comment\.content\)/)
 assert.match(postDetail, /renderPostText\(post\.content\)/)
+for (const key of ['profile.loadForumsFailed', 'profile.invalidBannerColor', 'profile.updated', 'profile.updateFailed', 'profile.bannerPlusRequired', 'profile.imageFormatUnsupported', 'profile.imageSizeLimit', 'profile.imageUpdated', 'profile.imageUploadFailed', 'profile.imageProcessingFailed', 'profile.bannerRemoved', 'profile.removeBannerFailed', 'profile.badgePreferenceFailed', 'profile.featuredBadgesHeader', 'profile.featuredBadgesFailed']) {
+  assert.ok(profilePage.includes(`t('${key}')`) || profilePage.includes(`t('${key}',`), `PerfilPage does not use ${key}`)
+}
+assert.match(profilePage, /toLocaleLowerCase\(locale\)/)
+assert.match(profilePage, /\{userProfile\.bio\}/)
+assert.match(profilePage, /\{userProfile\.customStatus\.text\}/)
+assert.match(profilePage, /\{forum\.name\}/)
+assert.match(profilePage, /\{forum\.description\}/)
+assert.match(profilePage, /\{selectedBadge\?\.description\}/)
+assert.doesNotMatch(profilePage, /Não foi possível carregar as publicações\./)
 assert.match(privacySettings, /\{user\.displayName\}/)
 assert.match(privacySettings, /\{user\.username\}/)
 assert.match(profileSettings, /\{request\.user\.displayName\}/)
