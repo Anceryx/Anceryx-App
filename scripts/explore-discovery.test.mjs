@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { messages } from '../src/renderer/i18nCatalog.ts'
 
 const page = await readFile(new URL('../src/renderer/pages/ExplorePage.tsx', import.meta.url), 'utf8')
 
@@ -29,5 +30,12 @@ assert.doesNotMatch(page, /searchPrivate|directMessageApi\.search/)
 assert.match(page, /setSelectedPost\(post\.id\)/)
 assert.match(page, /setSelectedUser\(profile\.username\)/)
 assert.match(page, /onOpenWorkspace\(localForum\)/)
+assert.match(page, /t\('explore\.video'\)/)
+assert.match(page, /t\('explore\.postWithImage'\)/)
+assert.match(page, /\{post\.content \|\|/)
+for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
+  assert.ok(messages[locale]['explore.video'], `${locale} is missing the video label`)
+  assert.ok(messages[locale]['explore.postWithImage'], `${locale} is missing the image-post label`)
+}
 
 console.log('Explore discovery/search state and privacy guards passed.')

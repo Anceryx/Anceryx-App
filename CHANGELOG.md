@@ -3,6 +3,7 @@
 - O modal de publicações do Fórum também localiza seus controles e estados, mantendo títulos, respostas e conteúdo dos membros no idioma original.
 - O modal de detalhes do Fórum agora localiza ações, contadores, descrição acessível e estados nos três idiomas; nomes e descrições do fórum continuam sendo conteúdo original.
 - A criação de fóruns localiza os modelos iniciais, configurações, validações, upload de imagens e controles em português, inglês e espanhol. Os campos digitados e erros livres da API continuam preservados.
+- A descoberta do Explore localiza os rótulos de fallback de mídia e mantém a página inicial, pesquisa contextual, filtros e conteúdo público existente.
 
 # Em desenvolvimento
 
