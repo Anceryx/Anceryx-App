@@ -4,6 +4,7 @@
 
 # Em desenvolvimento
 
+- As seções de privacidade, notificações, perfil, atualizações e histórico de login, além das páginas de cobrança, agora acompanham o idioma ativo em português, inglês e espanhol. Textos livres do servidor e conteúdo de notas de versão continuam intactos.
 - O canal de publicações da comunidade agora localiza controles, estados vazios e mensagens de erro genéricas nos três idiomas; títulos, respostas, conteúdo e nomes de membros continuam intactos.
 - A área inicial de moderação do workspace localiza filtros de denúncias e rótulos de ações em pt-BR, inglês e espanhol, preservando mensagens, motivos e conteúdo fornecido por membros.
 - O modal de perfil passou a localizar os principais estados, navegação, ações, listas, recursos de moderação e metadados de data; nomes, biografias, nomes de Fóruns e justificativas livres permanecem intactos. As abas e rótulos de cargos do gerenciamento de Fóruns agora acompanham o idioma ativo.

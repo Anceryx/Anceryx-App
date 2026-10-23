@@ -6,6 +6,13 @@ const profile = await readFile(new URL('../src/renderer/components/social/UserPr
 const forumManagement = await readFile(new URL('../src/renderer/components/social/ForumManagementModal.tsx', import.meta.url), 'utf8')
 const communityWorkspace = await readFile(new URL('../src/renderer/components/social/CommunityWorkspaceModal.tsx', import.meta.url), 'utf8')
 const communityForumChannel = await readFile(new URL('../src/renderer/components/social/CommunityForumChannel.tsx', import.meta.url), 'utf8')
+const privacySettings = await readFile(new URL('../src/renderer/components/settings/sections/DadosPrivacidadeSection.tsx', import.meta.url), 'utf8')
+const notificationSettings = await readFile(new URL('../src/renderer/components/settings/sections/NotificacoesSection.tsx', import.meta.url), 'utf8')
+const profileSettings = await readFile(new URL('../src/renderer/components/settings/sections/PerfilSection.tsx', import.meta.url), 'utf8')
+const aboutSettings = await readFile(new URL('../src/renderer/components/settings/sections/SobreSection.tsx', import.meta.url), 'utf8')
+const loginHistorySettings = await readFile(new URL('../src/renderer/components/settings/sections/UltimosLoginsSection.tsx', import.meta.url), 'utf8')
+const billing = await readFile(new URL('../src/renderer/pages/CobrancaPage.tsx', import.meta.url), 'utf8')
+const billingResult = await readFile(new URL('../src/renderer/pages/BillingResultPage.tsx', import.meta.url), 'utf8')
 
 for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
   for (const key of [
@@ -25,6 +32,9 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'workspaceUi.appealReviewerDisabled', 'workspaceUi.confirmAdministrativeCorrection',
     'workspaceUi.reportsRange', 'workspaceUi.casesRange', 'workspaceUi.eventsRange',
     'workspaceUi.inviteUseCount', 'workspaceUi.microphoneMuted', 'workspaceUi.speaking',
+    'settings.privacy.blockedAccounts', 'settings.notifications.privateMessageSound',
+    'settings.profile.whoCanMessage', 'settings.about.securePaused', 'settings.loginHistory.currentSession',
+    'billing.heroTitle', 'billing.benefit.1', 'billing.result.successTitle',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -70,6 +80,14 @@ assert.match(communityWorkspace, /\{item\.reason\}/)
 assert.match(communityWorkspace, /\{appeal\.statement\}/)
 assert.match(communityForumChannel, /t\('communityForum\.postsDescription'\)/)
 assert.match(communityForumChannel, /t\('communityForum\.loadTopicsFailed'\)/)
+assert.match(privacySettings, /t\('settings\.privacy\.blockedAccounts'\)/)
+assert.match(notificationSettings, /t\('settings\.notifications\.privateMessageSound'\)/)
+assert.match(profileSettings, /t\('settings\.profile\.whoCanMessage'\)/)
+assert.match(aboutSettings, /t\(statusKey\[info\.state\]\)/)
+assert.match(loginHistorySettings, /formatDateTime\(new Date\(login\.occurredAt\)\)/)
+assert.match(billing, /t\('billing\.heroTitle'\)/)
+assert.match(billing, /t\(`billing\.benefit\.\$\{index \+ 1\}`/)
+assert.match(billingResult, /t\('billing\.result\.successTitle'\)/)
 
 // Member-created topic/reply content and names stay in their original language.
 assert.match(communityForumChannel, /\{activeTopic\.title\}/)
@@ -77,6 +95,10 @@ assert.match(communityForumChannel, /\{activeTopic\.content\}/)
 assert.match(communityForumChannel, /\{item\.content\}/)
 assert.match(communityForumChannel, /\{topic\.title\}/)
 assert.match(communityForumChannel, /\{topic\.content\}/)
+assert.match(privacySettings, /\{user\.displayName\}/)
+assert.match(privacySettings, /\{user\.username\}/)
+assert.match(profileSettings, /\{request\.user\.displayName\}/)
+assert.match(profileSettings, /\{request\.user\.username\}/)
 
 // Localization must not bypass the existing owner permission checks.
 assert.match(forumManagement, /disabled=\{!isOwner\}/)
