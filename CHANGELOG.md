@@ -10,6 +10,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
 
 ## [0.15.1] — preparação local (não publicada)
+- O `.env.example` usa a API local para desenvolvimento; builds empacotados continuam limitados à API oficial de produção.
 - O chat lateral de voz agora reserva largura previsível, mantém a área de mensagens rolável e usa controles compactos acessíveis; cartões de participantes e prévias de compartilhamento se ajustam à janela.
 - A navegação do workspace destaca o canal selecionado, expõe a relação entre categorias expansíveis e seus canais e apresenta a quantidade de participantes conectados em canais de voz.
 - Mensagens agrupam mensagens consecutivas, mostram separadores de data, avatares e horários com adaptação para janelas estreitas; a tela ganhou estados de carregamento e erro mais claros.
