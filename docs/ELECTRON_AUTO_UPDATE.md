@@ -2,7 +2,7 @@
 
 ## Estado da versão 0.17.1
 
-O cliente contém um verificador Ed25519 independente, executado no processo principal, e um transporte HTTPS que só é iniciado depois da validação da assinatura do manifest. O manifest assinado cobre versão, canal, notas, URL e nome do instalador, tamanho e SHA-512. O cliente também valida o tamanho e o hash do arquivo durante o download.
+O cliente contém um verificador Ed25519 independente, executado no processo principal. O manifest é obtido por HTTPS e sua assinatura é validada antes de iniciar qualquer download do instalador. A assinatura cobre versão, canal, notas, URL e nome do instalador, tamanho e SHA-512. O cliente também valida o tamanho e o hash do arquivo durante o download.
 
 O atualizador continua desativado: ainda não há chave pública de produção fixada em `src/main/updater/updateTrust.ts`, e `UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED` permanece `false`. Sem esses dois requisitos, o aplicativo não faz chamadas de atualização. A configuração de produção não pode ser habilitada até que a chave seja provisionada e revisada, o secret protegido corresponda a ela e a QA do instalador seja aprovada.
 
