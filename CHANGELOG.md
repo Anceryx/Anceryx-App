@@ -20,6 +20,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - O sino de notificações agora tem uma faixa reservada no layout do Dashboard, separada dos controles das telas Feed, DMs e Fóruns.
 - Separadores de data em DMs deixam de ficar sticky, evitando que se sobreponham às mensagens durante a rolagem.
 - A URL de desenvolvimento do renderer só é considerada em builds não empacotados, preservando webSecurity, CSP, navegação, carregamento local e menu de produção.
+- A CSP passa a ter uma única política no HTML, com `connect-src` limitado às APIs, aos hosts de mídia necessários e às origens Klipy usadas para baixar GIFs.
 - O chat lateral de voz agora reserva largura previsível, mantém a área de mensagens rolável e usa controles compactos acessíveis; cartões de participantes e prévias de compartilhamento se ajustam à janela.
 - A navegação do workspace destaca o canal selecionado, expõe a relação entre categorias expansíveis e seus canais e apresenta a quantidade de participantes conectados em canais de voz.
 - Mensagens agrupam mensagens consecutivas, mostram separadores de data, avatares e horários com adaptação para janelas estreitas; a tela ganhou estados de carregamento e erro mais claros.

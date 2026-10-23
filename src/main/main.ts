@@ -336,9 +336,7 @@ function createWindow(): void {
     win.maximize()
   }
 
-  // ── Content Security Policy ───────────────────────────────────────────────
-  // Bloqueia eval, inline scripts não autorizados e fontes externas não listadas.
-  // Em DEV: relaxa script-src para permitir hot-reload do Vite.
+  // ── Diagnósticos de requisições de mídia ──────────────────────────────────
   const mediaRanges = new Map<number, string>()
   win.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
     if (details.resourceType === 'media') {
@@ -348,11 +346,6 @@ function createWindow(): void {
     callback({ requestHeaders: details.requestHeaders })
   })
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    const isDev = Boolean(developmentRendererUrl)
-    const scriptSrc = isDev
-      ? "'self' 'unsafe-inline' 'unsafe-eval'"   // necessário apenas para Vite HMR
-      : "'self'"
-
     if (details.resourceType === 'media') {
       const responseHeaders = details.responseHeaders ?? {}
       const readHeader = (name: string) => Object.entries(responseHeaders).find(([key]) => key.toLowerCase() === name)?.[1]?.join(', ') ?? null
@@ -367,26 +360,20 @@ function createWindow(): void {
       })
     }
 
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          [
-            `default-src 'self'`,
-            `script-src ${scriptSrc}`,
-            `style-src 'self' 'unsafe-inline'`,  // Tailwind injeta estilos inline
-            `img-src 'self' data: blob: https:${isDev ? ' http://localhost:3000' : ''}`,
-            `font-src 'self' data:`,
-            `connect-src 'self' https: wss:${isDev ? ' http://localhost:3000 ws://localhost:3000' : ''}`,
-            `media-src 'self' blob: https://admin-anceryx.site https://blob.squarecloud.dev https://public-blob.squarecloud.dev${isDev ? ' http://localhost:3000' : ''}`,
-            `object-src 'none'`,
-            `base-uri 'self'`,
-            `form-action 'self'`,
-            `frame-ancestors 'none'`,
-          ].join('; ')
-        ]
-      }
-    })
+    const responseHeaders = { ...(details.responseHeaders ?? {}) }
+    let isRendererMainFrame = false
+    try {
+      const requestUrl = new URL(details.url)
+      isRendererMainFrame = details.resourceType === 'mainFrame'
+        && requestUrl.protocol === `${RENDERER_SCHEME}:`
+        && requestUrl.hostname === RENDERER_HOST
+    } catch { /* Leave malformed and non-renderer responses unchanged. */ }
+    if (isRendererMainFrame) {
+      const cspHeaderName = Object.keys(responseHeaders).find((name) => name.toLowerCase() === 'content-security-policy') ?? 'Content-Security-Policy'
+      responseHeaders[cspHeaderName] = [...(responseHeaders[cspHeaderName] ?? []), "frame-ancestors 'none'"]
+    }
+
+    callback({ responseHeaders })
   })
   win.webContents.session.webRequest.onBeforeRedirect((details) => {
     if (details.resourceType !== 'media') return

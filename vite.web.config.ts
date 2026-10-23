@@ -2,18 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
-const webCsp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; connect-src 'self' https: wss:; font-src 'self' data:; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self'"
-
 export default defineConfig({
   root: path.resolve(__dirname, 'src/renderer'),
   base: '/',
   plugins: [
     react(),
     {
-      name: 'anceryx-web-security-policy',
+        name: 'anceryx-web-production-policy',
       apply: 'build',
       transformIndexHtml(html) {
-        return html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*\/?\s*>/i, `<meta http-equiv="Content-Security-Policy" content="${webCsp}" />`)
+          return html
+            .split(' http://localhost:3000').join('')
+            .split(' ws://localhost:3000').join('')
+            .split(' ws://localhost:5173').join('')
       },
     },
   ],
