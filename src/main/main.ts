@@ -28,6 +28,7 @@ const DEFAULT_WINDOW_STATE = {
 
 const OAUTH_SCHEME = 'anceryx'
 app.setName('Anceryx')
+const developmentRendererUrl = !app.isPackaged ? process.env['ELECTRON_RENDERER_URL'] : undefined
 
 const updateManager = new UpdateManager()
 
@@ -142,7 +143,6 @@ const encryptedDraftStore = createDraftStore({
 (encrypted) => Buffer.from(safeStorage.decryptString(Buffer.from(encrypted)), 'utf8'))
 
 function isTrustedRendererEvent(event: RendererIpcEvent): boolean {
-  const developmentRendererUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
   return isTrustedRenderer(event, mainWindow?.webContents ?? null, developmentRendererUrl)
 }
 
@@ -324,7 +324,7 @@ function createWindow(): void {
       sandbox: true,                // processo renderer isolado em sandbox
       preload: join(__dirname, '../preload/preload.js'),
       // Desabilita WebSecurity apenas em dev com Vite (hot-reload exige)
-      webSecurity: !process.env['ELECTRON_RENDERER_URL'],
+      webSecurity: !developmentRendererUrl,
       allowRunningInsecureContent: false,
       // Desabilita APIs deprecadas e perigosas
       experimentalFeatures: false,
@@ -348,7 +348,7 @@ function createWindow(): void {
     callback({ requestHeaders: details.requestHeaders })
   })
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    const isDev = !!process.env['ELECTRON_RENDERER_URL']
+    const isDev = Boolean(developmentRendererUrl)
     const scriptSrc = isDev
       ? "'self' 'unsafe-inline' 'unsafe-eval'"   // necessário apenas para Vite HMR
       : "'self'"
@@ -411,7 +411,7 @@ function createWindow(): void {
   // Impede que conteúdo da página redirecione a janela para URLs externas.
   win.webContents.on('will-navigate', (event, url) => {
     const parsed = new URL(url)
-    const isLocalDev  = url.startsWith(process.env['ELECTRON_RENDERER_URL'] ?? '__never__')
+    const isLocalDev  = Boolean(developmentRendererUrl && url.startsWith(developmentRendererUrl))
     const isLocalFile = parsed.protocol === 'file:'
 
     if (!isLocalDev && !isLocalFile) {
@@ -438,8 +438,8 @@ function createWindow(): void {
   })
 
   // ── Carregar a aplicação ───────────────────────────────────────────────────
-  if (process.env['ELECTRON_RENDERER_URL']) {
-    void win.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (developmentRendererUrl) {
+    void win.loadURL(developmentRendererUrl)
   } else {
     void win.loadURL('app://anceryx/index.html')
   }
@@ -502,7 +502,7 @@ app.whenReady().then(() => {
     }
   })
   // Desativa o menu padrão do Electron (evita acesso a DevTools em produção)
-  if (!process.env['ELECTRON_RENDERER_URL']) {
+  if (!developmentRendererUrl) {
     app.applicationMenu = null
   }
 

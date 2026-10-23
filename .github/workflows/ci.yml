@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      - run: npm run test:renderer-url-guard
       - run: npm run test:api-config
       - run: npm run test:license-audit
       - run: npm run test:update-security

@@ -55,7 +55,8 @@
     "test:settings-license-ui": "node scripts/settings-license-ui.test.mjs",
     "test:updater-ui-state": "node scripts/updater-ui-state.test.mjs",
     "test:mp4-diagnostics": "node scripts/mp4-playback-diagnostics.test.mjs",
-    "test:media-utils": "node --experimental-strip-types scripts/media-utils.test.mjs"
+    "test:media-utils": "node --experimental-strip-types scripts/media-utils.test.mjs",
+    "test:renderer-url-guard": "node scripts/renderer-url-guard.test.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.11",
