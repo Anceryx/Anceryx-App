@@ -38,7 +38,7 @@ test('registers window IPC once outside createWindow and starts updater once aft
   assert.ok(mainSource.indexOf('registerMainWindowIpc()') < createWindow)
   assert.equal((mainSource.match(/updateManager\.start\(\)/g) ?? []).length, 1)
   assert.ok(mainSource.indexOf('updateManager.start()') > readyHandler)
-  assert.match(mainSource, /app\.isPackaged \? undefined : process\.env\['ELECTRON_RENDERER_URL'\]/)
+  assert.match(mainSource, /const developmentRendererUrl = !app\.isPackaged \? process\.env\['ELECTRON_RENDERER_URL'\] : undefined/)
   assert.doesNotMatch(mainSource.slice(createWindow, readyHandler), /ipcMain\.(?:handle|on)\(/)
 })
 
