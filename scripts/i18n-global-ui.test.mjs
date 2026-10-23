@@ -41,7 +41,7 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
   for (const key of ['post.delete', 'status.title', 'calls.shareScreen', 'settings.backToCategories', 'messages.composePlaceholder', 'messages.send', 'forums.join']) assert.ok(messages[locale][key], `${locale}.${key} must be localized`)
 }
 
-const [postCard, postDetail, messagesPage, statusBubble, imageViewer, callHistory, voiceSettings, friendsPage, imageCrop, savedPosts, forumsPage, updateModal, releaseNotes, billingSettings, communityVoice, managementModal, expressionPicker, accountSettings, loginConnections, sessionsSettings] = await Promise.all([
+const [postCard, postDetail, messagesPage, statusBubble, imageViewer, callHistory, voiceSettings, friendsPage, imageCrop, savedPosts, forumsPage, updateModal, releaseNotes, billingSettings, communityVoice, managementModal, expressionPicker, accountSettings, loginConnections, sessionsSettings, securitySettings] = await Promise.all([
   readFile(new URL('../src/renderer/components/social/PostCard.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../src/renderer/components/social/PostDetailModal.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../src/renderer/pages/MensagensPage.tsx', import.meta.url), 'utf8'),
@@ -62,6 +62,7 @@ const [postCard, postDetail, messagesPage, statusBubble, imageViewer, callHistor
   readFile(new URL('../src/renderer/components/settings/sections/ContaSection.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../src/renderer/components/settings/sections/ConexoesLoginSection.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../src/renderer/components/settings/sections/SessoesDispositivosSection.tsx', import.meta.url), 'utf8'),
+  readFile(new URL('../src/renderer/components/settings/sections/SegurancaSection.tsx', import.meta.url), 'utf8'),
 ])
 assert.match(postCard, /renderContent\(post\.content\)/, 'post content must remain user-authored text')
 assert.match(postDetail, /renderAnceryxText\(comment\.content\)/, 'comment content must remain user-authored text')
@@ -85,8 +86,10 @@ assert.match(expressionPicker, /emojiCategory\.activities/, 'emoji category labe
 assert.match(accountSettings, /account\.displayName/, 'account settings must use the active locale')
 assert.match(loginConnections, /loginConnections\.googleNotConfigured/, 'login connections must use the active locale')
 assert.match(sessionsSettings, /sessions\.details/, 'session metadata labels must use the active locale')
+assert.match(securitySettings, /security\.secretIssuer/, 'authenticator setup details must use the active locale')
+assert.match(securitySettings, /security\.recoveryInstructions/, 'recovery-code instructions must use the active locale')
 for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
-  for (const key of ['achievement.new', 'messages.openImage', 'messages.closeImage', 'messages.imageViewer', 'messages.insertEmoji', 'messages.sendSticker', 'common.statusWithValue', 'calls.historyCompleted', 'settings.voice.inputDevice', 'settings.voice.outputUnsupported', 'friends.followers', 'friends.noFollowing', 'imageCrop.area', 'imageCrop.openFailed', 'savedPosts.title', 'savedPosts.loadMoreFailed', 'forumsPage.search', 'forumsPage.noSearchResults', 'updates.securityPaused', 'releaseNotes.gifKlipy', 'billing.manageSubscription', 'billing.paymentMethod', 'communityVoice.leaveChannel', 'forums.managementTitle', 'emojiCategory.flags', 'account.description', 'loginConnections.googleNotConfigured', 'sessions.revokeOthersFailed', 'sessions.details']) assert.ok(messages[locale][key], `${locale}.${key} must be localized`)
+  for (const key of ['achievement.new', 'messages.openImage', 'messages.closeImage', 'messages.imageViewer', 'messages.insertEmoji', 'messages.sendSticker', 'common.statusWithValue', 'common.premium', 'calls.historyCompleted', 'settings.voice.inputDevice', 'settings.voice.outputUnsupported', 'friends.followers', 'friends.noFollowing', 'imageCrop.area', 'imageCrop.openFailed', 'savedPosts.title', 'savedPosts.loadMoreFailed', 'forumsPage.search', 'forumsPage.noSearchResults', 'updates.securityPaused', 'releaseNotes.gifKlipy', 'billing.manageSubscription', 'billing.paymentMethod', 'communityVoice.leaveChannel', 'forums.managementTitle', 'emojiCategory.flags', 'account.description', 'loginConnections.googleNotConfigured', 'sessions.revokeOthersFailed', 'sessions.details', 'security.secretIssuer', 'security.recoveryInstructions']) assert.ok(messages[locale][key], `${locale}.${key} must be localized`)
 }
 
 console.log('Global i18n state tests passed (dynamic locale, persisted preference, auth/navigation/social catalog parity and user-content preservation).')

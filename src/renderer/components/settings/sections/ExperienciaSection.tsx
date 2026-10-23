@@ -321,7 +321,7 @@ const ExperienciaSection: React.FC = () => {
                     : 'border-border hover:border-border-hover',
                 ].join(' ')}
                 aria-pressed={isActive}
-                aria-label={t('experience.theme.aria', { name: t(themeOption.labelKey), premium: themeOption.premium ? ' (Anceryx+)' : '' })}
+                aria-label={t('experience.theme.aria', { name: t(themeOption.labelKey), premium: themeOption.premium ? ` (${t('common.premium')})` : '' })}
               >
                 {/* Preview swatches */}
                 <div className="p-3" style={{ background: themeOption.previewBg }}>
@@ -373,7 +373,6 @@ const THEME_OPTIONS = [
   {
     id: 'dark',
     labelKey: 'experience.theme.dark',
-    label: 'Escuro',
     premium: false,
     previewBg: '#0d0d0d',
     panel: '#18181b',
@@ -385,7 +384,6 @@ const THEME_OPTIONS = [
   {
     id: 'light',
     labelKey: 'experience.theme.light',
-    label: 'Claro',
     premium: false,
     previewBg: '#f4f4f5',
     panel: '#ffffff',
@@ -397,7 +395,6 @@ const THEME_OPTIONS = [
   {
     id: 'autumn',
     labelKey: 'experience.theme.autumn',
-    label: 'Outono',
     premium: true,
     previewBg: 'hsl(349 28% 22%)',
     panel: 'hsl(345 27% 29%)',
@@ -409,7 +406,6 @@ const THEME_OPTIONS = [
   {
     id: 'rose-moon',
     labelKey: 'experience.theme.roseMoon',
-    label: 'Rose Moon',
     premium: true,
     previewBg: 'hsl(246 24% 17%)',
     panel: 'hsl(248 24% 20%)',

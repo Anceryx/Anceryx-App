@@ -21,6 +21,7 @@ const BENEFIT_MASCOTS = [mascotText, mascotUpload, mascotBanner, mascotPersonali
 
 const CobrancaPage: React.FC = () => {
   const t = useTranslation()
+  const locale = useUIStore((s) => s.locale)
   const user = useAuthStore((s) => s.user)
   const addNotification = useUIStore((s) => s.addNotification)
   const [activePlan, setActivePlan] = useState<PremiumPlan>(user?.subscription?.plan ?? 'yearly')
@@ -78,7 +79,7 @@ const CobrancaPage: React.FC = () => {
             </div>
             <div className="min-w-0">
               <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent"><Sparkles size={10} /> {t('billing.feature')}</div>
-              <p className="text-sm leading-relaxed text-text-primary">{t(`billing.benefit.${index + 1}` as Parameters<typeof t>[0], { textLimit: PREMIUM_TEXT_LIMIT.toLocaleString(), uploadLimit: PREMIUM_UPLOAD_MAX_BYTES / 1024 / 1024 })}</p>
+              <p className="text-sm leading-relaxed text-text-primary">{t(`billing.benefit.${index + 1}` as Parameters<typeof t>[0], { textLimit: PREMIUM_TEXT_LIMIT.toLocaleString(locale), uploadLimit: PREMIUM_UPLOAD_MAX_BYTES / 1024 / 1024 })}</p>
             </div>
           </ContentSectionCard>
         ))}
@@ -114,7 +115,7 @@ const CobrancaPage: React.FC = () => {
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">{t('billing.included')}</p>
           <h2 className="text-xl font-semibold text-text-primary">{t('billing.personalizeTitle')}</h2>
           <p className="mt-1 text-sm leading-relaxed text-text-secondary">{t('billing.entitlementDescription')}</p>
-          <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1">{PREMIUM_BENEFITS.map((_, index) => <div key={index} className="flex items-start gap-3 rounded-xl border border-border bg-background-secondary p-3 text-sm text-text-secondary"><Check size={16} className="mt-0.5 shrink-0 text-accent" /><span>{t(`billing.benefit.${index + 1}` as Parameters<typeof t>[0], { textLimit: PREMIUM_TEXT_LIMIT.toLocaleString(), uploadLimit: PREMIUM_UPLOAD_MAX_BYTES / 1024 / 1024 })}</span></div>)}</div>
+          <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1">{PREMIUM_BENEFITS.map((_, index) => <div key={index} className="flex items-start gap-3 rounded-xl border border-border bg-background-secondary p-3 text-sm text-text-secondary"><Check size={16} className="mt-0.5 shrink-0 text-accent" /><span>{t(`billing.benefit.${index + 1}` as Parameters<typeof t>[0], { textLimit: PREMIUM_TEXT_LIMIT.toLocaleString(locale), uploadLimit: PREMIUM_UPLOAD_MAX_BYTES / 1024 / 1024 })}</span></div>)}</div>
         </ContentSectionCard>
       </section>
     </WidePage>

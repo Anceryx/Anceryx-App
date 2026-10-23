@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **1771**.
-- Strings visíveis fixas detectadas: **391**.
-- Cobertura medida neste subconjunto: **81.9%**.
+- Chamadas de tradução detectadas: **2075**.
+- Strings visíveis fixas detectadas: **183**.
+- Cobertura medida neste subconjunto: **91.9%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -34,14 +34,14 @@
 | `components/settings/sections/CobrancaSection.tsx` | 21 | 0 | 100.0% |
 | `components/settings/sections/ConexoesLoginSection.tsx` | 21 | 1 | 95.5% |
 | `components/settings/sections/ContaSection.tsx` | 14 | 0 | 100.0% |
-| `components/settings/sections/DadosPrivacidadeSection.tsx` | 0 | 18 | 0.0% |
-| `components/settings/sections/ExperienciaSection.tsx` | 72 | 8 | 90.0% |
-| `components/settings/sections/NotificacoesSection.tsx` | 0 | 21 | 0.0% |
-| `components/settings/sections/PerfilSection.tsx` | 0 | 17 | 0.0% |
-| `components/settings/sections/SegurancaSection.tsx` | 57 | 18 | 76.0% |
+| `components/settings/sections/DadosPrivacidadeSection.tsx` | 20 | 1 | 95.2% |
+| `components/settings/sections/ExperienciaSection.tsx` | 73 | 4 | 94.8% |
+| `components/settings/sections/NotificacoesSection.tsx` | 24 | 0 | 100.0% |
+| `components/settings/sections/PerfilSection.tsx` | 19 | 1 | 95.0% |
+| `components/settings/sections/SegurancaSection.tsx` | 79 | 0 | 100.0% |
 | `components/settings/sections/SessoesDispositivosSection.tsx` | 15 | 0 | 100.0% |
-| `components/settings/sections/SobreSection.tsx` | 0 | 12 | 0.0% |
-| `components/settings/sections/UltimosLoginsSection.tsx` | 0 | 7 | 0.0% |
+| `components/settings/sections/SobreSection.tsx` | 18 | 1 | 94.7% |
+| `components/settings/sections/UltimosLoginsSection.tsx` | 15 | 0 | 100.0% |
 | `components/settings/sections/VozSection.tsx` | 27 | 3 | 90.0% |
 | `components/settings/SettingsModal.tsx` | 7 | 0 | 100.0% |
 | `components/settings/SettingsNav.tsx` | 5 | 2 | 71.4% |
@@ -52,13 +52,13 @@
 | `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
 | `components/social/ForumDetailModal.tsx` | 0 | 9 | 0.0% |
-| `components/social/ForumManagementModal.tsx` | 6 | 97 | 5.8% |
+| `components/social/ForumManagementModal.tsx` | 143 | 7 | 95.3% |
 | `components/social/PostCard.tsx` | 44 | 2 | 95.7% |
 | `components/social/PostDetailModal.tsx` | 15 | 5 | 75.0% |
 | `components/social/ProfileMenu.tsx` | 27 | 1 | 96.4% |
 | `components/social/SetStatusModal.tsx` | 19 | 0 | 100.0% |
 | `components/social/StatusBubble.tsx` | 1 | 0 | 100.0% |
-| `components/social/UserProfileModal.tsx` | 58 | 13 | 81.7% |
+| `components/social/UserProfileModal.tsx` | 78 | 6 | 92.9% |
 | `components/ui/Avatar.tsx` | 1 | 0 | 100.0% |
 | `components/ui/Badge.tsx` | 1 | 0 | 100.0% |
 | `components/ui/EmojiPicker.tsx` | 5 | 0 | 100.0% |
@@ -71,8 +71,8 @@
 | `lib/billingData.ts` | 0 | 3 | 0.0% |
 | `lib/releaseNotes.ts` | 0 | 1 | 0.0% |
 | `pages/AmigosPage.tsx` | 16 | 1 | 94.1% |
-| `pages/BillingResultPage.tsx` | 0 | 1 | 0.0% |
-| `pages/CobrancaPage.tsx` | 0 | 17 | 0.0% |
+| `pages/BillingResultPage.tsx` | 8 | 0 | 100.0% |
+| `pages/CobrancaPage.tsx` | 20 | 1 | 95.2% |
 | `pages/DashboardPage.tsx` | 20 | 4 | 83.3% |
 | `pages/ExplorePage.tsx` | 71 | 12 | 85.5% |
 | `pages/FeedPage.tsx` | 32 | 4 | 88.9% |
@@ -88,6 +88,8 @@
 | `utils/communityMemberGroups.ts` | 5 | 0 | 100.0% |
 | `utils/communityVoiceControls.ts` | 0 | 6 | 0.0% |
 
-## Verificação manual do workspace comunitário
+## Verificação manual desta etapa
 
-O `CommunityWorkspaceModal.tsx` e o `CommunityForumChannel.tsx` foram revisados, incluindo rótulos JSX, estados montados em callbacks, confirmações, mensagens de erro locais, filtros, formulários e atributos de acessibilidade. Os 19 itens contabilizados como texto fixo no modal principal são marcadores visuais (`#`, `ID:`, setas e separadores), o exemplo técnico `community.role.update` e o prefixo de URI `anceryx://invite/`; não restaram frases estáticas de interface nesse componente. Os erros livres retornados pela API, nomes de pessoas/canais/cargos personalizados e conteúdo de mensagens, publicações, tópicos e recursos continuam sem tradução automática.
+Foram revisados os controles e estados das páginas de cobrança e do resultado do checkout; as seções de privacidade, notificações, perfil, atualizações, histórico de login e segurança; e os modais de gerenciamento de fórum e perfil. Os textos próprios desses módulos usam o catálogo nos três idiomas. Campos e conteúdo fornecidos por membros ou pelo servidor, incluindo nomes, biografias, tópicos, denúncias, evidências e notas de versão, permanecem sem tradução automática.
+
+A cobertura estática dos dois modais revisados é de 95,3% em `ForumManagementModal.tsx` e 92,9% em `UserProfileModal.tsx`. O restante medido corresponde a identificadores e metadados montados dinamicamente, pontuação e nomes próprios. Essa métrica não certifica toda a interface. O inventário ainda aponta módulos sociais e páginas com textos fixos, como criação e detalhes de fóruns, além de outras áreas que precisam de revisão nas próximas etapas.
