@@ -82,6 +82,7 @@ function reportStatusKey(status: ApiForumReport['status'] | 'open'): Translation
 
 const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onClose, onForumDeleted, presentation = 'modal', initialTab = 'overview' }) => {
   const t = useTranslation()
+  const locale = useUIStore((state) => state.locale)
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const addNotification = useUIStore((s) => s.addNotification)
   const {
@@ -103,7 +104,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     setForumTopicFlag: s.setForumTopicFlag,
     profiles: s.profiles,
   }))
-  const getProfile = (userId: string) => profiles[userId] ? { displayName: profiles[userId].displayName, handle: profiles[userId].username } : { displayName: 'Usuario', handle: userId }
+  const getProfile = (userId: string) => profiles[userId] ? { displayName: profiles[userId].displayName, handle: profiles[userId].username } : { displayName: t('forumManage.unknownUser'), handle: userId }
 
   const [activeTab, setActiveTab] = useState<ForumManagementTab>(initialTab)
   const [confirmRemoveUserId, setConfirmRemoveUserId] = useState<string | null>(null)
@@ -155,7 +156,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const loadRemoteState = async () => {
     if (!backendReady) {
-      setApiError('Este fórum ainda não está sincronizado com sua conta. Atualize a lista de fóruns e tente novamente.')
+      setApiError(t('forumManage.error.unsynced'))
       return
     }
     setPendingAction('refresh')
@@ -170,7 +171,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       setRemoteTags(tags.tags)
       setRemoteTopics(topics.topics)
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Não foi possível carregar os dados do fórum.')
+      setApiError(error instanceof Error ? error.message : t('forumManage.error.load'))
     } finally {
       setPendingAction(null)
     }
@@ -194,7 +195,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       setReportOffset(offset + reports.length)
       setReportHasMore(reports.length === 20)
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Não foi possível carregar as denúncias deste fórum.')
+      setApiError(error instanceof Error ? error.message : t('forumManage.error.loadReports'))
     } finally { setReportLoading(false) }
   }
 
@@ -207,10 +208,10 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     setApiError(null)
     try {
       await forumApi.reviewReport(reportId, { status, resolutionNote: reportResolutionNotes[reportId]?.trim() || undefined })
-      addNotification(status === 'reviewing' ? 'Denúncia assumida para análise.' : status === 'resolved' ? 'Denúncia concluída.' : 'Denúncia arquivada.', 'success')
+      addNotification(status === 'reviewing' ? t('forumManage.notice.reportReviewing') : status === 'resolved' ? t('forumManage.notice.reportResolved') : t('forumManage.notice.reportDismissed'), 'success')
       await loadReportPage(0)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Não foi possível atualizar esta denúncia.'
+      const message = error instanceof Error ? error.message : t('forumManage.error.reviewReport')
       setApiError(message)
       addNotification(message, 'error')
     } finally { setPendingAction(null) }
@@ -218,7 +219,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const runBackendAction = async (action: string, successMessage: string, operation: () => Promise<void>) => {
     if (!backendReady) {
-      setApiError('Não foi possível carregar os dados deste fórum. Tente novamente.')
+      setApiError(t('forumManage.error.actionNotReady'))
       return
     }
     setPendingAction(action)
@@ -227,7 +228,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       await operation()
       addNotification(successMessage, 'success')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Não foi possível concluir esta ação. Tente novamente.'
+      const message = error instanceof Error ? error.message : t('forumManage.error.action')
       setApiError(message)
       addNotification(message, 'error')
     } finally {
@@ -238,7 +239,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   if (!canManage) return null
 
   const promote = (userId: string) => {
-    void runBackendAction(`promote:${userId}`, 'Membro promovido a moderator.', async () => {
+    void runBackendAction(`promote:${userId}`, t('forumManage.notice.memberPromoted'), async () => {
       await forumApi.updateMemberRole(forum.id, userId, 'moderator')
       setForumMemberRole(forum.id, currentUserId, userId, 'moderator')
       await loadRemoteState()
@@ -246,7 +247,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   }
 
   const demote = (userId: string) => {
-    void runBackendAction(`demote:${userId}`, 'Moderator rebaixado para member.', async () => {
+    void runBackendAction(`demote:${userId}`, t('forumManage.notice.memberDemoted'), async () => {
       await forumApi.updateMemberRole(forum.id, userId, 'member')
       setForumMemberRole(forum.id, currentUserId, userId, 'member')
       await loadRemoteState()
@@ -256,7 +257,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   const remove = () => {
     if (!confirmRemoveUserId) return
     const userId = confirmRemoveUserId
-    void runBackendAction(`remove:${userId}`, 'Membro removido do fórum.', async () => {
+    void runBackendAction(`remove:${userId}`, t('forumManage.notice.memberRemoved'), async () => {
       await forumApi.removeMember(forum.id, userId)
       removeForumMember(forum.id, currentUserId, userId)
       setConfirmRemoveUserId(null)
@@ -270,7 +271,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       setTagInput('')
       return
     }
-    void runBackendAction('tag:add', 'Tag adicionada.', async () => {
+    void runBackendAction('tag:add', t('forumManage.notice.tagAdded'), async () => {
       await forumApi.createTag(forum.id, next)
       updateForumTags(forum.id, [...displayedTags, next])
       setTagInput('')
@@ -279,10 +280,10 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   }
 
   const removeTag = (tag: string) => {
-    void runBackendAction(`tag:remove:${tag}`, 'Tag removida.', async () => {
+    void runBackendAction(`tag:remove:${tag}`, t('forumManage.notice.tagRemoved'), async () => {
       const remoteTag = remoteTags?.find((item) => item.name === tag || item.slug === tag)
       const tagId = remoteTag?.id ?? (await forumApi.listTags(forum.id)).tags.find((item) => item.name === tag || item.slug === tag)?.id
-      if (!tagId) throw new Error('Esta tag não está mais disponível.')
+      if (!tagId) throw new Error(t('forumManage.error.tagUnavailable'))
       await forumApi.deleteTag(forum.id, tagId)
       updateForumTags(forum.id, displayedTags.filter((item) => item !== tag))
       await loadRemoteState()
@@ -290,7 +291,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   }
 
   const saveSettings = () => {
-    void runBackendAction('settings:save', 'Configurações do fórum atualizadas.', async () => {
+    void runBackendAction('settings:save', t('forumManage.notice.settingsSaved'), async () => {
       await forumApi.updateForum(forum.id, settingsDraft)
       updateForum(forum.id, settingsDraft)
       await loadRemoteState()
@@ -298,8 +299,8 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   }
 
   const leaveForum = () => {
-    if (!forum.isJoined || currentRole === 'owner' || !window.confirm('Deseja sair deste fórum? Você poderá entrar novamente se ele for público.')) return
-    void runBackendAction('forum:leave', 'Você saiu do fórum.', async () => {
+    if (!forum.isJoined || currentRole === 'owner' || !window.confirm(t('forumManage.confirm.leave'))) return
+    void runBackendAction('forum:leave', t('forumManage.notice.leftForum'), async () => {
       await toggleForumJoin(forum.id)
       onClose()
     })
@@ -307,7 +308,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const deleteForum = () => {
     if (!isOwner || deleteConfirmation !== forum.name) return
-    void runBackendAction('forum:delete', 'Fórum excluído permanentemente.', async () => {
+    void runBackendAction('forum:delete', t('forumManage.notice.forumDeleted'), async () => {
       await communityApi.deleteCommunity(forum.id, forum.name)
       removeForum(forum.id)
       setDeleteDialogOpen(false)
@@ -316,12 +317,12 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     })
   }
 
-  const deleteConfirmationDialog = deleteDialogOpen && <div className="titlebar-overlay fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/75 p-4" role="alertdialog" aria-modal="true" aria-labelledby="forum-delete-title" aria-describedby="forum-delete-description"><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5 shadow-2xl" onSubmit={(event) => { event.preventDefault(); deleteForum() }}><div><h2 id="forum-delete-title" className="text-lg font-semibold text-text-primary">Excluir fórum</h2><p id="forum-delete-description" className="mt-2 text-sm text-text-secondary">O fórum e seus dados exclusivos serão removidos definitivamente para todos. Esta ação não pode ser desfeita.</p><p className="mt-3 rounded-md bg-background-tertiary p-2 text-sm font-semibold text-text-primary">{forum.name}</p></div><label className="block text-sm text-text-secondary">Digite o nome do fórum para confirmar<Input autoFocus value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} className="mt-1" /></label>{apiError && <p role="alert" className="text-sm text-red-300">{apiError}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={pendingAction === 'forum:delete'} onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmation('') }}>Cancelar</Button><Button type="submit" variant="danger" loading={pendingAction === 'forum:delete'} disabled={deleteConfirmation !== forum.name}>Excluir fórum</Button></div></form></div>
+  const deleteConfirmationDialog = deleteDialogOpen && <div className="titlebar-overlay fixed inset-x-0 bottom-0 top-9 z-[90] grid place-items-center bg-black/75 p-4" role="alertdialog" aria-modal="true" aria-labelledby="forum-delete-title" aria-describedby="forum-delete-description"><form className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background-secondary p-5 shadow-2xl" onSubmit={(event) => { event.preventDefault(); deleteForum() }}><div><h2 id="forum-delete-title" className="text-lg font-semibold text-text-primary">{t('forumManage.delete.title')}</h2><p id="forum-delete-description" className="mt-2 text-sm text-text-secondary">{t('forumManage.delete.description')}</p><p className="mt-3 rounded-md bg-background-tertiary p-2 text-sm font-semibold text-text-primary">{forum.name}</p></div><label className="block text-sm text-text-secondary">{t('forumManage.delete.confirmLabel')}<Input autoFocus value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} className="mt-1" /></label>{apiError && <p role="alert" className="text-sm text-red-300">{apiError}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="ghost" disabled={pendingAction === 'forum:delete'} onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmation('') }}>{t('common.cancel')}</Button><Button type="submit" variant="danger" loading={pendingAction === 'forum:delete'} disabled={deleteConfirmation !== forum.name}>{t('forumManage.delete.title')}</Button></div></form></div>
 
   const uploadIdentityImage = async (target: 'icon' | 'banner', file?: File) => {
     if (!file || !isOwner) return
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setApiError('Use uma imagem PNG, JPEG ou WebP.'); return }
-    if (file.size > 15 * 1024 * 1024) { setApiError('A imagem deve ter até 15 MB.'); return }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setApiError(t('forumManage.error.imageType')); return }
+    if (file.size > 15 * 1024 * 1024) { setApiError(t('forumManage.error.imageSize')); return }
     if (cropSource) URL.revokeObjectURL(cropSource)
     setCropFile(file); setCropTarget(target); setCropSource(URL.createObjectURL(file)); setApiError(null)
   }
@@ -341,9 +342,9 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       const patch = target === 'icon' ? { iconUrl: asset.publicUrl } : { bannerUrl: asset.publicUrl }
       await forumApi.updateForum(forum.id, patch)
       updateForum(forum.id, target === 'icon' ? { iconImage: asset.publicUrl } : { bannerImage: asset.publicUrl })
-      addNotification(target === 'icon' ? 'Ícone do fórum atualizado.' : 'Banner do fórum atualizado.', 'success')
+      addNotification(target === 'icon' ? t('forumManage.notice.iconUpdated') : t('forumManage.notice.bannerUpdated'), 'success')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Não foi possível enviar a imagem do fórum.'
+      const message = error instanceof Error ? error.message : t('forumManage.error.imageUpload')
       setApiError(message)
       addNotification(message, 'error')
     } finally {
@@ -352,7 +353,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   }
 
   const toggleTopicFlag = (topicId: string, flag: TopicFlag, value: boolean) => {
-    void runBackendAction(`${flag}:${topicId}`, 'Topico atualizado.', async () => {
+    void runBackendAction(`${flag}:${topicId}`, t('forumManage.notice.topicUpdated'), async () => {
       await forumApi.setTopicFlag(forum.id, topicId, flag, value)
       setForumTopicFlag(forum.id, topicId, flag, value)
       await loadRemoteState()
@@ -363,17 +364,17 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     <div className="space-y-5">
       <SectionHeader eyebrow="Comunidade" title={forum.name} description={forum.description} />
       <div className="grid grid-cols-4 gap-3 max-[900px]:grid-cols-2">
-        <StatCard label="Visibilidade" value={forum.visibility === 'public' ? 'Público' : 'Privado'} />
-        <StatCard label="Membros" value={displayedMembers.length.toLocaleString('pt-BR')} />
-        <StatCard label="Topicos/posts" value={displayedTopics.length.toLocaleString('pt-BR')} />
-        <StatCard label="Reports pendentes" value={pendingReports.length} />
+        <StatCard label={t('forumManage.visibility')} value={forum.visibility === 'public' ? t('forumManage.public') : t('forumManage.private')} />
+        <StatCard label={t('forumManage.members')} value={displayedMembers.length.toLocaleString(locale)} />
+        <StatCard label={t('forumManage.topicsPosts')} value={displayedTopics.length.toLocaleString(locale)} />
+        <StatCard label={t('forumManage.pendingReports')} value={pendingReports.length} />
       </div>
       <ContentSectionCard>
         <div className="grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
           <ActionRow title={t('forumManage.owner')} description={getProfile(forum.ownerId).displayName} />
-          <ActionRow title="Criado em" description={formatTimestamp(forum.createdAt)} />
-          <ActionRow title="Tags" description={displayedTags.length ? displayedTags.map((tag) => `#${tag}`).join(', ') : 'Nenhuma tag'} />
-          <ActionRow title="Sua role local" description={currentRole ? t(roleLabelKey(currentRole)) : t('forumManage.noMembership')} />
+          <ActionRow title={t('forumManage.createdAt')} description={formatTimestamp(forum.createdAt)} />
+          <ActionRow title={t('forumManage.tags')} description={displayedTags.length ? displayedTags.map((tag) => `#${tag}`).join(', ') : t('forumManage.noTags')} />
+          <ActionRow title={t('forumManage.yourRole')} description={currentRole ? t(roleLabelKey(currentRole)) : t('forumManage.noMembership')} />
         </div>
       </ContentSectionCard>
     </div>
@@ -381,10 +382,10 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const renderPosts = () => (
     <div className="space-y-5">
-      <SectionHeader title="Publicações e tópicos" description="Gerencie os tópicos publicados neste fórum." />
+      <SectionHeader title={t('forumManage.postsAndTopics')} description={t('forumManage.postsDescription')} />
       {displayedTopics.length === 0 ? (
         <ContentSectionCard className="text-center text-sm text-text-secondary">
-          Ainda não há tópicos neste fórum.
+          {t('forumManage.noTopics')}
         </ContentSectionCard>
       ) : (
         <div className="space-y-3">
@@ -395,20 +396,20 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
                   <h3 className="font-semibold text-text-primary">{topic.title}</h3>
                   <p className="mt-1 text-sm text-text-secondary line-clamp-2">{topic.content}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                    {topic.isPinned && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-accent">Pinned</span>}
-                    {topic.isLocked && <span className="rounded-full bg-yellow-500/15 px-2 py-0.5 text-yellow-300">Locked</span>}
-                    {topic.isResolved && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-400">Resolved</span>}
+                    {topic.isPinned && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-accent">{t('forumManage.pinned')}</span>}
+                    {topic.isLocked && <span className="rounded-full bg-yellow-500/15 px-2 py-0.5 text-yellow-300">{t('forumManage.locked')}</span>}
+                    {topic.isResolved && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-400">{t('forumManage.resolved')}</span>}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="secondary" loading={pendingAction === `isPinned:${topic.id}`} leftIcon={<Pin size={13} />} onClick={() => toggleTopicFlag(topic.id, 'isPinned', !topic.isPinned)}>
-                    {topic.isPinned ? 'Unpin' : 'Pin'}
+                    {topic.isPinned ? t('forumManage.unpin') : t('forumManage.pin')}
                   </Button>
                   <Button size="sm" variant="secondary" loading={pendingAction === `isLocked:${topic.id}`} leftIcon={topic.isLocked ? <Unlock size={13} /> : <Lock size={13} />} onClick={() => toggleTopicFlag(topic.id, 'isLocked', !topic.isLocked)}>
-                    {topic.isLocked ? 'Unlock' : 'Lock'}
+                    {topic.isLocked ? t('forumManage.unlock') : t('forumManage.lock')}
                   </Button>
                   <Button size="sm" variant="secondary" loading={pendingAction === `isResolved:${topic.id}`} leftIcon={<CheckCircle2 size={13} />} onClick={() => toggleTopicFlag(topic.id, 'isResolved', !topic.isResolved)}>
-                    {topic.isResolved ? 'Unresolved' : 'Resolved'}
+                    {topic.isResolved ? t('forumManage.markUnresolved') : t('forumManage.markResolved')}
                   </Button>
                 </div>
               </div>
@@ -421,7 +422,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const renderMembers = () => (
     <div className="space-y-5">
-      <SectionHeader title="Membros" description="Consulte os membros e gerencie as funções permitidas para sua conta." />
+      <SectionHeader title={t('forumManage.members')} description={t('forumManage.membersDescription')} />
       <div className="space-y-3">
         {sortedMembers.map((member) => {
           const apiUser = 'user' in member ? member.user : null
@@ -438,13 +439,13 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
               action={
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="secondary" loading={pendingAction === `promote:${member.userId}`} disabled={!isOwner || protectedOwner || self || member.role === 'moderator'} onClick={() => promote(member.userId)}>
-                    Promover
+                    {t('forumManage.promote')}
                   </Button>
                   <Button size="sm" variant="secondary" loading={pendingAction === `demote:${member.userId}`} disabled={!isOwner || protectedOwner || self || member.role !== 'moderator'} onClick={() => demote(member.userId)}>
-                    Rebaixar
+                    {t('forumManage.demote')}
                   </Button>
                   <Button size="sm" variant="danger" loading={pendingAction === `remove:${member.userId}`} disabled={!isOwner || protectedOwner || self} onClick={() => setConfirmRemoveUserId(member.userId)}>
-                    Remover
+                    {t('forumManage.remove')}
                   </Button>
                 </div>
               }
@@ -457,18 +458,18 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
   const renderModeration = () => (
     <div className="space-y-5">
-      <SectionHeader title="Denúncias" description="Analise denúncias deste fórum. A identidade de quem denunciou não é exibida." />
+      <SectionHeader title={t('forumManage.reports')} description={t('forumManage.reportsDescription')} />
       <div className="grid gap-3 rounded-xl border border-border bg-background-secondary p-3 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="text-xs text-text-secondary">Situação<select aria-label="Filtrar denúncias por situação" value={reportStatusFilter} onChange={(event) => setReportStatusFilter(event.target.value as typeof reportStatusFilter)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="">Todas</option><option value="pending">Pendente</option><option value="reviewing">Em análise</option><option value="resolved">Concluída</option><option value="dismissed">Arquivada</option></select></label>
-        <label className="text-xs text-text-secondary">Tipo<select aria-label="Filtrar denúncias por tipo" value={reportTypeFilter} onChange={(event) => setReportTypeFilter(event.target.value as typeof reportTypeFilter)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="">Todos</option><option value="forum_topic">Tópico</option><option value="forum_reply">Resposta</option><option value="post">Publicação</option><option value="post_comment">Comentário</option><option value="user">Membro</option></select></label>
-        <label className="text-xs text-text-secondary">A partir de<input aria-label="Filtrar denúncias desde" type="date" value={reportCreatedAfter} onChange={(event) => setReportCreatedAfter(event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary" /></label>
-        <label className="text-xs text-text-secondary">Até<input aria-label="Filtrar denúncias até" type="date" value={reportCreatedBefore} onChange={(event) => setReportCreatedBefore(event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary" /></label>
+        <label className="text-xs text-text-secondary">{t('forumManage.reportStatus')}<select aria-label={t('forumManage.filterReportStatus')} value={reportStatusFilter} onChange={(event) => setReportStatusFilter(event.target.value as typeof reportStatusFilter)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="">{t('forumManage.allFem')}</option><option value="pending">{t('forumManage.status.pending')}</option><option value="reviewing">{t('forumManage.status.reviewing')}</option><option value="resolved">{t('forumManage.status.resolved')}</option><option value="dismissed">{t('forumManage.status.dismissed')}</option></select></label>
+        <label className="text-xs text-text-secondary">{t('forumManage.reportType')}<select aria-label={t('forumManage.filterReportType')} value={reportTypeFilter} onChange={(event) => setReportTypeFilter(event.target.value as typeof reportTypeFilter)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary"><option value="">{t('forumManage.allMasc')}</option><option value="forum_topic">{t('forumManage.target.topic')}</option><option value="forum_reply">{t('forumManage.target.reply')}</option><option value="post">{t('forumManage.target.post')}</option><option value="post_comment">{t('forumManage.target.comment')}</option><option value="user">{t('forumManage.target.member')}</option></select></label>
+        <label className="text-xs text-text-secondary">{t('forumManage.from')}<input aria-label={t('forumManage.filterFrom')} type="date" value={reportCreatedAfter} onChange={(event) => setReportCreatedAfter(event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary" /></label>
+        <label className="text-xs text-text-secondary">{t('forumManage.to')}<input aria-label={t('forumManage.filterTo')} type="date" value={reportCreatedBefore} onChange={(event) => setReportCreatedBefore(event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background-primary px-3 py-2 text-sm text-text-primary" /></label>
       </div>
       {apiError && activeTab === 'moderation' && <p role="alert" className="text-sm text-red-300">{apiError}</p>}
-      {reportLoading && <p role="status" className="text-sm text-text-secondary">Carregando denúncias…</p>}
+      {reportLoading && <p role="status" className="text-sm text-text-secondary">{t('forumManage.loadingReports')}</p>}
       {!reportLoading && displayedReports.length === 0 ? (
         <ContentSectionCard className="text-center text-sm text-text-secondary">
-          Nenhuma denúncia encontrada para estes filtros.
+          {t('forumManage.noReports')}
         </ContentSectionCard>
       ) : (
         <div className="space-y-3">
@@ -476,64 +477,64 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
             <article key={report.id} className="space-y-3 rounded-xl border border-border bg-background-secondary p-4">
               <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-all text-sm font-semibold text-text-primary">{report.targetType === 'forum_topic' ? 'Tópico' : report.targetType === 'forum_reply' ? 'Resposta' : report.targetType === 'post' ? 'Publicação' : report.targetType === 'post_comment' ? 'Comentário' : 'Membro'} · {report.targetId}</h3><p className="mt-1 text-xs text-text-secondary">{report.reason} · {formatTimestamp(new Date(report.createdAt))}</p></div><span className="rounded-full border border-border bg-background-tertiary px-2 py-1 text-xs">{t(reportStatusKey(report.status))}</span></div>
               {report.details && <p className="whitespace-pre-wrap break-words text-sm text-text-primary">{report.details}</p>}
-              {report.evidence.length > 0 && <details><summary className="cursor-pointer text-xs text-accent">Ver evidências permitidas</summary><ul className="mt-2 space-y-1">{report.evidence.map((evidence, index) => <li key={`${report.id}-${index}`} className="break-all text-xs text-text-secondary">{evidence}</li>)}</ul></details>}
+              {report.evidence.length > 0 && <details><summary className="cursor-pointer text-xs text-accent">{t('forumManage.viewEvidence')}</summary><ul className="mt-2 space-y-1">{report.evidence.map((evidence, index) => <li key={`${report.id}-${index}`} className="break-all text-xs text-text-secondary">{evidence}</li>)}</ul></details>}
               {report.resolutionNote && <p className="text-xs text-text-secondary">Decisão registrada: {report.resolutionNote}</p>}
-              {(report.status === 'pending' || report.status === 'reviewing') && <div className="space-y-2"><textarea aria-label="Observação da decisão" value={reportResolutionNotes[report.id] ?? ''} onChange={(event) => setReportResolutionNotes((current) => ({ ...current, [report.id]: event.target.value.slice(0, 1000) }))} maxLength={1000} rows={2} placeholder="Observação da decisão (opcional)" className="w-full rounded-lg border border-border bg-background-primary p-2 text-xs text-text-primary" /><div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" disabled={pendingAction === `report:${report.id}`} loading={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'reviewing')}>Assumir análise</Button><Button size="sm" variant="secondary" disabled={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'resolved')}>Concluir</Button><Button size="sm" variant="ghost" disabled={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'dismissed')}>Arquivar</Button></div></div>}
+              {(report.status === 'pending' || report.status === 'reviewing') && <div className="space-y-2"><textarea aria-label={t('forumManage.resolutionNote')} value={reportResolutionNotes[report.id] ?? ''} onChange={(event) => setReportResolutionNotes((current) => ({ ...current, [report.id]: event.target.value.slice(0, 1000) }))} maxLength={1000} rows={2} placeholder={t('forumManage.resolutionNotePlaceholder')} className="w-full rounded-lg border border-border bg-background-primary p-2 text-xs text-text-primary" /><div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" disabled={pendingAction === `report:${report.id}`} loading={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'reviewing')}>{t('forumManage.takeReport')}</Button><Button size="sm" variant="secondary" disabled={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'resolved')}>{t('forumManage.resolveReport')}</Button><Button size="sm" variant="ghost" disabled={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'dismissed')}>{t('forumManage.dismissReport')}</Button></div></div>}
             </article>
           ))}
         </div>
       )}
-      {reportHasMore && <Button size="sm" variant="secondary" loading={reportLoading} onClick={() => void loadReportPage(reportOffset, true)}>Carregar mais denúncias</Button>}
+      {reportHasMore && <Button size="sm" variant="secondary" loading={reportLoading} onClick={() => void loadReportPage(reportOffset, true)}>{t('forumManage.loadMoreReports')}</Button>}
     </div>
   )
 
   const renderSettings = () => (
     <div className="space-y-5">
-      <SectionHeader title={activeTab === 'access' ? 'Acesso e visibilidade' : activeTab === 'critical' ? 'Propriedade e ações críticas' : 'Perfil do Fórum'} description={activeTab === 'access' ? 'Defina quem pode encontrar e acessar este Fórum.' : activeTab === 'critical' ? 'Ações que alteram o acesso ou removem o Fórum ficam separadas do uso diário.' : 'Mantenha a identidade do Fórum em um único lugar.'} />
+      <SectionHeader title={activeTab === 'access' ? t('forumManage.access') : activeTab === 'critical' ? t('forumManage.critical') : t('forumManage.profile')} description={activeTab === 'access' ? t('forumManage.accessDescription') : activeTab === 'critical' ? t('forumManage.criticalDescription') : t('forumManage.profileDescription')} />
       <ContentSectionCard className="space-y-4">
         {(activeTab === 'profile' || activeTab === 'settings') && <>
         <label className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          Nome
+          {t('forumManage.name')}
           <input disabled={!isOwner} className="mt-1 w-full rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" value={settingsDraft.name} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, name: e.target.value }))} />
         </label>
         <label className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          Descrição
+          {t('forumManage.description')}
           <textarea disabled={!isOwner} className="mt-1 w-full resize-none rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" rows={3} value={settingsDraft.description} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, description: e.target.value }))} />
         </label>
         </>}
         {activeTab === 'access' && <label className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          Visibilidade
+          {t('forumManage.visibility')}
           <select disabled={!isOwner} className="mt-1 w-full max-w-md rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary disabled:opacity-60" value={settingsDraft.visibility} onChange={(e) => setSettingsDraft((draft) => ({ ...draft, visibility: e.target.value as Forum['visibility'] }))}>
-            <option value="public">Público</option>
-            <option value="private">Privado</option>
+            <option value="public">{t('forumManage.public')}</option>
+            <option value="private">{t('forumManage.private')}</option>
           </select>
-          <span className="mt-1 block normal-case font-normal">A visibilidade atual é {settingsDraft.visibility === 'public' ? 'pública' : 'privada'}.</span>
+          <span className="mt-1 block normal-case font-normal">{t('forumManage.visibilityCurrent', { value: settingsDraft.visibility === 'public' ? t('forumManage.publicLower') : t('forumManage.privateLower') })}</span>
         </label>}
         {(activeTab === 'profile' || activeTab === 'settings') && <>
         <div className="grid min-w-0 grid-cols-1 gap-3 @container sm:grid-cols-2">
           <div className="min-w-0 space-y-2 rounded-lg border border-border p-3">
-            <p className="text-xs font-semibold text-text-secondary">Ícone</p>
-            {forum.iconImage && <img src={mediaApi.resolvePublicUrl(forum.iconImage)} alt="Ícone atual do fórum" className="h-14 w-14 rounded-xl object-cover" />}
+            <p className="text-xs font-semibold text-text-secondary">{t('forumManage.icon')}</p>
+            {forum.iconImage && <img src={mediaApi.resolvePublicUrl(forum.iconImage)} alt={t('forumManage.currentIcon')} className="h-14 w-14 rounded-xl object-cover" />}
             <input ref={iconInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => { void uploadIdentityImage('icon', event.target.files?.[0]); event.currentTarget.value = '' }} />
-            <Button size="sm" variant="secondary" disabled={!isOwner || Boolean(imageBusy)} loading={imageBusy === 'icon'} onClick={() => iconInputRef.current?.click()} leftIcon={<ImagePlus size={14} />}>Enviar ícone</Button>
+            <Button size="sm" variant="secondary" disabled={!isOwner || Boolean(imageBusy)} loading={imageBusy === 'icon'} onClick={() => iconInputRef.current?.click()} leftIcon={<ImagePlus size={14} />}>{t('forumManage.uploadIcon')}</Button>
           </div>
           <div className="min-w-0 space-y-2 rounded-lg border border-border p-3">
-            <p className="text-xs font-semibold text-text-secondary">Banner</p>
-            {forum.bannerImage && <img src={mediaApi.resolvePublicUrl(forum.bannerImage)} alt="Banner atual do fórum" className="aspect-video w-full rounded-xl object-cover object-center" />}
+            <p className="text-xs font-semibold text-text-secondary">{t('forumManage.banner')}</p>
+            {forum.bannerImage && <img src={mediaApi.resolvePublicUrl(forum.bannerImage)} alt={t('forumManage.currentBanner')} className="aspect-video w-full rounded-xl object-cover object-center" />}
             <input ref={bannerInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => { void uploadIdentityImage('banner', event.target.files?.[0]); event.currentTarget.value = '' }} />
-            <Button size="sm" variant="secondary" disabled={!isOwner || Boolean(imageBusy)} loading={imageBusy === 'banner'} onClick={() => bannerInputRef.current?.click()} leftIcon={<ImagePlus size={14} />}>Enviar banner</Button>
+            <Button size="sm" variant="secondary" disabled={!isOwner || Boolean(imageBusy)} loading={imageBusy === 'banner'} onClick={() => bannerInputRef.current?.click()} leftIcon={<ImagePlus size={14} />}>{t('forumManage.uploadBanner')}</Button>
           </div>
         </div>
         </>}
-        {(activeTab === 'profile' || activeTab === 'access' || activeTab === 'settings') && <Button onClick={saveSettings} loading={pendingAction === 'settings:save'} disabled={!isOwner}>Salvar alterações</Button>}
+        {(activeTab === 'profile' || activeTab === 'access' || activeTab === 'settings') && <Button onClick={saveSettings} loading={pendingAction === 'settings:save'} disabled={!isOwner}>{t('forumManage.saveChanges')}</Button>}
       </ContentSectionCard>
 
       {(activeTab === 'profile' || activeTab === 'settings') && <>
       <ContentSectionCard className="space-y-3">
-        <SectionHeader title="Tags" description="Organize este fórum com tags para facilitar sua descoberta." />
+        <SectionHeader title={t('forumManage.tags')} description={t('forumManage.tagsDescription')} />
         <div className="flex gap-2">
-          <input className="flex-1 rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }} placeholder="nova-tag" />
-          <Button variant="secondary" onClick={addTag} loading={pendingAction === 'tag:add'} leftIcon={<Hash size={14} />}>Adicionar</Button>
+          <input className="flex-1 rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }} placeholder={t('forumManage.newTagPlaceholder')} />
+          <Button variant="secondary" onClick={addTag} loading={pendingAction === 'tag:add'} leftIcon={<Hash size={14} />}>{t('forumManage.addTag')}</Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {displayedTags.map((tag) => (
@@ -550,12 +551,12 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
       {activeTab === 'critical' && <>
       <ContentSectionCard className="border-red-500/30">
-        <SectionHeader title="Ações da comunidade" description="A exclusão permanente é restrita ao proprietário e exige a confirmação do nome do fórum." />
+        <SectionHeader title={t('forumManage.communityActions')} description={t('forumManage.communityActionsDescription')} />
         <div className="mt-4 grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
-          <Button variant="secondary" disabled={!forum.isJoined || currentRole === 'owner'} loading={pendingAction === 'forum:leave'} onClick={leaveForum}>Sair do fórum</Button>
-          <Button variant="danger" disabled={!isOwner || Boolean(pendingAction)} onClick={() => { setDeleteConfirmation(''); setApiError(null); setDeleteDialogOpen(true) }} leftIcon={<Trash2 size={14} />}>Excluir fórum</Button>
+          <Button variant="secondary" disabled={!forum.isJoined || currentRole === 'owner'} loading={pendingAction === 'forum:leave'} onClick={leaveForum}>{t('forumManage.leaveForum')}</Button>
+          <Button variant="danger" disabled={!isOwner || Boolean(pendingAction)} onClick={() => { setDeleteConfirmation(''); setApiError(null); setDeleteDialogOpen(true) }} leftIcon={<Trash2 size={14} />}>{t('forumManage.delete.title')}</Button>
         </div>
-        {currentRole === 'owner' && <p className="mt-3 text-xs text-text-secondary">Transfira a propriedade antes de sair do fórum.</p>}
+        {currentRole === 'owner' && <p className="mt-3 text-xs text-text-secondary">{t('forumManage.transferBeforeLeave')}</p>}
       </ContentSectionCard>
       </>}
     </div>
@@ -572,7 +573,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   const errorBanner = apiError && (
     <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100" role="alert">
       <span>{apiError}</span>
-      <Button size="sm" variant="secondary" loading={pendingAction === 'refresh'} onClick={() => void loadRemoteState()}>Tentar novamente</Button>
+      <Button size="sm" variant="secondary" loading={pendingAction === 'refresh'} onClick={() => void loadRemoteState()}>{t('common.retry')}</Button>
     </div>
   )
 
@@ -580,9 +581,9 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
     <div className="space-y-4">
       {errorBanner}
       {renderActiveTab()}
-      {confirmRemoveUserId && <div className="titlebar-overlay fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Confirmar remoção"><div className="w-full max-w-md rounded-xl border border-border bg-background-secondary p-5 shadow-2xl"><h3 className="text-lg font-semibold text-text-primary">Remover membro?</h3><p className="mt-2 text-sm text-text-secondary">A pessoa perderá acesso a este Fórum. A propriedade do Fórum não pode ser removida por esta ação.</p><div className="mt-5 flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmRemoveUserId(null)}>Cancelar</Button><Button variant="danger" loading={pendingAction === `remove:${confirmRemoveUserId}`} onClick={remove}>Remover</Button></div></div></div>}
+      {confirmRemoveUserId && <div className="titlebar-overlay fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label={t('forumManage.confirmRemoval')}><div className="w-full max-w-md rounded-xl border border-border bg-background-secondary p-5 shadow-2xl"><h3 className="text-lg font-semibold text-text-primary">{t('forumManage.removeMemberQuestion')}</h3><p className="mt-2 text-sm text-text-secondary">{t('forumManage.removeMemberDescription')}</p><div className="mt-5 flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmRemoveUserId(null)}>{t('common.cancel')}</Button><Button variant="danger" loading={pendingAction === `remove:${confirmRemoveUserId}`} onClick={remove}>{t('forumManage.remove')}</Button></div></div></div>}
       {deleteConfirmationDialog}
-      {cropSource && <ImageCropModal src={cropSource} shape={cropTarget === 'icon' ? 'circle' : 'rect'} aspect={cropTarget === 'icon' ? 1 : 16 / 9} outputWidth={cropTarget === 'icon' ? 512 : 1920} outputHeight={cropTarget === 'icon' ? 512 : 1080} title={cropTarget === 'icon' ? 'Editar ícone do Fórum' : 'Editar banner do Fórum'} onApply={(dataUrl) => { void applyIdentityCrop(dataUrl) }} onCancel={() => { if (cropSource) URL.revokeObjectURL(cropSource); setCropSource(null); setCropFile(null) }} />}
+      {cropSource && <ImageCropModal src={cropSource} shape={cropTarget === 'icon' ? 'circle' : 'rect'} aspect={cropTarget === 'icon' ? 1 : 16 / 9} outputWidth={cropTarget === 'icon' ? 512 : 1920} outputHeight={cropTarget === 'icon' ? 512 : 1080} title={cropTarget === 'icon' ? t('forumManage.editIcon') : t('forumManage.editBanner')} onApply={(dataUrl) => { void applyIdentityCrop(dataUrl) }} onCancel={() => { if (cropSource) URL.revokeObjectURL(cropSource); setCropSource(null); setCropFile(null) }} />}
     </div>
   )
 
@@ -592,9 +593,9 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
         <aside className="w-60 shrink-0 border-r border-border bg-background-secondary p-3">
           <div className="mb-4 px-2">
             <p className="truncate text-sm font-semibold text-text-primary">{forum.name}</p>
-            <p className="text-xs text-text-secondary">Configurações do fórum</p>
+          <p className="text-xs text-text-secondary">{t('forumManage.settings')}</p>
           </div>
-          <nav className="space-y-1" aria-label="Gerenciamento do fórum">
+          <nav className="space-y-1" aria-label={t('forumManage.navigationLabel')}>
           {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -614,8 +615,8 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
 
         <main className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <h2 className="text-lg font-semibold text-text-primary">Painel do fórum</h2>
-            <button type="button" onClick={onClose} className="rounded-lg p-2 text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label="Fechar gerenciamento">
+            <h2 className="text-lg font-semibold text-text-primary">{t('forumManage.panelTitle')}</h2>
+            <button type="button" onClick={onClose} className="rounded-lg p-2 text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label={t('forumManage.closeManagement')}>
               <X size={18} />
             </button>
           </div>
@@ -627,19 +628,19 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       </div>
 
       {confirmRemoveUserId && (
-        <div className="titlebar-overlay fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Confirmar remocao">
+        <div className="titlebar-overlay fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label={t('forumManage.confirmRemoval')}>
           <div className="w-full max-w-md rounded-xl border border-border bg-background-secondary p-5 shadow-2xl">
-            <h3 className="text-lg font-semibold text-text-primary">Remover membro?</h3>
-            <p className="mt-2 text-sm text-text-secondary">A pessoa perderá acesso a este fórum. A propriedade do fórum não pode ser removida por esta ação.</p>
+            <h3 className="text-lg font-semibold text-text-primary">{t('forumManage.removeMemberQuestion')}</h3>
+            <p className="mt-2 text-sm text-text-secondary">{t('forumManage.removeMemberDescription')}</p>
             <div className="mt-5 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setConfirmRemoveUserId(null)}>Cancelar</Button>
-              <Button variant="danger" loading={pendingAction === `remove:${confirmRemoveUserId}`} onClick={remove}>Remover</Button>
+              <Button variant="ghost" onClick={() => setConfirmRemoveUserId(null)}>{t('common.cancel')}</Button>
+              <Button variant="danger" loading={pendingAction === `remove:${confirmRemoveUserId}`} onClick={remove}>{t('forumManage.remove')}</Button>
             </div>
           </div>
         </div>
       )}
       {deleteConfirmationDialog}
-      {cropSource && <ImageCropModal src={cropSource} shape={cropTarget === 'icon' ? 'circle' : 'rect'} aspect={cropTarget === 'icon' ? 1 : 16 / 9} outputWidth={cropTarget === 'icon' ? 512 : 1920} outputHeight={cropTarget === 'icon' ? 512 : 1080} title={cropTarget === 'icon' ? 'Editar ícone do fórum' : 'Editar banner do fórum'} onApply={(dataUrl) => { void applyIdentityCrop(dataUrl) }} onCancel={() => { if (cropSource) URL.revokeObjectURL(cropSource); setCropSource(null); setCropFile(null) }} />}
+      {cropSource && <ImageCropModal src={cropSource} shape={cropTarget === 'icon' ? 'circle' : 'rect'} aspect={cropTarget === 'icon' ? 1 : 16 / 9} outputWidth={cropTarget === 'icon' ? 512 : 1920} outputHeight={cropTarget === 'icon' ? 512 : 1080} title={cropTarget === 'icon' ? t('forumManage.editIcon') : t('forumManage.editBanner')} onApply={(dataUrl) => { void applyIdentityCrop(dataUrl) }} onCancel={() => { if (cropSource) URL.revokeObjectURL(cropSource); setCropSource(null); setCropFile(null) }} />}
     </div>
   )
 }

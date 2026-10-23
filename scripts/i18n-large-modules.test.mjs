@@ -35,6 +35,8 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'settings.privacy.blockedAccounts', 'settings.notifications.privateMessageSound',
     'settings.profile.whoCanMessage', 'settings.about.securePaused', 'settings.loginHistory.currentSession',
     'billing.heroTitle', 'billing.benefit.1', 'billing.result.successTitle',
+    'forumManage.delete.title', 'forumManage.reportsDescription', 'forumManage.accessDescription',
+    'forumManage.removeMemberDescription', 'forumManage.error.imageType', 'forumManage.notice.settingsSaved',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -88,6 +90,11 @@ assert.match(loginHistorySettings, /formatDateTime\(new Date\(login\.occurredAt\
 assert.match(billing, /t\('billing\.heroTitle'\)/)
 assert.match(billing, /t\(`billing\.benefit\.\$\{index \+ 1\}`/)
 assert.match(billingResult, /t\('billing\.result\.successTitle'\)/)
+assert.match(forumManagement, /t\('forumManage\.delete\.title'\)/)
+assert.match(forumManagement, /t\('forumManage\.reportsDescription'\)/)
+assert.match(forumManagement, /t\('forumManage\.notice\.settingsSaved'\)/)
+assert.match(profile, /t\('profile\.communityMemberData', \{ name: communityContext\.forumName \}\)/)
+assert.match(profile, /\{role\.name\}/)
 
 // Member-created topic/reply content and names stay in their original language.
 assert.match(communityForumChannel, /\{activeTopic\.title\}/)
