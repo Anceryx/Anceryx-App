@@ -17,6 +17,7 @@
 - A tela de notificações localiza ações, estados vazios e falhas padrão; textos dinâmicos recebidos da API permanecem intactos.
 - O compositor e o estado vazio de conversas localizam anexos, envio e acessibilidade sem alterar o texto digitado ou recebido nas mensagens.
 - O cartão de fórum localiza seus rótulos e formata contagens conforme o idioma, mantendo nomes, descrições e tags definidos pelos membros.
+- A auditoria de cobertura passou a contar texto estático em expressões JSX e templates de atributos/objetos; seu relatório continua identificando uma amostra parcial.
 
 ## Internacionalização — chamadas e navegação de configurações
 
