@@ -10,7 +10,6 @@ individually and validated with the Electron build and security smokes.
 - `react-router`: `7.18.4`
 - `electron`: `44.7.0`
 - `electron-builder`: `26.17.0`
-- `electron-updater`: `6.8.9`
 - `electron-vite`: `5.0.0`
 - `vite`: `7.3.7`
 - `tailwindcss`: `4.3.3`

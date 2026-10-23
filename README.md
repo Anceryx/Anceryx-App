@@ -76,7 +76,7 @@ npm run test:encoding
 
 ## Instalação e atualizações
 
-O repositório está em preparação para distribuição; a Release `v0.15.0` não contém instalador. Consulte [instalação e atualizações do Windows](docs/INSTALLATION.md). Builds de revisão são artifacts temporários, não Releases. O atualizador integrado está pausado até que o cliente possa verificar manifests assinados com Ed25519; atualizações serão manuais nesse período. A migração de instalações antigas exige baixar a versão aprovada na página Releases e instalar sobre a versão atual, após QA de preservação dos dados.
+O cliente está preparado localmente como versão `0.17.1`. Consulte [instalação e atualizações do Windows](docs/INSTALLATION.md). Builds de revisão são artifacts temporários, não Releases. O atualizador integrado usa um verificador Ed25519 próprio, mas permanece desativado até a chave pública de produção ser fixada no cliente e o fluxo de publicação e o QA no Windows serem aprovados. Instale atualizações manualmente pelas Releases oficiais enquanto essa validação estiver pendente.
 
 ## Contribuições
 

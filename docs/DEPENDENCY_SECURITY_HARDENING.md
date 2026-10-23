@@ -29,7 +29,6 @@ The direct toolchain versions are now:
 
 - Electron `44.7.0`
 - electron-builder `26.17.0`
-- electron-updater `6.8.9`
 - electron-vite `5.0.0`
 - Vite `7.3.7`
 - Tailwind `4.3.3` with `@tailwindcss/postcss`

@@ -1,13 +1,21 @@
 # Atualizações do Electron
 
-Status: o atualizador integrado está desativado no cliente até que haja verificação confiável de manifests assinados.
+## Estado da versão 0.17.1
 
-O feed configurado aponta para Releases públicos de `Anceryx/Anceryx-App`; o aplicativo não contém token nem URL de feed privado. O cliente preparado para `0.17.0` usa `electron-builder` 26.18.0 e `electron-updater` 6.8.11, que não verificam a assinatura Ed25519 do manifest. Por isso, a consulta, o download e a instalação permanecem bloqueados. SHA-512 e blockmap detectam inconsistências no arquivo, mas não autenticam o manifest.
+O cliente contém um verificador Ed25519 independente, executado no processo principal, e um transporte HTTPS que só é iniciado depois da validação da assinatura do manifest. O manifest assinado cobre versão, canal, notas, URL e nome do instalador, tamanho e SHA-512. O cliente também valida o tamanho e o hash do arquivo durante o download.
 
-Para reativar o fluxo, será necessário adotar versões estáveis compatíveis do builder e updater, configurar a chave pública confiável incorporada ao aplicativo, armazenar a chave privada em secret protegido e validar a assinatura do manifest antes de qualquer ação. O workflow `.github/workflows/publish-windows-release.yml` falha fechado até essas dependências e o secret `ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY` estarem configurados. O flag de execução no cliente também precisará ser habilitado explicitamente após os testes.
+O atualizador continua desativado: ainda não há chave pública de produção fixada em `src/main/updater/updateTrust.ts`, e `UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED` permanece `false`. Sem esses dois requisitos, o aplicativo não faz chamadas de atualização. A configuração de produção não pode ser habilitada até que a chave seja provisionada e revisada, o secret protegido corresponda a ela e a QA do instalador seja aprovada.
 
-## Transição de instalações existentes
+O cliente não usa `electron-updater`; essa dependência foi removida para evitar uma segunda rota de download que não passe pelo verificador. Não há download automático nem instalação silenciosa. Quando habilitado futuramente, o usuário inicia o download e abre o NSIS para confirmar a instalação.
 
-Não é possível provar, usando somente este clone, a origem de todos os instaladores antigos. A transição para uma versão aprovada deverá ser feita manualmente, instalando o NSIS sobre a instalação existente e confirmando em Windows que `app.getPath('userData')`, SafeStorage, sessões e preferências são preservados. Não desinstale nem apague dados locais durante a transição.
+## Manifest e publicação
 
-Consulte o [modelo de segurança](UPDATE_SECURITY_MODEL.md), o [checklist de QA](UPDATE_QA_CHECKLIST.md) e o [pipeline de distribuição](WINDOWS_RELEASE_PIPELINE.md).
+O asset `update-manifest.json` usa JSON canônico com chaves ordenadas e uma assinatura Ed25519 sobre todos os campos exceto `signature`. A URL do instalador precisa corresponder exatamente ao repositório e à tag do release. O manifest é baixado primeiro; somente depois de verificado o cliente solicita o instalador, seguindo apenas redirecionamentos HTTPS para `github.com` ou `release-assets.githubusercontent.com`, com limite de tamanho e quantidade de redirecionamentos.
+
+O workflow manual `publish-windows-release.yml` exige que o tag corresponda à versão `0.17.1`, que a chave privada protegida corresponda à chave pública fixada no cliente e que a verificação esteja explicitamente habilitada. Ele assina e verifica o manifest, confere o instalador e gera checksums. A publicação pública continua protegida pelos controles já existentes do workflow. Este trabalho local não executou o workflow nem publicou assets.
+
+## Instalações existentes
+
+A primeira atualização automática, quando autorizada, deve ser testada sobre a instalação `0.17.0` em Windows isolado. Confirme que `app.getPath('userData')`, SafeStorage, sessões, preferências e anexos continuam presentes. Não desinstale nem apague dados durante o teste. Até a aprovação, instale manualmente somente uma versão aprovada nas Releases oficiais.
+
+Consulte o [modelo de segurança](UPDATE_SECURITY_MODEL.md), o [checklist de QA](UPDATE_QA_CHECKLIST.md) e o [pipeline Windows](WINDOWS_RELEASE_PIPELINE.md).

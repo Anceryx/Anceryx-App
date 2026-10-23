@@ -1,6 +1,6 @@
 {
   "name": "anceryx",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "license": "Apache-2.0",
   "author": "Anceryx",
   "description": "Plataforma social Anceryx",
@@ -22,6 +22,7 @@
     "electron:dev": "electron-vite dev",
     "electron:build": "npm run build && electron-builder --publish never",
     "test:update-security": "node --experimental-strip-types scripts/update-security-smoke.mjs",
+    "create:update-manifest": "node --experimental-strip-types scripts/create-update-manifest.mjs",
     "test:connection-config": "node --experimental-strip-types scripts/connection-config-smoke.mjs",
     "test:api-config": "node --experimental-strip-types scripts/api-config.test.mjs",
     "test:electron-safe-storage": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/electron-safe-storage-two-process-smoke.ps1",
@@ -63,7 +64,6 @@
     "test:renderer-url-guard": "node scripts/renderer-url-guard.test.mjs"
   },
   "dependencies": {
-    "electron-updater": "^6.8.11",
     "lucide-react": "^0.414.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -57,17 +57,14 @@ jobs:
           $packageVersion = node -p "require('./package.json').version"
           if ($tagVersion -ne $packageVersion) { throw "Tag version $tagVersion does not match package.json $packageVersion." }
       - run: npm ci
-      - name: Require stable signed-manifest support and protected key
+      - name: Require pinned Ed25519 trust and protected signing key
         shell: pwsh
         env:
-          UPDATE_SIGNING_KEY: ${{ secrets.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY }}
+          ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY: ${{ secrets.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          $builderVersion = node -p "require('./node_modules/electron-builder/package.json').version"
-          $updaterVersion = node -p "require('./node_modules/electron-updater/package.json').version"
-          if ($builderVersion -notmatch '^27\.\d+\.\d+$' -or $updaterVersion -notmatch '^7\.\d+\.\d+$') {
-            throw "Signed Ed25519 update manifests require stable electron-builder 27.x and electron-updater 7.x; found $builderVersion / $updaterVersion."
-          }
-          if ([string]::IsNullOrWhiteSpace($env:UPDATE_SIGNING_KEY)) { throw 'Protected Ed25519 update-manifest signing key is not configured.' }
+          node --experimental-strip-types scripts/check-update-release-prerequisites.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install the Windows Electron runtime
         run: node node_modules/electron/install.js
       - name: Validate source and dependency policies
@@ -82,12 +79,15 @@ jobs:
           npm run test:electron-safe-storage
           npm audit --audit-level=moderate
           npm audit --omit=dev --audit-level=moderate
-      - name: Build unsigned NSIS installer and sign update manifest
+      - name: Build unsigned NSIS installer and create signed update manifest
         shell: pwsh
         env:
-          ELECTRON_BUILDER_UPDATE_SIGN_KEY: ${{ secrets.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY }}
+          ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY: ${{ secrets.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY }}
         run: |
           npx electron-builder --win nsis --publish never --config.win.verifyUpdateCodeSignature=false
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $version = node -p "require('./package.json').version"
+          node --experimental-strip-types scripts/create-update-manifest.mjs "dist/Anceryx-Setup-$version.exe" "dist/update-manifest.json"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify unsigned installer and signed update metadata
         shell: pwsh
@@ -98,30 +98,21 @@ jobs:
           $installer = Get-Item "dist/Anceryx-Setup-$version.exe"
           $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
           if ($signature.Status -ne 'NotSigned') { throw "Expected an unsigned installer; signature status is $($signature.Status)." }
-          if ($version -match '-beta\.') { $channel = 'beta' } elseif ($version -match '-rc\.') { $channel = 'rc' } else { $channel = 'latest' }
-          $manifest = Get-Content "dist/$channel.yml" -Raw
-          if ($manifest -notmatch ('(?m)^version:\s*' + [regex]::Escape($version) + '\s*$')) { throw 'Update manifest version does not match tag.' }
-          if ($manifest -notmatch ('(?m)^\s+url:\s*' + [regex]::Escape($installer.Name) + '\s*$')) { throw 'Manifest installer path is missing.' }
-          if ($manifest -notmatch "(?m)^\s+size:\s*$($installer.Length)\s*$") { throw 'Manifest installer size is invalid.' }
-          if ($manifest -notmatch '(?m)^\s+sha512:\s*[A-Za-z0-9+/]{86}==$') { throw 'Manifest SHA-512 is missing or malformed.' }
-          if ($manifest -notmatch '(?m)^signature:\s*[A-Za-z0-9+/]{86}==$') { throw 'Ed25519 manifest signature is missing or malformed.' }
-          if ($manifest -notmatch '(?m)^signatures:\s*$') { throw 'Ed25519 manifest signature list is missing.' }
-          $appUpdateConfig = Get-Content 'dist/win-unpacked/resources/app-update.yml' -Raw
-          if ($appUpdateConfig -notmatch '(?m)^updateManifestPublicKey:\s*\S+') { throw 'The client does not embed the update-manifest trust key.' }
-          $actualHash = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData([IO.File]::ReadAllBytes($installer.FullName)))
-          $manifestHash = [regex]::Match($manifest, '(?m)^\s+sha512:\s*([A-Za-z0-9+/]{86}==)$').Groups[1].Value
-          if ($manifestHash -ne $actualHash) { throw 'Manifest SHA-512 does not match installer.' }
+          $manifest = Get-Item 'dist/update-manifest.json'
+          node --experimental-strip-types scripts/verify-update-manifest.mjs $manifest.FullName $installer.FullName
+          if ($LASTEXITCODE -ne 0) { throw 'Signed update manifest verification failed.' }
           if (-not (Test-Path "dist/$($installer.Name).blockmap")) { throw 'NSIS blockmap is missing.' }
           New-Item -ItemType Directory -Path release-assets | Out-Null
           Copy-Item $installer.FullName release-assets/
           Copy-Item "dist/$($installer.Name).blockmap" release-assets/
-          Copy-Item "dist/$channel.yml" release-assets/
-          $checksumFiles = @($installer.FullName, "dist/$($installer.Name).blockmap", "dist/$channel.yml")
+          Copy-Item $manifest.FullName release-assets/
+          $checksumFiles = @($installer.FullName, "dist/$($installer.Name).blockmap", $manifest.FullName)
           $checksumLines = foreach ($file in $checksumFiles) {
             $hash = Get-FileHash -LiteralPath $file -Algorithm SHA256
             "$($hash.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($file))"
           }
           $checksumLines | Set-Content -LiteralPath 'release-assets/SHA256SUMS.txt' -Encoding ascii
+          if ($version -match '-beta\.') { $channel = 'beta' } else { $channel = 'latest' }
           "Verified release channel: $channel" | Out-File -FilePath release-assets/release-channel.txt -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
@@ -154,11 +145,11 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY" --jq .visibility | grep -qx public
           channel=$(cat release-files/release-channel.txt)
           test -n "$channel"
-          mapfile -t assets < <(find release-files -maxdepth 1 -type f \( -name '*.exe' -o -name '*.blockmap' -o -name 'latest.yml' -o -name 'beta.yml' -o -name 'rc.yml' -o -name 'SHA256SUMS.txt' \) | sort)
+          mapfile -t assets < <(find release-files -maxdepth 1 -type f \( -name '*.exe' -o -name '*.blockmap' -o -name 'update-manifest.json' -o -name 'SHA256SUMS.txt' \) | sort)
           test "${#assets[@]}" -ge 4
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null | grep -qx true; then
             gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
-            if [[ "$channel" == 'Verified release channel: latest' ]]; then
+          if [[ "$channel" == 'Verified release channel: latest' ]]; then
               gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "Anceryx $TAG" --draft=false --latest
             else
               gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "Anceryx $TAG" --draft=false --prerelease

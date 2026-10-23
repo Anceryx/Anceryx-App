@@ -6,7 +6,6 @@ This is a technical preparation inventory based on installed package metadata, p
 
 | Package | Version | Declared license | Classification |
 | --- | --- | --- | --- |
-| electron-updater | 6.8.9 | MIT | Runtime updater; distribution review required |
 | lucide-react | 0.414.0 | ISC | Permissive |
 | react | 18.3.1 | MIT | Permissive |
 | react-dom | 18.3.1 | MIT | Permissive |

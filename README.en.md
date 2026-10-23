@@ -74,7 +74,7 @@ npm run test:encoding
 
 ## Installation and updates
 
-This repository is being prepared for distribution; the `v0.15.0` Release has no installer. See [Windows installation and updates](docs/INSTALLATION.en.md). Review builds are temporary artifacts, not Releases. The in-app updater is paused until the client can verify Ed25519-signed manifests; updates are manual in the meantime. Migration of older installations requires downloading an approved version from Releases and installing it over the current version, after QA confirms local data is preserved.
+The client is locally prepared as version `0.17.1`. See [Windows installation and updates](docs/INSTALLATION.en.md). Review builds are temporary artifacts, not Releases. The in-app updater now has an independent Ed25519 verifier but remains disabled until the production public key is pinned in the client and the publishing flow and Windows QA are approved. Install updates manually from official Releases while those checks are pending.
 
 ## Contributing
 

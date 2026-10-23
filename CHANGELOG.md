@@ -1,7 +1,16 @@
 # Registro de alterações
+
+## 0.17.1 (em preparação; não publicada)
+
+- Substituído o caminho do `electron-updater` por validação Ed25519 própria do manifest antes de aceitar metadados e iniciar o download.
+- Adicionadas validações de canal, versão, URL oficial, tamanho e SHA-512, com teste de assinatura adulterada, chave incorreta, downgrade, redirecionamento e integridade.
+- Preparado o workflow manual para gerar e verificar manifest assinado; publicação permanece bloqueada até a chave de produção e o QA Windows serem aprovados.
+- Mantido o atualizador desativado, sem chave de produção, sem download automático e sem instalação silenciosa.
+
+## Alterações anteriores registradas
 - A auditoria final removeu literais antigos não utilizados dos dados de cobrança/notas, localizou o selo Popular e documentou os candidatos restantes da métrica como símbolos, marcas, identificadores ou conteúdo de teste. O teste de publicações comunitárias agora aceita um caminho explícito para o checkout separado da API.
 - Os nomes dos canais stable e beta do atualizador agora acompanham o idioma selecionado no modal e nas configurações.
-- A versão do pacote foi preparada como 0.17.0. A publicação estável continua bloqueada: o lockfile usa electron-builder 26.x/electron-updater 6.x, enquanto o workflow exige 27.x/7.x e assinatura Ed25519; nenhuma Release ou tag foi criada.
+- A versão 0.17.0 foi preparada com electron-builder 26.x e electron-updater 6.x. Naquele momento, a publicação permaneceu bloqueada pela falta de verificação Ed25519 no cliente; nenhuma Release ou tag foi criada por essa preparação.
 - O workspace comunitário agora localiza controles, moderação, recursos, convites, canais, mensagens, eventos e voz em pt-BR, inglês e espanhol. Permissões, conteúdo enviado por membros e mensagens de erro livres da API permanecem preservados.
 - O modal de publicações do Fórum também localiza seus controles e estados, mantendo títulos, respostas e conteúdo dos membros no idioma original.
 - O modal de detalhes do Fórum agora localiza ações, contadores, descrição acessível e estados nos três idiomas; nomes e descrições do fórum continuam sendo conteúdo original.

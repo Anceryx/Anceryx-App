@@ -1,21 +1,24 @@
 # Modelo de segurança do atualizador
 
-## Estado atual
+## Fluxo de confiança
 
-- O atualizador integrado está desativado no cliente empacotado. A consulta, o download e a instalação automáticos ficam bloqueados até o aplicativo verificar criptograficamente o manifest de atualização com uma chave pública confiável.
-- O cliente preparado para `0.17.0` usa `electron-builder` 26.18.0 e `electron-updater` 6.8.11. Nessas versões estáveis, o hash SHA-512 protege a integridade do arquivo em relação ao manifest recebido, mas não autentica a origem do próprio manifest.
-- Builds sem certificado Authenticode são permitidos para revisão. O app não exige assinatura de código para verificar o executável; essa configuração não substitui a verificação criptográfica do manifest.
-- O renderer não fornece URL de feed nem chama operações privilegiadas. Tokens de publicação e a chave privada de assinatura não ficam no cliente.
-- A mensagem no aplicativo instrui a instalação manual apenas de versões publicadas nas Releases oficiais da Anceryx.
+- O feed é o asset `update-manifest.json` da Release oficial `Anceryx/Anceryx-App`.
+- A chave Ed25519 pública confiável deve estar compilada no processo principal. A chave privada só pode existir em um secret protegido do GitHub Actions.
+- O cliente valida o esquema fechado do manifest, a assinatura Ed25519, versão SemVer crescente, canal, nome e URL exatos do instalador, tamanho máximo de 500 MiB e SHA-512.
+- A assinatura é verificada antes de solicitar a URL do instalador. Redirecionamentos são limitados e aceitos apenas em HTTPS nos hosts permitidos do GitHub.
+- O instalador é gravado em arquivo temporário exclusivo, com limite de bytes, e só fica disponível à interface depois que tamanho e SHA-512 forem conferidos.
+- IPC continua protegido por `isTrustedRenderer`. A interface não escolhe URL nem caminho de arquivo.
 
-## Requisitos para reativar o atualizador
+## Estado fechado por padrão
 
-Antes de habilitá-lo, o projeto precisa adotar versões estáveis compatíveis do builder e do updater com assinatura Ed25519 de manifests, incorporar uma chave pública confiável ao aplicativo, manter a chave privada somente em secret protegido e validar a assinatura antes de aceitar qualquer metadado. A ativação também exige testes de regressão para assinatura ausente, inválida e válida, além de QA da instalação e atualização em Windows.
+Em `0.17.1`, `UPDATE_MANIFEST_PUBLIC_KEY_PEM` está vazio e `UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED` está `false`. Portanto o updater não inicia chamadas de rede, não baixa arquivos e não abre instaladores. O gerador e o workflow recusam assinar ou publicar sem uma chave privada que corresponda à chave pública fixada e sem ativação explícita no cliente.
 
-O workflow de publicação falha fechado enquanto a assinatura nativa de manifests não estiver disponível em versões estáveis e o secret `ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY` não estiver configurado. O nome do secret é mapeado para `ELECTRON_BUILDER_UPDATE_SIGN_KEY`; a documentação do builder especifica uma chave privada Ed25519 em PEM PKCS#8. Não use versões alpha nem gere ou invente uma chave para contornar esse bloqueio. Mesmo após essas condições, o flag de execução do atualizador deve ser alterado explicitamente no cliente e validado antes de publicar uma versão.
+As versões estáveis disponíveis nesta revisão local são `electron-builder` 26.18.0 e `electron-updater` 6.8.11; o suporte nativo Ed25519 consultado aparece em versões alpha 27/7. Para não depender de alpha, o cliente implementa verificação independente com `node:crypto` e removeu `electron-updater`. A verificação foi testada com chaves efêmeras de teste; nenhuma chave de produção foi criada ou embutida.
 
-## Integridade e preservação de dados
+## Limites e ameaças
 
-SemVer, canal, nome, tamanho e SHA-512 do instalador são verificações adicionais de integridade, não autenticação da origem. O blockmap auxilia atualizações diferenciais e também não autentica a origem. Não habilite o atualizador com base somente nesses campos.
+O hash SHA-512 sozinho não autentica o manifest; ele só é confiável depois de verificar a assinatura. O HTTPS do GitHub protege o transporte e ajuda a disponibilidade, mas não substitui a assinatura. Um manifest assinado não prova que o aplicativo foi assinado por Authenticode; o instalador permanece sem assinatura de código até configuração separada.
 
-A instalação não deve remover `app.getPath('userData')` nem alterar os caminhos atuais. SafeStorage, sessões, preferências, anexos, instalação sobre uma versão anterior, recuperação e desinstalação ainda precisam de QA em Windows real. A transição de instalações antigas para o feed atual é manual; o histórico de builds antigos não está integralmente disponível neste repositório.
+O cliente não baixa automaticamente e não instala em silêncio. Depois de uma ação explícita de download, o usuário ainda confirma o instalador NSIS. A versão v0.17.0 deve ser instalada manualmente; não alterar sua tag ou Release como parte desta preparação.
+
+Antes de habilitar a chave real, testar manifestação ausente, assinatura incorreta, chave errada, alteração de cada campo assinado, canal divergente, downgrade, versão igual, URL externa/insegura, tamanho/hash incorretos, redirecionamentos, falha/interrupção de rede, chamadas duplicadas, IPC não confiável e preservação de dados em instalação sobreposta no Windows.

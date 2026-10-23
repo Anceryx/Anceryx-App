@@ -31,9 +31,3 @@ mac:
 linux:
   target: AppImage
   icon: resources/icon.png
-
-publish:
-  provider: github
-  owner: Anceryx
-  repo: Anceryx-App
-  private: false
