@@ -30,13 +30,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
         run: |
+          $ErrorActionPreference = 'Stop'
           if (-not ($env:TAG -match '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(beta|rc)\.(0|[1-9]\d*))?$')) { throw 'Tag must be a stable, beta, or rc SemVer tag.' }
           $visibility = gh api "repos/$env:GITHUB_REPOSITORY" --jq .visibility
+          if ($LASTEXITCODE -ne 0) { throw 'Could not verify repository visibility.' }
           if ($visibility -ne 'public') { throw 'Repository must be public before release publication is enabled.' }
           gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:TAG" | Out-Null
           if ($LASTEXITCODE -ne 0) { throw 'The reviewed release tag does not exist.' }
-          $releaseDraft = gh release view $env:TAG --repo $env:GITHUB_REPOSITORY --json isDraft --jq .isDraft 2>$null
-          if ($LASTEXITCODE -eq 0 -and $releaseDraft -ne 'true') { throw 'An existing release for this tag is already published.' }
+          $releaseLookup = gh release view $env:TAG --repo $env:GITHUB_REPOSITORY --json isDraft --jq .isDraft 2>&1
+          $releaseLookupExitCode = $LASTEXITCODE
+          if ($releaseLookupExitCode -eq 0 -and $releaseLookup -ne 'true') { throw 'An existing release for this tag is already published.' }
+          if ($releaseLookupExitCode -ne 0 -and ($releaseLookup -join "`n") -notmatch '(?i)(HTTP 404|\bNot Found\b|release not found)') { throw 'Could not verify whether a release already exists for this tag.' }
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag }}
@@ -50,14 +54,21 @@ jobs:
         env:
           TAG: ${{ inputs.tag }}
         run: |
+          $ErrorActionPreference = 'Stop'
           git fetch origin main
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch main for ancestry validation.' }
           $tagCommit = git rev-list -n 1 $env:TAG
+          if ($LASTEXITCODE -ne 0 -or -not $tagCommit) { throw 'Could not resolve the release tag commit.' }
           git merge-base --is-ancestor $tagCommit origin/main
           if ($LASTEXITCODE -ne 0) { throw 'Release tag is not reachable from main.' }
           $tagVersion = $env:TAG.Substring(1)
           $packageVersion = node -p "require('./package.json').version"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read package.json version.' }
           if ($tagVersion -ne $packageVersion) { throw "Tag version $tagVersion does not match package.json $packageVersion." }
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
+      - name: Check workflow fail-fast regression
+        run: npm run test:workflow-fail-fast
       - name: Require pinned Ed25519 trust and protected signing key
         shell: pwsh
         env:
@@ -68,18 +79,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install the Windows Electron runtime
         run: node node_modules/electron/install.js
-      - name: Validate source and dependency policies
-        run: |
-          npm run typecheck
-          npm run build
-          npm run audit:licenses
-          npm run test:license-audit
-          npm run test:update-security
-          npm run test:connection-config
-          npm run test:encoding
-          npm run test:electron-safe-storage
-          npm audit --audit-level=moderate
-          npm audit --omit=dev --audit-level=moderate
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build application
+        run: npm run build
+      - name: Audit dependency licenses
+        run: npm run audit:licenses
+      - name: Test license policy
+        run: npm run test:license-audit
+      - name: Test updater security
+        run: npm run test:update-security
+      - name: Test connection and updater configuration
+        run: npm run test:connection-config
+      - name: Test text encoding
+        run: npm run test:encoding
+      - name: Test Electron safe storage
+        run: npm run test:electron-safe-storage
+      - name: Audit all dependencies
+        run: npm audit --audit-level=moderate
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=moderate
       - name: Build unsigned NSIS installer and create signed update manifest
         shell: pwsh
         env:
@@ -88,6 +107,7 @@ jobs:
           npx electron-builder --win nsis --publish never --config.win.verifyUpdateCodeSignature=false
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $version = node -p "require('./package.json').version"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --experimental-strip-types scripts/create-update-manifest.mjs "dist/Anceryx-Setup-$version.exe" "dist/update-manifest.json"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify unsigned installer and signed update metadata

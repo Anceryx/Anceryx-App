@@ -24,6 +24,7 @@ jobs:
       - run: npm run test:renderer-url-guard
       - run: npm run test:api-config
       - run: npm run test:license-audit
+      - run: npm run test:workflow-fail-fast
       - run: npm run test:update-security
       - run: npm run test:connection-config
       - run: npm run test:encoding

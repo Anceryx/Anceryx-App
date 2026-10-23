@@ -55,21 +55,35 @@ jobs:
       - name: Install Electron runtime for Windows security checks
         run: node node_modules/electron/install.js
 
-      - name: Validate root
-        run: |
-          npm run typecheck
-          npm run build
-          npm run audit:licenses
-          npm run test:license-audit
-          npm run test:update-security
-          npm run test:connection-config
-          npm run test:encoding
-          npm audit --omit=dev --audit-level=moderate
+      - name: Check workflow fail-fast regression
+        run: npm run test:workflow-fail-fast
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build application
+        run: npm run build
+
+      - name: Audit dependency licenses
+        run: npm run audit:licenses
+
+      - name: Test license policy
+        run: npm run test:license-audit
+
+      - name: Test updater security
+        run: npm run test:update-security
+
+      - name: Test connection and updater configuration
+        run: npm run test:connection-config
+
+      - name: Test text encoding
+        run: npm run test:encoding
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Run Windows and release security checks
-        shell: pwsh
-        run: |
-          npm run test:electron-safe-storage
+        run: npm run test:electron-safe-storage
 
       - name: Build Windows NSIS without publishing
         env:
