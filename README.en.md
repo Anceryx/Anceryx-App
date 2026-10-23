@@ -56,7 +56,9 @@ npm ci
 npm run dev
 ```
 
-During development, the client defaults to `http://localhost:3000`. The `.env.example` file points to the official API. Set `VITE_ANCERYX_API_URL` for the environment you intend to use; never put secrets in `VITE_*` variables. The private API repository is not required to install or build the client.
+During development, the client defaults to `http://localhost:3000`. To configure the local environment explicitly, copy `.env.example` to `.env`; the example keeps the local API active and the official URL commented out. To point development at the official API, switch the two `VITE_ANCERYX_API_URL` lines in `.env` so only the desired URL is active. Vite does not load `.env.example` directly.
+
+Electron production builds default to `https://admin-anceryx.site`, independently of `.env.example`, and reject nonofficial hosts or HTTP. Never put secrets in `VITE_*` variables. The private API repository is not required to install or build the client.
 
 Useful checks:
 
