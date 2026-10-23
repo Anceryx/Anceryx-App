@@ -6,6 +6,7 @@ const profile = await readFile(new URL('../src/renderer/components/social/UserPr
 const forumManagement = await readFile(new URL('../src/renderer/components/social/ForumManagementModal.tsx', import.meta.url), 'utf8')
 const communityWorkspace = await readFile(new URL('../src/renderer/components/social/CommunityWorkspaceModal.tsx', import.meta.url), 'utf8')
 const communityForumChannel = await readFile(new URL('../src/renderer/components/social/CommunityForumChannel.tsx', import.meta.url), 'utf8')
+const forumDetail = await readFile(new URL('../src/renderer/components/social/ForumDetailModal.tsx', import.meta.url), 'utf8')
 const privacySettings = await readFile(new URL('../src/renderer/components/settings/sections/DadosPrivacidadeSection.tsx', import.meta.url), 'utf8')
 const notificationSettings = await readFile(new URL('../src/renderer/components/settings/sections/NotificacoesSection.tsx', import.meta.url), 'utf8')
 const profileSettings = await readFile(new URL('../src/renderer/components/settings/sections/PerfilSection.tsx', import.meta.url), 'utf8')
@@ -38,6 +39,8 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'forumManage.delete.title', 'forumManage.reportsDescription', 'forumManage.accessDescription',
     'forumManage.removeMemberDescription', 'forumManage.error.imageType', 'forumManage.notice.settingsSaved',
     'forumManage.memberJoined', 'forumManage.decisionRecorded', 'forumManage.removeTagAria',
+    'forums.detailAria', 'forums.joinFailed', 'forums.openCommunity', 'forums.enterCommunity',
+    'forums.created', 'forums.contentsTitle', 'forums.contentsDescription',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -83,6 +86,9 @@ assert.match(communityWorkspace, /\{item\.reason\}/)
 assert.match(communityWorkspace, /\{appeal\.statement\}/)
 assert.match(communityForumChannel, /t\('communityForum\.postsDescription'\)/)
 assert.match(communityForumChannel, /t\('communityForum\.loadTopicsFailed'\)/)
+assert.match(forumDetail, /t\('forums\.detailAria', \{ name: liveForum\.name \}\)/)
+assert.match(forumDetail, /t\('forums\.contentsTitle'\)/)
+assert.match(forumDetail, /t\('forums\.contentsDescription'\)/)
 assert.match(privacySettings, /t\('settings\.privacy\.blockedAccounts'\)/)
 assert.match(notificationSettings, /t\('settings\.notifications\.privateMessageSound'\)/)
 assert.match(profileSettings, /t\('settings\.profile\.whoCanMessage'\)/)
@@ -107,6 +113,8 @@ assert.match(communityForumChannel, /\{activeTopic\.content\}/)
 assert.match(communityForumChannel, /\{item\.content\}/)
 assert.match(communityForumChannel, /\{topic\.title\}/)
 assert.match(communityForumChannel, /\{topic\.content\}/)
+assert.match(forumDetail, /renderAnceryxText\(liveForum\.description\)/)
+assert.match(forumDetail, /\{liveForum\.name\}/)
 assert.match(privacySettings, /\{user\.displayName\}/)
 assert.match(privacySettings, /\{user\.username\}/)
 assert.match(profileSettings, /\{request\.user\.displayName\}/)

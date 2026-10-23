@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2080**.
-- Strings visíveis fixas detectadas: **178**.
-- Cobertura medida neste subconjunto: **92.1%**.
+- Chamadas de tradução detectadas: **2091**.
+- Strings visíveis fixas detectadas: **170**.
+- Cobertura medida neste subconjunto: **92.5%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -51,7 +51,7 @@
 | `components/social/CommunityWorkspaceModal.tsx` | 672 | 19 | 97.3% |
 | `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
-| `components/social/ForumDetailModal.tsx` | 0 | 9 | 0.0% |
+| `components/social/ForumDetailModal.tsx` | 11 | 1 | 91.7% |
 | `components/social/ForumManagementModal.tsx` | 147 | 3 | 98.0% |
 | `components/social/PostCard.tsx` | 44 | 2 | 95.7% |
 | `components/social/PostDetailModal.tsx` | 15 | 5 | 75.0% |
@@ -90,6 +90,6 @@
 
 ## Verificação manual desta etapa
 
-Foram revisados os controles, estados e rótulos acessíveis das páginas de cobrança e do resultado do checkout; das seções de privacidade, notificações, perfil, atualizações, histórico de login e segurança; e dos modais de gerenciamento de fórum e perfil. Os textos de interface desses módulos usam o catálogo nos três idiomas. Nomes, biografias, tópicos, denúncias, evidências, justificativas e notas de versão recebidos como conteúdo permanecem intactos.
+Foram revisados os controles, estados e rótulos acessíveis das páginas de cobrança e do resultado do checkout; das seções de privacidade, notificações, perfil, atualizações, histórico de login e segurança; e dos modais de gerenciamento, detalhes e perfil de fórum. Os textos de interface desses módulos usam o catálogo nos três idiomas. Nomes, biografias, descrições, tópicos, denúncias, evidências, justificativas e notas de versão recebidos como conteúdo permanecem intactos.
 
-A medição estática aponta 98,0% em `ForumManagementModal.tsx` e 94,0% em `UserProfileModal.tsx`; os itens restantes nesses módulos são símbolos, separadores e conteúdo dinâmico preservado. A medição global de 92,1% é parcial. O inventário ainda identifica outros módulos com textos fixos, incluindo criação e detalhes de fóruns, Explore, Feed, perfil e telas de autenticação; essas áreas continuam pendentes de revisão.
+A medição estática aponta 98,0% em `ForumManagementModal.tsx`, 91,7% em `ForumDetailModal.tsx` e 94,0% em `UserProfileModal.tsx`; os itens restantes são símbolos, separadores e conteúdo dinâmico preservado. A medição global de 92,5% é parcial. O inventário ainda identifica outros módulos com textos fixos, incluindo criação de fóruns, Explore, Feed, perfil e telas de autenticação; essas áreas continuam pendentes de revisão.

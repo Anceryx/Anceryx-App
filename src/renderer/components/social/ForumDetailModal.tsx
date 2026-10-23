@@ -11,6 +11,7 @@ import CommunityWorkspaceModal from './CommunityWorkspaceModal'
 import { renderAnceryxText } from '@/lib/anceryxEmojis'
 import { mediaApi } from '@/services/mediaApi'
 import type { SidebarSection } from '@/types/index'
+import { useTranslation } from '@/i18n'
 
 interface ForumDetailModalProps {
   forum: Forum
@@ -20,6 +21,8 @@ interface ForumDetailModalProps {
 }
 
 const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onOpenWorkspace, onNavigateGlobal }) => {
+  const t = useTranslation()
+  const locale = useUIStore((state) => state.locale)
   const toggleForumJoin = useSocialStore((s) => s.toggleForumJoin)
   const liveForum = useSocialStore((s) => s.forums.find((item) => item.id === forum.id) ?? forum)
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
@@ -35,7 +38,7 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
-      aria-label={`Detalhes do fórum ${liveForum.name}`}
+      aria-label={t('forums.detailAria', { name: liveForum.name })}
     >
       <div className="bg-background-secondary border border-border rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[90vh]">
         <div
@@ -52,7 +55,7 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
           <button
             onClick={onClose}
             className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
-            aria-label="Fechar"
+            aria-label={t('common.close')}
           >
             <X size={15} />
           </button>
@@ -75,7 +78,7 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
                     color: 'var(--color-accent)',
                   }}
                 >
-                  <Crown size={9} /> Criado por você
+                  <Crown size={9} /> {t('forums.createdByYou')}
                 </span>
               )}
             </div>
@@ -85,9 +88,9 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
                 if (onOpenWorkspace) { onOpenWorkspace(liveForum); onClose(); return }
                 setWorkspaceOpen(true)
               } catch (error) {
-                addNotification(error instanceof Error ? error.message : 'Não foi possível entrar nesta comunidade.', 'error')
+                addNotification(error instanceof Error ? error.message : t('forums.joinFailed'), 'error')
               }
-            }}>{liveForum.isJoined ? 'Abrir comunidade' : 'Entrar na comunidade'}</Button>
+            }}>{liveForum.isJoined ? t('forums.openCommunity') : t('forums.enterCommunity')}</Button>
           </div>
 
           <p className="text-sm text-text-secondary mt-3 leading-relaxed">{renderAnceryxText(liveForum.description)}</p>
@@ -96,23 +99,23 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
             <div className="flex flex-col items-center gap-0.5">
               <span className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
                 <Users size={14} className="text-accent" />
-                {liveForum.memberCount.toLocaleString('pt-BR')}
+                {liveForum.memberCount.toLocaleString(locale)}
               </span>
-              <span className="text-xs text-text-secondary">Membros</span>
+              <span className="text-xs text-text-secondary">{t('forumManage.members')}</span>
             </div>
             <div className="flex flex-col items-center gap-0.5">
               <span className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
                 <FileText size={14} className="text-accent" />
-                {liveForum.postCount.toLocaleString('pt-BR')}
+                {liveForum.postCount.toLocaleString(locale)}
               </span>
-              <span className="text-xs text-text-secondary">Posts</span>
+              <span className="text-xs text-text-secondary">{t('forums.posts')}</span>
             </div>
             <div className="flex flex-col items-center gap-0.5">
               <span className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
                 <Calendar size={14} className="text-accent" />
                 {formatTimestamp(liveForum.createdAt)}
               </span>
-              <span className="text-xs text-text-secondary">Criado</span>
+              <span className="text-xs text-text-secondary">{t('forums.created')}</span>
             </div>
           </div>
 
@@ -130,8 +133,8 @@ const ForumDetailModal: React.FC<ForumDetailModalProps> = ({ forum, onClose, onO
           )}
 
           <div className="mt-6 rounded-lg border border-border bg-background-tertiary/40 p-4">
-            <p className="text-sm font-semibold text-text-primary">Canais, tópicos e conversas</p>
-            <p className="mt-1 text-xs text-text-secondary">Abra a comunidade para acessar os canais e as publicações organizadas por tópico.</p>
+            <p className="text-sm font-semibold text-text-primary">{t('forums.contentsTitle')}</p>
+            <p className="mt-1 text-xs text-text-secondary">{t('forums.contentsDescription')}</p>
           </div>
         </div>
       </div>
