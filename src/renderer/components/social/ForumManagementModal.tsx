@@ -39,6 +39,7 @@ import { Avatar } from '@/components/ui/index'
 import { formatTimestamp } from '@/utils/formatters'
 import { mediaApi } from '@/services/mediaApi'
 import { communityApi } from '@/services/communityApi'
+import { useTranslation, type TranslationKey } from '@/i18n'
 
 export type ForumManagementTab = 'overview' | 'posts' | 'members' | 'moderation' | 'profile' | 'access' | 'critical' | 'settings'
 type TopicFlag = 'isPinned' | 'isLocked' | 'isResolved'
@@ -51,31 +52,36 @@ interface ForumManagementModalProps {
   initialTab?: ForumManagementTab
 }
 
-const TABS: { id: ForumManagementTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'Visão geral', icon: <Shield size={15} /> },
-  { id: 'posts', label: 'Posts', icon: <FileText size={15} /> },
-  { id: 'members', label: 'Membros', icon: <Users size={15} /> },
-  { id: 'moderation', label: 'Moderação', icon: <AlertTriangle size={15} /> },
-  { id: 'profile', label: 'Perfil do Fórum', icon: <Settings size={15} /> },
-  { id: 'access', label: 'Acesso e visibilidade', icon: <Unlock size={15} /> },
-  { id: 'critical', label: 'Ações críticas', icon: <Trash2 size={15} /> },
+const TABS: { id: ForumManagementTab; labelKey: TranslationKey; icon: React.ReactNode }[] = [
+  { id: 'overview', labelKey: 'forumManage.overview', icon: <Shield size={15} /> },
+  { id: 'posts', labelKey: 'forumManage.posts', icon: <FileText size={15} /> },
+  { id: 'members', labelKey: 'forumManage.members', icon: <Users size={15} /> },
+  { id: 'moderation', labelKey: 'forumManage.moderation', icon: <AlertTriangle size={15} /> },
+  { id: 'profile', labelKey: 'forumManage.profile', icon: <Settings size={15} /> },
+  { id: 'access', labelKey: 'forumManage.access', icon: <Unlock size={15} /> },
+  { id: 'critical', labelKey: 'forumManage.critical', icon: <Trash2 size={15} /> },
 ]
 
-function roleLabel(role: ForumMemberRole): string {
-  if (role === 'owner') return 'Proprietário'
-  if (role === 'moderator') return 'Moderador'
-  return 'Membro'
+function roleLabelKey(role: ForumMemberRole): TranslationKey {
+  if (role === 'owner') return 'forumManage.role.owner'
+  if (role === 'moderator') return 'forumManage.role.moderator'
+  return 'forumManage.role.member'
 }
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
-function reportStatusLabel(status: ApiForumReport['status'] | 'open'): string {
-  return status === 'pending' ? 'open' : status
+function reportStatusKey(status: ApiForumReport['status'] | 'open'): TranslationKey {
+  if (status === 'pending') return 'forumManage.status.pending'
+  if (status === 'reviewing') return 'forumManage.status.reviewing'
+  if (status === 'resolved') return 'forumManage.status.resolved'
+  if (status === 'dismissed') return 'forumManage.status.dismissed'
+  return 'forumManage.status.open'
 }
 
 const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onClose, onForumDeleted, presentation = 'modal', initialTab = 'overview' }) => {
+  const t = useTranslation()
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const addNotification = useUIStore((s) => s.addNotification)
   const {
@@ -364,10 +370,10 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
       </div>
       <ContentSectionCard>
         <div className="grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
-          <ActionRow title="Owner" description={getProfile(forum.ownerId).displayName} />
+          <ActionRow title={t('forumManage.owner')} description={getProfile(forum.ownerId).displayName} />
           <ActionRow title="Criado em" description={formatTimestamp(forum.createdAt)} />
           <ActionRow title="Tags" description={displayedTags.length ? displayedTags.map((tag) => `#${tag}`).join(', ') : 'Nenhuma tag'} />
-          <ActionRow title="Sua role local" description={currentRole ? roleLabel(currentRole) : 'Sem membership'} />
+          <ActionRow title="Sua role local" description={currentRole ? t(roleLabelKey(currentRole)) : t('forumManage.noMembership')} />
         </div>
       </ContentSectionCard>
     </div>
@@ -428,7 +434,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
               icon={<Avatar name={profile.displayName} src={apiUser?.avatarUrl ?? null} size="sm" />}
               title={profile.displayName}
               description={`@${profile.handle} - entrou ${formatTimestamp(new Date(member.joinedAt))}`}
-              meta={<span className="rounded-full border border-border bg-background-tertiary px-2 py-0.5">{roleLabel(member.role)}</span>}
+              meta={<span className="rounded-full border border-border bg-background-tertiary px-2 py-0.5">{t(roleLabelKey(member.role))}</span>}
               action={
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="secondary" loading={pendingAction === `promote:${member.userId}`} disabled={!isOwner || protectedOwner || self || member.role === 'moderator'} onClick={() => promote(member.userId)}>
@@ -468,7 +474,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
         <div className="space-y-3">
           {displayedReports.map((report) => (
             <article key={report.id} className="space-y-3 rounded-xl border border-border bg-background-secondary p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-all text-sm font-semibold text-text-primary">{report.targetType === 'forum_topic' ? 'Tópico' : report.targetType === 'forum_reply' ? 'Resposta' : report.targetType === 'post' ? 'Publicação' : report.targetType === 'post_comment' ? 'Comentário' : 'Membro'} · {report.targetId}</h3><p className="mt-1 text-xs text-text-secondary">{report.reason} · {formatTimestamp(new Date(report.createdAt))}</p></div><span className="rounded-full border border-border bg-background-tertiary px-2 py-1 text-xs">{reportStatusLabel(report.status)}</span></div>
+              <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-all text-sm font-semibold text-text-primary">{report.targetType === 'forum_topic' ? 'Tópico' : report.targetType === 'forum_reply' ? 'Resposta' : report.targetType === 'post' ? 'Publicação' : report.targetType === 'post_comment' ? 'Comentário' : 'Membro'} · {report.targetId}</h3><p className="mt-1 text-xs text-text-secondary">{report.reason} · {formatTimestamp(new Date(report.createdAt))}</p></div><span className="rounded-full border border-border bg-background-tertiary px-2 py-1 text-xs">{t(reportStatusKey(report.status))}</span></div>
               {report.details && <p className="whitespace-pre-wrap break-words text-sm text-text-primary">{report.details}</p>}
               {report.evidence.length > 0 && <details><summary className="cursor-pointer text-xs text-accent">Ver evidências permitidas</summary><ul className="mt-2 space-y-1">{report.evidence.map((evidence, index) => <li key={`${report.id}-${index}`} className="break-all text-xs text-text-secondary">{evidence}</li>)}</ul></details>}
               {report.resolutionNote && <p className="text-xs text-text-secondary">Decisão registrada: {report.resolutionNote}</p>}
@@ -589,7 +595,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
             <p className="text-xs text-text-secondary">Configurações do fórum</p>
           </div>
           <nav className="space-y-1" aria-label="Gerenciamento do fórum">
-            {TABS.map((tab) => (
+          {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -600,7 +606,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
                 ].join(' ')}
               >
                 {tab.icon}
-                {tab.label}
+              {t(tab.labelKey)}
               </button>
             ))}
           </nav>

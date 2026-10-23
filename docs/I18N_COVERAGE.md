@@ -1,10 +1,18 @@
 # Relatório de cobertura de internacionalização
 
+## Estado desta etapa
+
+- A cobertura estática subiu de 53,5% (992 chamadas traduzidas e 863 rótulos fixos) para 56,7% (1.056 chamadas e 808 rótulos fixos).
+- `UserProfileModal.tsx` foi parcialmente localizado (81,7% no subconjunto medido); ainda há rótulos, datas e status de moderação a traduzir e revisar visualmente.
+- `ForumManagementModal.tsx` tem abas, cargos e estados conhecidos de denúncias localizados, mas o restante da interface de gerenciamento segue pendente.
+- `CommunityWorkspaceModal.tsx`, configurações de dados/privacidade, notificações, perfil, sobre, últimos logins e outros módulos listados abaixo ainda têm texto fixo.
+- O percentual mede somente padrões estáticos reconhecidos pelo script e não representa a cobertura integral da interface.
+
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **992**.
-- Strings visíveis fixas detectadas: **863**.
-- Cobertura medida neste subconjunto: **53.5%**.
+- Chamadas de tradução detectadas: **1056**.
+- Strings visíveis fixas detectadas: **808**.
+- Cobertura medida neste subconjunto: **56.7%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -52,13 +60,13 @@
 | `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
 | `components/social/ForumDetailModal.tsx` | 0 | 9 | 0.0% |
-| `components/social/ForumManagementModal.tsx` | 0 | 105 | 0.0% |
+| `components/social/ForumManagementModal.tsx` | 6 | 97 | 5.8% |
 | `components/social/PostCard.tsx` | 44 | 2 | 95.7% |
 | `components/social/PostDetailModal.tsx` | 15 | 5 | 75.0% |
 | `components/social/ProfileMenu.tsx` | 27 | 1 | 96.4% |
 | `components/social/SetStatusModal.tsx` | 19 | 0 | 100.0% |
 | `components/social/StatusBubble.tsx` | 1 | 0 | 100.0% |
-| `components/social/UserProfileModal.tsx` | 0 | 60 | 0.0% |
+| `components/social/UserProfileModal.tsx` | 58 | 13 | 81.7% |
 | `components/ui/Avatar.tsx` | 1 | 0 | 100.0% |
 | `components/ui/Badge.tsx` | 1 | 0 | 100.0% |
 | `components/ui/EmojiPicker.tsx` | 5 | 0 | 100.0% |

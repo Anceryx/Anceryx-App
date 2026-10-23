@@ -2,6 +2,7 @@
 
 # Em desenvolvimento
 
+- O modal de perfil passou a localizar os principais estados, navegação, ações, listas, recursos de moderação e metadados de data; nomes, biografias, nomes de Fóruns e justificativas livres permanecem intactos. As abas e rótulos de cargos do gerenciamento de Fóruns agora acompanham o idioma ativo.
 - A área do perfil agora localiza navegação, cabeçalho, estatísticas e edição de perfil; nomes, biografias, badges e status personalizados continuam sendo conteúdo de usuário.
 - A seção de segurança localiza a verificação de e-mail, senha e etapas principais da configuração de autenticação em duas etapas. Mensagens de erro livres da API permanecem sem tradução automática.
 - A área de mensagens diretas localiza busca, estados vazios, acessibilidade, chamadas, envio de denúncias e textos do próprio aplicativo, mantendo intactos o conteúdo das mensagens e os erros dinâmicos recebidos da API.
