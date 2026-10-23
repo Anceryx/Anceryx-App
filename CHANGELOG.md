@@ -8,6 +8,7 @@
 - Mantido o atualizador desativado, sem chave de produção, sem download automático e sem instalação silenciosa.
 - O atualizador revalida SHA-512, tipo e tamanho do instalador imediatamente antes de abrir o NSIS, rejeita substituições do arquivo e limita redirecionamentos a quatro saltos confiáveis.
 - Adicionada ferramenta local para gerar e conferir pares Ed25519 sem exibir a chave privada, além de workflow manual de validação Windows com Node 22.
+- Fixada a chave pública oficial Ed25519 no processo principal; o workflow de publicação associa a assinatura ao Environment protegido `public-release`, enquanto QA usa somente chaves efêmeras e mantém o updater desativado até a revisão do instalador.
 
 ## Alterações anteriores registradas
 - A auditoria final removeu literais antigos não utilizados dos dados de cobrança/notas, localizou o selo Popular e documentou os candidatos restantes da métrica como símbolos, marcas, identificadores ou conteúdo de teste. O teste de publicações comunitárias agora aceita um caminho explícito para o checkout separado da API.

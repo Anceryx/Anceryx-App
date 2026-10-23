@@ -11,9 +11,9 @@
 
 ## Estado fechado por padrão
 
-Em `0.17.1`, `UPDATE_MANIFEST_PUBLIC_KEY_PEM` está vazio e `UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED` está `false`. Portanto o updater não inicia chamadas de rede, não baixa arquivos e não abre instaladores. O gerador e o workflow recusam assinar ou publicar sem uma chave privada que corresponda à chave pública fixada e sem ativação explícita no cliente.
+Em `0.17.1`, a chave pública oficial Ed25519 está fixada em `UPDATE_MANIFEST_PUBLIC_KEY_PEM`; o flag `UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED` continua `false`. Portanto o updater não inicia chamadas de rede, não baixa arquivos e não abre instaladores. O gerador e o workflow recusam assinar ou publicar sem uma chave privada que corresponda matematicamente à chave pública fixada e sem ativação explícita no cliente. Builds de QA e PR não recebem o secret. O job de publicação associado ao Environment protegido `public-release` confere a correspondência antes de gerar o manifest; esta execução local não acessa o secret.
 
-As versões estáveis disponíveis nesta revisão local são `electron-builder` 26.18.0 e `electron-updater` 6.8.11; o suporte nativo Ed25519 consultado aparece em versões alpha 27/7. Para não depender de alpha, o cliente implementa verificação independente com `node:crypto` e removeu `electron-updater`. A verificação foi testada com chaves efêmeras de teste; nenhuma chave de produção foi criada ou embutida.
+As versões estáveis disponíveis nesta revisão local são `electron-builder` 26.18.0; o cliente implementa verificação independente com `node:crypto` e não usa `electron-updater`, evitando uma segunda rota de download. Os testes criptográficos usam pares efêmeros e também confirmam o formato e o tipo Ed25519 da chave pública fixada. A chave privada de produção não é lida nem registrada localmente.
 
 ## Limites e ameaças
 

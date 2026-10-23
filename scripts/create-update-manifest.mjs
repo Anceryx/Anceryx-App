@@ -1,20 +1,16 @@
-import { createPrivateKey, createPublicKey, sign } from 'node:crypto'
+import { createPrivateKey, sign } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { canonicalUpdateManifestPayload } from '../src/main/updater/manifestVerifier.ts'
+import { assertUpdateSigningKeyMatches } from './update-signing-key.mjs'
 
 const [installerPath, outputPath = 'dist/update-manifest.json'] = process.argv.slice(2)
 if (!installerPath) throw new Error('Pass the built NSIS installer path.')
 const privatePem = process.env.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY
 if (!privatePem) throw new Error('The protected update-manifest signing key is missing.')
 const trustSource = await readFile(new URL('../src/main/updater/updateTrust.ts', import.meta.url), 'utf8')
-const match = /UPDATE_MANIFEST_PUBLIC_KEY_PEM\s*=\s*`([\s\S]*?)`/.exec(trustSource)
-if (!match?.[1]?.trim()) throw new Error('The application does not pin a production update trust key.')
-const publicPem = match[1].replace(/\\n/g, '\n')
+assertUpdateSigningKeyMatches(trustSource, privatePem)
 const privateKey = createPrivateKey(privatePem)
-const derived = createPublicKey(privateKey).export({ type: 'spki', format: 'der' })
-const pinned = createPublicKey(publicPem).export({ type: 'spki', format: 'der' })
-if (!derived.equals(pinned)) throw new Error('The protected signing key does not match the public key pinned by the application.')
 
 const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
 const version = pkg.version

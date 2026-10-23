@@ -6,11 +6,11 @@ O workflow `windows-release.yml` é manual e gera artifacts temporários com `--
 
 ## Publicação controlada
 
-`.github/workflows/publish-windows-release.yml` exige execução manual, tag revisada, confirmação exata, `ANCERYX_PUBLIC_RELEASE_ENABLED=true` e ambiente protegido `public-release`. A tag deve corresponder ao pacote `0.17.1` e estar alcançável desde `main`.
+`.github/workflows/publish-windows-release.yml` exige execução manual, tag revisada, confirmação exata, `ANCERYX_PUBLIC_RELEASE_ENABLED=true` e ambiente protegido `public-release`. A tag deve corresponder ao pacote `0.17.1` e estar alcançável desde `main`. O job de build também usa esse Environment para que a chave privada de assinatura não fique disponível em secrets gerais do repositório.
 
 Antes de compilar, o workflow exige a chave Ed25519 privada em `ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY`, confere sua correspondência com a chave pública compilada no cliente e verifica que o flag de assinatura está habilitado. A ausência de qualquer requisito interrompe a execução. Após o build NSIS, o fluxo gera `update-manifest.json`, verifica assinatura, tamanho e SHA-512, e calcula `SHA256SUMS.txt`. O job que publica conserva as permissões restritas existentes.
 
-O código desta preparação ainda mantém o updater desativado e sem chave pública real. O workflow de publicação não pode ser aprovado até a chave ser provisionada, o cliente ser ativado em commit revisado e o instalador passar pelo QA Windows. Não execute esse workflow enquanto tais critérios não forem cumpridos.
+O código desta preparação mantém o updater desativado, embora a chave pública oficial já esteja fixada no cliente. A validação Windows manual usa chaves de teste efêmeras e não recebe o secret de produção. O workflow de publicação confere a chave protegida, mas só deve ser executado após autorização explícita; o cliente só poderá ser ativado em commit revisado após a QA do instalador. Não execute o workflow de publicação durante o QA.
 
 ## QA e distribuição
 

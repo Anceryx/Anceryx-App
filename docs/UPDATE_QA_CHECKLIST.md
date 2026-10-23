@@ -7,9 +7,11 @@ O cliente atual mantém o atualizador integrado desativado até verificar manife
 - [ ] Instalar e iniciar o NSIS em um perfil de teste; confirmar que o SmartScreen é apresentado normalmente e que nenhuma instrução orienta ignorá-lo.
 - [ ] Instalar sobre uma versão anterior em ambiente isolado e confirmar que `%APPDATA%`, SafeStorage, sessões, preferências e anexos permanecem acessíveis.
 - [ ] Confirmar que o app inicia e funciona sem conexão ao feed de atualização.
-- [ ] Confirmar que consultas, download e instalação pelo atualizador integrado ficam desativados no cliente atual.
-- [ ] Antes de habilitar assinatura Ed25519: testar manifest válido, ausente, adulterado e assinado por chave não confiável; somente o válido deve ser aceito.
-- [ ] Depois da implementação do verificador: validar seleção de canal stable/beta e rejeição de downgrade, versão igual, SemVer inválido e canal incompatível.
+- [ ] Confirmar que consultas, download e instalação pelo atualizador integrado ficam desativados no cliente atual até o QA do Windows ser aprovado e a flag de verificação ser habilitada em alteração revisada.
+- [ ] Confirmar que os testes de assinatura usam apenas pares efêmeros; a chave privada de produção não deve ser enviada ao workflow de QA.
+- [ ] Confirmar que o workflow protegido de publicação valida a correspondência do secret com a chave pública antes de assinar qualquer manifest; a execução não deve imprimir o secret.
+- [ ] Com o updater ainda desativado, confirmar que manifest válido é aceito pelo verificador e que manifest ausente, adulterado ou assinado por chave não confiável é rejeitado.
+- [ ] Validar seleção de canal stable/beta e rejeição de downgrade, versão igual, SemVer inválido e canal incompatível.
 - [ ] Testar recuperação após interrupção, consentimento explícito para reinício/instalação, notas como texto simples e bloqueio de URLs arbitrárias.
 - [ ] Testar instalação, desinstalação e rollback; preservar dados locais em todos os casos.
 - [ ] Registrar hashes dos artifacts, tag e resultado sem incluir segredos ou dados pessoais.

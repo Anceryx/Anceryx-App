@@ -18,6 +18,7 @@ permissions:
 jobs:
   build-release:
     if: vars.ANCERYX_PUBLIC_RELEASE_ENABLED == 'true' && inputs.confirmation == 'PUBLISH ANCERYX WINDOWS RELEASE'
+    environment: public-release
     runs-on: windows-latest
     timeout-minutes: 45
     permissions:

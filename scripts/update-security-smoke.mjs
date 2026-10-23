@@ -4,13 +4,18 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { generateUpdateKeyPair, verifyUpdateKeyPair } from './manage-update-keypair.mjs'
+import { assertUpdateSigningKeyMatches } from './update-signing-key.mjs'
 import { UPDATE_GITHUB_OWNER, UPDATE_GITHUB_REPOSITORY, UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, UPDATE_MANUAL_INSTALL_MESSAGE, releaseNotesToLines, resolveUpdateChannel, safeUpdaterError } from '../src/main/updater/updateUtils.ts'
+import { UPDATE_MANIFEST_PUBLIC_KEY_PEM } from '../src/main/updater/updateTrust.ts'
 import { assertInstallerIntegrity, canonicalUpdateManifestPayload, isTrustedDownloadUrl, selectLatestBetaVersion, verifySignedUpdateManifest } from '../src/main/updater/manifestVerifier.ts'
 import { isAllowedUpdateRedirect, resolveAllowedUpdateRedirect, verifyDownloadedInstallerFile } from '../src/main/updater/updateTransport.ts'
 
 assert.equal(UPDATE_GITHUB_OWNER, 'Anceryx')
 assert.equal(UPDATE_GITHUB_REPOSITORY, 'Anceryx-App')
 assert.equal(UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED, false)
+assert.equal(createPublicKey(UPDATE_MANIFEST_PUBLIC_KEY_PEM).asymmetricKeyType, 'ed25519')
+const pinnedDer = createPublicKey(UPDATE_MANIFEST_PUBLIC_KEY_PEM).export({ type: 'spki', format: 'der' })
+assert.equal(pinnedDer.toString('base64'), 'MCowBQYDK2VwAyEAWtvd5/en3Vvs5GxfJ4uNLcVof2CoB33qU4D+CKf9EKc=')
 assert.match(UPDATE_MANUAL_INSTALL_MESSAGE, /assinatura criptográfica/i)
 assert.match(safeUpdaterError({ code: 'ERR_UPDATER_MANIFEST_SIGNATURE_INVALID' }), /assinatura de segurança.*download foi bloqueado/i)
 assert.equal(safeUpdaterError({ code: 'ERR_UPDATER_MANIFEST_NOT_SIGNED', message: 'private-token-value' }).includes('private-token-value'), false)
@@ -47,6 +52,8 @@ const base = {
 }
 const signed = { ...base, signature: sign(null, canonicalUpdateManifestPayload(base), privateKey).toString('base64') }
 assert.deepEqual(verifySignedUpdateManifest(signed, '0.17.0', 'stable', publicPem), base)
+assert.throws(() => verifySignedUpdateManifest(undefined, '0.17.0', 'stable', publicPem), /UPDATE_MANIFEST_INVALID/)
+assert.throws(() => verifySignedUpdateManifest(signed, '0.17.0', 'stable', UPDATE_MANIFEST_PUBLIC_KEY_PEM), /UPDATE_SIGNATURE_INVALID/)
 assert.throws(() => verifySignedUpdateManifest(signed, '0.17.0', 'stable', ''), /UPDATE_TRUST_KEY_MISSING/)
 assert.throws(() => verifySignedUpdateManifest(signed, '0.17.0', 'stable', generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }).toString()), /UPDATE_SIGNATURE_INVALID/)
 assert.throws(() => verifySignedUpdateManifest({ ...signed, notes: ['different notes'] }, '0.17.0', 'stable', publicPem), /UPDATE_SIGNATURE_INVALID/)
@@ -90,6 +97,12 @@ try {
   const { privatePath, publicPath } = await generateUpdateKeyPair(keyDirectory)
   const privatePem = readFileSync(privatePath, 'utf8')
   const generatedPublicPem = readFileSync(publicPath, 'utf8')
+  const trustSource = `export const UPDATE_MANIFEST_PUBLIC_KEY_PEM = \`${generatedPublicPem}\``
+  assert.equal(assertUpdateSigningKeyMatches(trustSource, privatePem), true)
+  assert.throws(() => assertUpdateSigningKeyMatches(trustSource, ''), /not configured/)
+  assert.throws(() => assertUpdateSigningKeyMatches(trustSource, 'not a private key'), /invalid or incompatible/)
+  const differentPrivate = generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+  assert.throws(() => assertUpdateSigningKeyMatches(trustSource, differentPrivate), /does not match/)
   assert.equal(createPublicKey(createPrivateKey(privatePem)).export({ type: 'spki', format: 'der' }).equals(createPublicKey(generatedPublicPem).export({ type: 'spki', format: 'der' })), true)
   await verifyUpdateKeyPair(privatePath, publicPath)
   const mismatchedPublicPath = join(keyDirectory, 'mismatched-public.pem')
@@ -106,6 +119,8 @@ const manager = readFileSync(new URL('../src/main/updater/updateManager.ts', imp
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 const packageLock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'))
 const builderConfig = readFileSync(new URL('../electron-builder.yml', import.meta.url), 'utf8')
+const qaWorkflow = readFileSync(new URL('../.github/workflows/updater-security-windows.yml', import.meta.url), 'utf8')
+const releaseWorkflow = readFileSync(new URL('../.github/workflows/publish-windows-release.yml', import.meta.url), 'utf8')
 assert.match(manager, /UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED/)
 assert.match(manager, /if \(!this\.snapshot\.configured\) return this\.getSnapshot\(\)/)
 assert.match(manager, /this\.snapshot\.state !== 'available'/)
@@ -118,4 +133,9 @@ assert.equal(packageLock.packages['node_modules/electron-updater'], undefined)
 assert.doesNotMatch(builderConfig, /^publish:/m)
 assert.equal(packageJson.scripts['electron:build'].includes('--publish never'), true)
 assert.equal(/process\.env\[['"](?:GH_TOKEN|GITHUB_TOKEN|ANCERYX_UPDATE_TOKEN)/.test(manager), false)
+assert.doesNotMatch(qaWorkflow, /ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY|secrets\./)
+assert.match(releaseWorkflow, /ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY:\s*\$\{\{\s*secrets\.ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY\s*\}\}/)
+assert.match(releaseWorkflow, /check-update-release-prerequisites\.mjs/)
+assert.match(releaseWorkflow, /build-release:[\s\S]*?environment:\s*public-release/)
+assert.doesNotMatch(readFileSync(new URL('./update-signing-key.mjs', import.meta.url), 'utf8'), /console\.(?:log|info|warn|error)\([^\n]*privateKeyPem/)
 console.log('update security smoke: PASS (Ed25519, schema, channel/version, URL, fail-closed client and consent gates)')
