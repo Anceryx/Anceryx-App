@@ -2,17 +2,18 @@
 
 ## Estado desta etapa
 
-- A cobertura estática subiu de 53,5% (992 chamadas traduzidas e 863 rótulos fixos) para 56,7% (1.056 chamadas e 808 rótulos fixos).
-- `UserProfileModal.tsx` foi parcialmente localizado (81,7% no subconjunto medido); ainda há rótulos, datas e status de moderação a traduzir e revisar visualmente.
-- `ForumManagementModal.tsx` tem abas, cargos e estados conhecidos de denúncias localizados, mas o restante da interface de gerenciamento segue pendente.
-- `CommunityWorkspaceModal.tsx`, configurações de dados/privacidade, notificações, perfil, sobre, últimos logins e outros módulos listados abaixo ainda têm texto fixo.
+- A cobertura estática subiu de 53,5% (992 chamadas traduzidas e 863 rótulos fixos) para 59,6% (1.111 chamadas e 753 rótulos fixos).
+- `UserProfileModal.tsx` foi parcialmente localizado (81,7% no subconjunto medido); rótulos dinâmicos, status de moderação e revisão visual seguem pendentes.
+- `ForumManagementModal.tsx` localiza abas, cargos e alguns estados conhecidos (5,8% medidos); a interface principal de gerenciamento ainda precisa de tradução.
+- `CommunityWorkspaceModal.tsx` localiza a área inicial de moderação (13,5% medidos), mas 352 rótulos fixos permanecem detectados.
+- Configurações de dados/privacidade, notificações, perfil, sobre, últimos logins e outros módulos abaixo ainda têm texto fixo.
 - O percentual mede somente padrões estáticos reconhecidos pelo script e não representa a cobertura integral da interface.
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **1056**.
-- Strings visíveis fixas detectadas: **808**.
-- Cobertura medida neste subconjunto: **56.7%**.
+- Chamadas de tradução detectadas: **1111**.
+- Strings visíveis fixas detectadas: **753**.
+- Cobertura medida neste subconjunto: **59.6%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -56,7 +57,7 @@
 | `components/social/CommunityForumChannel.tsx` | 0 | 33 | 0.0% |
 | `components/social/CommunityManagementModal.tsx` | 7 | 0 | 100.0% |
 | `components/social/CommunityVoiceActionButtons.tsx` | 14 | 0 | 100.0% |
-| `components/social/CommunityWorkspaceModal.tsx` | 0 | 407 | 0.0% |
+| `components/social/CommunityWorkspaceModal.tsx` | 55 | 352 | 13.5% |
 | `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
 | `components/social/ForumDetailModal.tsx` | 0 | 9 | 0.0% |
