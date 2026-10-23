@@ -6,6 +6,10 @@
 - A descoberta do Explore localiza os rótulos de fallback de mídia e mantém a página inicial, pesquisa contextual, filtros e conteúdo público existente.
 - O feed localiza notificações de interação e mensagens genéricas de falha; a validação de upload reaproveita mensagens localizadas sem substituir erros específicos da API. O detalhe da publicação localiza o estado de nova tentativa.
 - O perfil próprio localiza mensagens de conta, imagens, badges, fóruns públicos e listas; nomes, biografias, status e descrições de membros permanecem no idioma de origem. A busca de conexões agora respeita a região ativa.
+- As prévias de publicações compartilhadas e os rótulos acessíveis de GIFs agora acompanham o idioma ativo; a atribuição da KLIPY é localizada e o título do GIF permanece como conteúdo original.
+- Os controles de teste de áudio, a identificação da versão nas configurações e a ligação localizada entre os termos e a política de privacidade agora acompanham o idioma ativo. A atribuição da KLIPY nas mensagens também usa o catálogo.
+- Os estados dos fluxos de retorno OAuth e abertura de links internos também acompanham o idioma ativo nas três localidades.
+- Os erros de autenticação com códigos conhecidos agora são armazenados como chaves e renderizados conforme o idioma atual; respostas livres inesperadas do servidor continuam sem tradução arbitrária.
 
 # Em desenvolvimento
 

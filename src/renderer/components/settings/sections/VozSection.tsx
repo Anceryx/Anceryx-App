@@ -246,8 +246,8 @@ const VozSection: React.FC = () => {
               ].join(' ')}
             >
               {isTesting
-                ? <><StopCircle size={13} /> Parar teste</>
-                : <><PlayCircle size={13} /> Iniciar teste</>}
+                ? <><StopCircle size={13} /> {t('settings.voice.stopMicTest')}</>
+                : <><PlayCircle size={13} /> {t('settings.voice.startMicTest')}</>}
             </button>
           </div>
 
@@ -338,7 +338,7 @@ const VozSection: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/5 border border-border text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
             >
               <PlayCircle size={13} />
-              Testar áudio
+              {t('settings.voice.testAudio')}
             </button>
           </div>
         </div>

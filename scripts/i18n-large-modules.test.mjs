@@ -11,6 +11,7 @@ const forumDetail = await readFile(new URL('../src/renderer/components/social/Fo
 const createForum = await readFile(new URL('../src/renderer/components/social/CreateForumModal.tsx', import.meta.url), 'utf8')
 const feedPage = await readFile(new URL('../src/renderer/pages/FeedPage.tsx', import.meta.url), 'utf8')
 const postDetail = await readFile(new URL('../src/renderer/components/social/PostDetailModal.tsx', import.meta.url), 'utf8')
+const sharedPost = await readFile(new URL('../src/renderer/components/messages/SharedPostPreview.tsx', import.meta.url), 'utf8')
 const privacySettings = await readFile(new URL('../src/renderer/components/settings/sections/DadosPrivacidadeSection.tsx', import.meta.url), 'utf8')
 const notificationSettings = await readFile(new URL('../src/renderer/components/settings/sections/NotificacoesSection.tsx', import.meta.url), 'utf8')
 const profileSettings = await readFile(new URL('../src/renderer/components/settings/sections/PerfilSection.tsx', import.meta.url), 'utf8')
@@ -18,6 +19,14 @@ const aboutSettings = await readFile(new URL('../src/renderer/components/setting
 const loginHistorySettings = await readFile(new URL('../src/renderer/components/settings/sections/UltimosLoginsSection.tsx', import.meta.url), 'utf8')
 const billing = await readFile(new URL('../src/renderer/pages/CobrancaPage.tsx', import.meta.url), 'utf8')
 const billingResult = await readFile(new URL('../src/renderer/pages/BillingResultPage.tsx', import.meta.url), 'utf8')
+const voiceSettings = await readFile(new URL('../src/renderer/components/settings/sections/VozSection.tsx', import.meta.url), 'utf8')
+const settingsNav = await readFile(new URL('../src/renderer/components/settings/SettingsNav.tsx', import.meta.url), 'utf8')
+const messagesPage = await readFile(new URL('../src/renderer/pages/MensagensPage.tsx', import.meta.url), 'utf8')
+const loginPage = await readFile(new URL('../src/renderer/pages/LoginPage.tsx', import.meta.url), 'utf8')
+const registerPage = await readFile(new URL('../src/renderer/pages/RegisterPage.tsx', import.meta.url), 'utf8')
+const webOAuthCallback = await readFile(new URL('../src/renderer/pages/WebOAuthCallbackPage.tsx', import.meta.url), 'utf8')
+const webDeepLink = await readFile(new URL('../src/renderer/router/WebDeepLinkPage.tsx', import.meta.url), 'utf8')
+const authApi = await readFile(new URL('../src/renderer/services/authApi.ts', import.meta.url), 'utf8')
 
 for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
   for (const key of [
@@ -58,6 +67,12 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'profile.imageUpdated', 'profile.imageUploadFailed', 'profile.imageProcessingFailed',
     'profile.bannerRemoved', 'profile.removeBannerFailed', 'profile.badgePreferenceFailed',
     'profile.featuredBadgesHeader', 'profile.featuredBadgesFailed',
+    'messages.sharedPostBy', 'messages.sharedPostUnavailable', 'messages.sharedPostLoading',
+    'messages.gifProviderAttribution', 'messages.sendGif', 'auth.termsPrivacyAnd', 'settings.appVersionLabel',
+    'auth.googleHandoffFailed', 'auth.completingGoogleSignIn', 'common.openingAnceryxLink',
+    'auth.detailsInvalid', 'auth.emailAlreadyRegistered', 'auth.usernameAlreadyInUse', 'auth.accountAlreadyInUse',
+    'auth.invalidCredentials', 'auth.sessionExpired', 'auth.tooManyAttempts', 'auth.serviceUnavailable',
+    'auth.authenticationFailed', 'auth.apiConnectionFailed',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -159,6 +174,23 @@ assert.match(profilePage, /\{forum\.name\}/)
 assert.match(profilePage, /\{forum\.description\}/)
 assert.match(profilePage, /\{selectedBadge\?\.description\}/)
 assert.doesNotMatch(profilePage, /Não foi possível carregar as publicações\./)
+assert.match(sharedPost, /t\('messages\.sharedPostBy', \{ name: post\.author\.displayName \}\)/)
+assert.match(sharedPost, /\{post\.content\.slice\(0, 240\)\}/)
+assert.match(voiceSettings, /t\('settings\.voice\.stopMicTest'\)/)
+assert.match(voiceSettings, /t\('settings\.voice\.startMicTest'\)/)
+assert.match(voiceSettings, /t\('settings\.voice\.testAudio'\)/)
+assert.match(settingsNav, /t\('settings\.appVersionLabel', \{ version:/)
+assert.match(messagesPage, /t\('messages\.gifProviderAttribution'\)/)
+assert.match(loginPage, /t\('auth\.termsPrivacyAnd'\)/)
+assert.match(registerPage, /t\('auth\.termsPrivacyAnd'\)/)
+assert.match(webOAuthCallback, /t\('auth\.googleHandoffFailed'\)/)
+assert.match(webOAuthCallback, /t\('auth\.backToLogin'\)/)
+assert.match(webOAuthCallback, /t\('auth\.completingGoogleSignIn'\)/)
+assert.match(webDeepLink, /t\('common\.openingAnceryxLink'\)/)
+assert.match(authApi, /case 'EMAIL_ALREADY_EXISTS': return '__i18n:auth\.emailAlreadyRegistered'/)
+assert.match(authApi, /case 'INVALID_CREDENTIALS': return '__i18n:auth\.invalidCredentials'/)
+assert.match(authApi, /case 'SESSION_REVOKED': return '__i18n:auth\.sessionExpired'/)
+assert.doesNotMatch(authApi, /payload\.message|error\?\.message/)
 assert.match(privacySettings, /\{user\.displayName\}/)
 assert.match(privacySettings, /\{user\.username\}/)
 assert.match(profileSettings, /\{request\.user\.displayName\}/)

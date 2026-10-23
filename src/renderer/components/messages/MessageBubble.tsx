@@ -69,7 +69,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, showMeta
               />
             </button>
           )}
-          {_exhaustive.type === 'gif' && _exhaustive.image && <span className="text-[10px] opacity-60">Powered by KLIPY</span>}
+          {_exhaustive.type === 'gif' && _exhaustive.image && <span className="text-[10px] opacity-60">{t('messages.gifProviderAttribution')}</span>}
           {hasText && (
             <span className="whitespace-pre-wrap">
               {renderAnceryxText(_exhaustive.content)}

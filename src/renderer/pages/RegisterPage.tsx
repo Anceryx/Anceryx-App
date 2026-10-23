@@ -225,7 +225,7 @@ const RegisterPage: React.FC = () => {
             >
               {t('auth.terms')}
             </button>{' '}
-            e a{' '}
+            {t('auth.termsPrivacyAnd')}{' '}
             <button
               type="button"
               onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}

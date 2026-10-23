@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2197**.
-- Strings visíveis fixas detectadas: **119**.
-- Cobertura medida neste subconjunto: **94.9%**.
+- Chamadas de tradução detectadas: **2214**.
+- Strings visíveis fixas detectadas: **104**.
+- Cobertura medida neste subconjunto: **95.5%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -24,11 +24,11 @@
 | `components/messages/CallHistoryMessage.tsx` | 7 | 0 | 100.0% |
 | `components/messages/ConversationHeader.tsx` | 9 | 1 | 90.0% |
 | `components/messages/EmptyConversation.tsx` | 3 | 0 | 100.0% |
-| `components/messages/ExpressionPicker.tsx` | 17 | 3 | 85.0% |
-| `components/messages/MessageBubble.tsx` | 2 | 1 | 66.7% |
+| `components/messages/ExpressionPicker.tsx` | 19 | 1 | 95.0% |
+| `components/messages/MessageBubble.tsx` | 3 | 0 | 100.0% |
 | `components/messages/MessageComposer.tsx` | 11 | 0 | 100.0% |
 | `components/messages/MessageImageViewer.tsx` | 4 | 0 | 100.0% |
-| `components/messages/SharedPostPreview.tsx` | 0 | 1 | 0.0% |
+| `components/messages/SharedPostPreview.tsx` | 3 | 0 | 100.0% |
 | `components/messages/StickerPicker.tsx` | 7 | 1 | 87.5% |
 | `components/messages/TypingIndicator.tsx` | 1 | 0 | 100.0% |
 | `components/settings/sections/CobrancaSection.tsx` | 21 | 0 | 100.0% |
@@ -42,9 +42,9 @@
 | `components/settings/sections/SessoesDispositivosSection.tsx` | 15 | 0 | 100.0% |
 | `components/settings/sections/SobreSection.tsx` | 18 | 1 | 94.7% |
 | `components/settings/sections/UltimosLoginsSection.tsx` | 15 | 0 | 100.0% |
-| `components/settings/sections/VozSection.tsx` | 27 | 3 | 90.0% |
+| `components/settings/sections/VozSection.tsx` | 30 | 0 | 100.0% |
 | `components/settings/SettingsModal.tsx` | 7 | 0 | 100.0% |
-| `components/settings/SettingsNav.tsx` | 5 | 2 | 71.4% |
+| `components/settings/SettingsNav.tsx` | 6 | 1 | 85.7% |
 | `components/social/CommunityForumChannel.tsx` | 38 | 4 | 90.5% |
 | `components/social/CommunityManagementModal.tsx` | 7 | 0 | 100.0% |
 | `components/social/CommunityVoiceActionButtons.tsx` | 14 | 0 | 100.0% |
@@ -77,16 +77,17 @@
 | `pages/ExplorePage.tsx` | 73 | 12 | 85.9% |
 | `pages/FeedPage.tsx` | 40 | 4 | 90.9% |
 | `pages/ForunsPage.tsx` | 20 | 0 | 100.0% |
-| `pages/LoginPage.tsx` | 29 | 4 | 87.9% |
-| `pages/MensagensPage.tsx` | 49 | 2 | 96.1% |
+| `pages/LoginPage.tsx` | 30 | 3 | 90.9% |
+| `pages/MensagensPage.tsx` | 50 | 1 | 98.0% |
 | `pages/NotificationsPage.tsx` | 32 | 0 | 100.0% |
 | `pages/PerfilPage.tsx` | 86 | 2 | 97.7% |
-| `pages/RegisterPage.tsx` | 25 | 2 | 92.6% |
+| `pages/RegisterPage.tsx` | 26 | 1 | 96.3% |
 | `pages/SavedPostsPage.tsx` | 11 | 0 | 100.0% |
-| `pages/WebOAuthCallbackPage.tsx` | 0 | 3 | 0.0% |
-| `router/WebDeepLinkPage.tsx` | 0 | 1 | 0.0% |
+| `pages/WebOAuthCallbackPage.tsx` | 3 | 0 | 100.0% |
+| `router/WebDeepLinkPage.tsx` | 1 | 0 | 100.0% |
 | `utils/communityMemberGroups.ts` | 5 | 0 | 100.0% |
 | `utils/communityVoiceControls.ts` | 0 | 6 | 0.0% |
+| `utils/validators.ts` | 11 | 0 | 100.0% |
 
 ## Revisão manual das superfícies priorizadas
 
@@ -96,8 +97,29 @@
 - `pages/FeedPage.tsx`: os quatro itens residuais são `@`, `•` e aspas de apresentação. Notificações, erros genéricos e validações de upload usam traduções. Mensagens de erro livres de serviços são preservadas.
 - `components/social/PostDetailModal.tsx`: os quatro resíduos são marcadores `@` e `·` ao lado de nomes/identificadores; ações e estado de nova tentativa são localizados. Posts e comentários permanecem intactos.
 - `pages/PerfilPage.tsx`: os dois itens residuais são `@` antes do nome de usuário. Erros locais, estados, badges, fóruns, imagens e listas usam chaves; nomes, biografias, descrições e status fornecidos por usuários permanecem no idioma original. A busca respeita a localidade ativa.
+- `components/messages/SharedPostPreview.tsx`: autoria, carregamento e indisponibilidade da prévia usam o catálogo; o conteúdo do post não é traduzido.
+- `components/messages/ExpressionPicker.tsx` e `MessageBubble.tsx`: a atribuição do provedor KLIPY e o rótulo acessível do botão GIF são localizados; títulos e conteúdo de GIFs continuam intactos.
+- `pages/MensagensPage.tsx`: a atribuição de GIFs nas conversas usa a mesma tradução do seletor e da bolha de mensagem.
+- `components/settings/sections/VozSection.tsx` e `SettingsNav.tsx`: os controles de teste de áudio e o rótulo da versão do aplicativo acompanham o idioma.
+- `pages/LoginPage.tsx` e `RegisterPage.tsx`: a conjunção entre os links de termos e privacidade é localizada para preservar a gramática nos três idiomas.
+- `pages/WebOAuthCallbackPage.tsx` e `router/WebDeepLinkPage.tsx`: erros/estados do retorno OAuth e a abertura de links internos usam o catálogo. Esses componentes de compatibilidade não reativam o produto web.
+- `services/authApi.ts`: erros de autenticação para códigos conhecidos agora retornam chaves localizáveis; erros desconhecidos continuam com mensagem genérica segura e a resposta livre da API não é interpretada nem traduzida.
 
-## Próximas superfícies para revisão
+## Ocorrências restantes e classificação
 
-A medição não classifica automaticamente todos os literais. Continuam na fila os módulos com strings residuais na tabela, incluindo `DashboardPage.tsx`, `ForumManagementModal.tsx`, `UserProfileModal.tsx`, `CommunityWorkspaceModal.tsx`, `CommunityForumChannel.tsx`, componentes de mensagens e chamadas, autenticação e diálogos do Electron. Cada literal deve ser inspecionado para distinguir interface, conteúdo social, nome próprio, identificador, símbolo e texto não visível. A cobertura estática geral é parcial.
-| `utils/validators.ts` | 11 | 0 | 100.0% |
+- `components/calls/MiniCallCard.tsx`: dois literais detectados são blocos CSS de `@keyframes` e classes de animação, sem texto apresentado ao usuário.
+- `components/layout/TitleBar.tsx`, `components/messages/ExpressionPicker.tsx`, `components/messages/StickerPicker.tsx`, `components/settings/sections/SobreSection.tsx` e `pages/DashboardPage.tsx`: ocorrências restantes são os nomes próprios Anceryx, Anceryx+ e Kaoli; devem permanecer intactos.
+- `components/messages/ConversationHeader.tsx`: hífen é separador visual de identificador, sem conteúdo linguístico.
+- `components/settings/sections/ConexoesLoginSection.tsx`: Google é o nome próprio do provedor de autenticação.
+- `components/settings/sections/ExperienciaSection.tsx`: `720p`, `1080p` e `Aa` são valores técnicos/ícone tipográfico; Anceryx+ é marca.
+- `components/settings/SettingsNav.tsx`: versão numérica e placeholder técnico foram mantidos; o rótulo de produto foi localizado.
+- `components/social/CommunityWorkspaceModal.tsx`: `ID`, setas, o nome técnico de ação `community.role.update` e o prefixo do deep link são identificadores, símbolos ou exemplo de filtro, não rótulos de interface.
+- `components/social/UserProfileModal.tsx`: `✦` é ícone decorativo acessível como oculto; nomes, biografias e conteúdo do perfil permanecem originais.
+- `components/ui/EmojiPicker.tsx`, `pages/ExplorePage.tsx` e `pages/PerfilPage.tsx`: parâmetros dinâmicos/símbolos e marcadores de nomes; os dados recebidos não são traduzidos.
+- `image-crop-visual-test.tsx`: textos pertencem ao harness de teste visual e não são incluídos na interface distribuída.
+- `lib/billingData.ts` e `lib/releaseNotes.ts`: literais residuais são dados não renderizados diretamente; as páginas/modal consomem as traduções do catálogo.
+- `pages/FeedPage.tsx`: resíduos são aspas e marcadores tipográficos ao redor de texto de usuário.
+- `utils/communityVoiceControls.ts`: os literais são chaves tipadas do catálogo, consumidas por `t()` no componente de controles de voz.
+- `services/mediaApi.ts`, `services/apiClient.ts`, `services/realtimeClient.ts`, `services/webrtc/peerConnection.ts`, `services/webrtc/communityVoiceClient.ts` e `main/updater/*`: permanecem mensagens fixas geradas nos serviços/processo principal. A localização desses fluxos, preservando erros livres do servidor e o contrato IPC do updater, ainda requer uma etapa dedicada.
+
+A tabela automatizada tem falsos positivos e não consegue medir arrays dinâmicos, strings de serviço ou o conteúdo efetivamente renderizado. O valor de 95,5% é apenas a razão do subconjunto estático contabilizado, não uma declaração de cobertura total. QA visual dos três idiomas ainda é necessário.

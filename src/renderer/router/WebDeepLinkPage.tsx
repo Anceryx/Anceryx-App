@@ -3,11 +3,13 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useSocialStore } from '@/store/socialStore'
 import { useUIStore } from '@/store/uiStore'
 import { resolveWebLinkIntent } from './webLinkIntent'
+import { useTranslation } from '@/i18n'
 
 const WebDeepLinkPage: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const params = useParams()
+  const t = useTranslation()
 
   useEffect(() => {
     const ui = useUIStore.getState()
@@ -28,7 +30,7 @@ const WebDeepLinkPage: React.FC = () => {
     navigate('/app', { replace: true })
   }, [location.pathname, navigate, params.forumId, params.postId, params.token, params.username])
 
-  return <div className="grid min-h-screen place-items-center bg-background-primary text-sm text-text-secondary">Abrindo link da Anceryx…</div>
+  return <div className="grid min-h-screen place-items-center bg-background-primary text-sm text-text-secondary">{t('common.openingAnceryxLink')}</div>
 }
 
 export default WebDeepLinkPage

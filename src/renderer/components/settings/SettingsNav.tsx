@@ -148,7 +148,7 @@ const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) 
         </button>
 
         <div className="mt-4 px-1 text-[10px] text-zinc-500">
-          <p className="leading-relaxed">Anceryx Desktop • v{appVersion ?? '...'}</p>
+          <p className="leading-relaxed">{t('settings.appVersionLabel', { version: appVersion ?? '...' })}</p>
           <div className="mt-1 flex items-center gap-3">
             <button
               onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}

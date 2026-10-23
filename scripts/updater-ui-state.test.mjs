@@ -9,6 +9,6 @@ const modal = await readFile(new URL('../src/renderer/components/layout/UpdateMo
 assert.match(policy, /UPDATE_MANIFEST_SIGNATURE_VERIFICATION_ENABLED = false/)
 assert.match(updater, /if \(!this\.snapshot\.configured\) return this\.getSnapshot\(\)/)
 assert.match(updater, /if \(!this\.snapshot\.configured \|\| this\.snapshot\.state !== 'available'\)/)
-assert.match(about, /Atualizações automáticas pausadas por segurança/)
-assert.match(modal, /Atualizações automáticas pausadas por segurança/)
+assert.match(about, /t\('settings\.about\.securePaused'\)/)
+assert.match(modal, /t\('updates\.securityPaused'\)/)
 console.log('updater UI state smoke: PASS (manifest verification remains disabled; paused state is explicit)')

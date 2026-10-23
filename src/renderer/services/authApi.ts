@@ -46,25 +46,24 @@ export class AuthApiError extends Error {
 
 function friendlyAuthMessage(code: string | undefined, status: number): string {
   switch (code) {
-    case 'VALIDATION_ERROR': return 'Confira os dados informados e tente novamente.'
-    case 'EMAIL_ALREADY_EXISTS': return 'Este e-mail já está cadastrado.'
-    case 'USERNAME_ALREADY_EXISTS': return 'Este nome de usuário já está em uso.'
-    case 'ACCOUNT_ALREADY_EXISTS': return 'O e-mail ou nome de usuário já está em uso.'
-    case 'INVALID_CREDENTIALS': return 'E-mail, nome de usuário ou senha incorretos.'
-    case 'INVALID_MFA_CODE': return 'O código de autenticação é inválido.'
+    case 'VALIDATION_ERROR': return '__i18n:auth.detailsInvalid'
+    case 'EMAIL_ALREADY_EXISTS': return '__i18n:auth.emailAlreadyRegistered'
+    case 'USERNAME_ALREADY_EXISTS': return '__i18n:auth.usernameAlreadyInUse'
+    case 'ACCOUNT_ALREADY_EXISTS': return '__i18n:auth.accountAlreadyInUse'
+    case 'INVALID_CREDENTIALS': return '__i18n:auth.invalidCredentials'
+    case 'INVALID_MFA_CODE': return '__i18n:auth.mfaCodeInvalid'
     case 'SESSION_EXPIRED':
-    case 'SESSION_REVOKED': return 'Sua sessão expirou. Entre novamente.'
-    case 'GOOGLE_NOT_CONNECTED': return 'Esta conta Google ainda não está vinculada à Anceryx.'
-    case 'GOOGLE_ACCOUNT_EXISTS': return 'Já existe uma conta com este e-mail. Entre com ela e vincule o Google nas configurações.'
-    case 'GOOGLE_EMAIL_UNVERIFIED': return 'A conta Google precisa ter um e-mail confirmado para criar uma conta Anceryx.'
-    case 'INVALID_OAUTH_STATE':
-    case 'INVALID_OAUTH_NONCE': return 'A autenticação Google expirou ou já foi usada. Inicie novamente.'
+    case 'SESSION_REVOKED': return '__i18n:auth.sessionExpired'
+    case 'GOOGLE_NOT_CONNECTED': return '__i18n:auth.accountGoogleNotConnected'
+    case 'GOOGLE_ACCOUNT_EXISTS': return '__i18n:auth.accountGoogleExists'
+    case 'GOOGLE_EMAIL_UNVERIFIED': return '__i18n:auth.googleEmailUnverified'
+    case 'INVALID_OAUTH_STATE': return '__i18n:auth.googleStateInvalid'
+    case 'INVALID_OAUTH_NONCE': return '__i18n:auth.googleNonceInvalid'
     default:
-      if (status === 429) return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
-      if (status >= 500) return 'O serviço está temporariamente indisponível. Tente novamente mais tarde.'
-      if (status === 400) return 'Confira os dados informados e tente novamente.'
-      if (status === 401 || status === 403) return 'Não foi possível autenticar. Verifique seus dados e tente novamente.'
-      return 'Não foi possível concluir a autenticação.'
+      if (status === 429) return '__i18n:auth.tooManyAttempts'
+      if (status >= 500) return '__i18n:auth.serviceUnavailable'
+      if (status === 400) return '__i18n:auth.detailsInvalid'
+      return '__i18n:auth.authenticationFailed'
   }
 }
 
@@ -86,7 +85,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       pageOrigin: window.location.origin,
       reason: 'network_or_csp_block',
     })
-    throw new AuthApiError('Não foi possível conectar à API da Anceryx. Verifique a conexão e tente novamente.')
+    throw new AuthApiError('__i18n:auth.apiConnectionFailed')
   }
   if (!response.ok) {
     let code: string | undefined
