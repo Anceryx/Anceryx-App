@@ -9,7 +9,7 @@ for (const locale of locales) {
     assert.equal(typeof value, 'string', `${locale}.${key} must be text`)
     assert.ok(value.trim().length > 0, `${locale}.${key} must not be empty`)
     assert.ok(value.length <= 240, `${locale}.${key} is too long for a compact interface string`)
-    for (const match of value.matchAll(/\{([^}]+)\}/g)) assert.ok(['count', 'name', 'premium', 'resolution', 'value', 'type', 'duration', 'time', 'action', 'ip', 'method', 'start', 'end', 'version', 'date', 'textLimit', 'uploadLimit'].includes(match[1]), `${locale}.${key} has an unsupported interpolation placeholder`)
+    for (const match of value.matchAll(/\{([^}]+)\}/g)) assert.ok(['count', 'name', 'premium', 'resolution', 'value', 'type', 'duration', 'time', 'action', 'ip', 'method', 'start', 'end', 'version', 'date', 'textLimit', 'uploadLimit', 'handle'].includes(match[1]), `${locale}.${key} has an unsupported interpolation placeholder`)
   }
 }
 

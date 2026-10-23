@@ -434,7 +434,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
               key={member.userId}
               icon={<Avatar name={profile.displayName} src={apiUser?.avatarUrl ?? null} size="sm" />}
               title={profile.displayName}
-              description={`@${profile.handle} - entrou ${formatTimestamp(new Date(member.joinedAt))}`}
+              description={t('forumManage.memberJoined', { handle: profile.handle, time: formatTimestamp(new Date(member.joinedAt)) })}
               meta={<span className="rounded-full border border-border bg-background-tertiary px-2 py-0.5">{t(roleLabelKey(member.role))}</span>}
               action={
                 <div className="flex flex-wrap justify-end gap-2">
@@ -478,7 +478,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
               <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-all text-sm font-semibold text-text-primary">{report.targetType === 'forum_topic' ? 'Tópico' : report.targetType === 'forum_reply' ? 'Resposta' : report.targetType === 'post' ? 'Publicação' : report.targetType === 'post_comment' ? 'Comentário' : 'Membro'} · {report.targetId}</h3><p className="mt-1 text-xs text-text-secondary">{report.reason} · {formatTimestamp(new Date(report.createdAt))}</p></div><span className="rounded-full border border-border bg-background-tertiary px-2 py-1 text-xs">{t(reportStatusKey(report.status))}</span></div>
               {report.details && <p className="whitespace-pre-wrap break-words text-sm text-text-primary">{report.details}</p>}
               {report.evidence.length > 0 && <details><summary className="cursor-pointer text-xs text-accent">{t('forumManage.viewEvidence')}</summary><ul className="mt-2 space-y-1">{report.evidence.map((evidence, index) => <li key={`${report.id}-${index}`} className="break-all text-xs text-text-secondary">{evidence}</li>)}</ul></details>}
-              {report.resolutionNote && <p className="text-xs text-text-secondary">Decisão registrada: {report.resolutionNote}</p>}
+              {report.resolutionNote && <p className="text-xs text-text-secondary">{t('forumManage.decisionRecorded', { value: report.resolutionNote })}</p>}
               {(report.status === 'pending' || report.status === 'reviewing') && <div className="space-y-2"><textarea aria-label={t('forumManage.resolutionNote')} value={reportResolutionNotes[report.id] ?? ''} onChange={(event) => setReportResolutionNotes((current) => ({ ...current, [report.id]: event.target.value.slice(0, 1000) }))} maxLength={1000} rows={2} placeholder={t('forumManage.resolutionNotePlaceholder')} className="w-full rounded-lg border border-border bg-background-primary p-2 text-xs text-text-primary" /><div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" disabled={pendingAction === `report:${report.id}`} loading={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'reviewing')}>{t('forumManage.takeReport')}</Button><Button size="sm" variant="secondary" disabled={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'resolved')}>{t('forumManage.resolveReport')}</Button><Button size="sm" variant="ghost" disabled={pendingAction === `report:${report.id}`} onClick={() => void reviewReport(report.id, 'dismissed')}>{t('forumManage.dismissReport')}</Button></div></div>}
             </article>
           ))}
@@ -540,7 +540,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
           {displayedTags.map((tag) => (
             <span key={tag} className="inline-flex items-center gap-1 rounded-full border border-border bg-background-tertiary px-2 py-1 text-xs text-text-secondary">
               #{tag}
-              <button type="button" onClick={() => removeTag(tag)} aria-label={`Remover tag ${tag}`} className="hover:text-accent-red">
+              <button type="button" onClick={() => removeTag(tag)} aria-label={t('forumManage.removeTagAria', { name: tag })} className="hover:text-accent-red">
                 <X size={12} />
               </button>
             </span>
@@ -588,7 +588,7 @@ const ForumManagementModal: React.FC<ForumManagementModalProps> = ({ forum, onCl
   )
 
   return (
-    <div className="titlebar-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label={`Gerenciar ${forum.name}`}>
+    <div className="titlebar-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label={t('forumManage.manageAria', { name: forum.name })}>
       <div className="flex h-full max-h-[780px] w-full max-w-[1120px] overflow-hidden rounded-2xl border border-border bg-background-primary shadow-2xl">
         <aside className="w-60 shrink-0 border-r border-border bg-background-secondary p-3">
           <div className="mb-4 px-2">

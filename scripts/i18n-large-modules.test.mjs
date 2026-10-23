@@ -37,6 +37,7 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'billing.heroTitle', 'billing.benefit.1', 'billing.result.successTitle',
     'forumManage.delete.title', 'forumManage.reportsDescription', 'forumManage.accessDescription',
     'forumManage.removeMemberDescription', 'forumManage.error.imageType', 'forumManage.notice.settingsSaved',
+    'forumManage.memberJoined', 'forumManage.decisionRecorded', 'forumManage.removeTagAria',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -93,7 +94,11 @@ assert.match(billingResult, /t\('billing\.result\.successTitle'\)/)
 assert.match(forumManagement, /t\('forumManage\.delete\.title'\)/)
 assert.match(forumManagement, /t\('forumManage\.reportsDescription'\)/)
 assert.match(forumManagement, /t\('forumManage\.notice\.settingsSaved'\)/)
+assert.match(forumManagement, /t\('forumManage\.memberJoined', \{ handle:/)
+assert.match(forumManagement, /t\('forumManage\.decisionRecorded', \{ value: report\.resolutionNote \}\)/)
+assert.match(forumManagement, /t\('forumManage\.removeTagAria', \{ name: tag \}\)/)
 assert.match(profile, /t\('profile\.communityMemberData', \{ name: communityContext\.forumName \}\)/)
+assert.match(profile, /t\('profile\.viewAchievement', \{ name: badge\.name \}\)/)
 assert.match(profile, /\{role\.name\}/)
 
 // Member-created topic/reply content and names stay in their original language.

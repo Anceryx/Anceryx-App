@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2075**.
-- Strings visíveis fixas detectadas: **183**.
-- Cobertura medida neste subconjunto: **91.9%**.
+- Chamadas de tradução detectadas: **2080**.
+- Strings visíveis fixas detectadas: **178**.
+- Cobertura medida neste subconjunto: **92.1%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -52,13 +52,13 @@
 | `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
 | `components/social/ForumDetailModal.tsx` | 0 | 9 | 0.0% |
-| `components/social/ForumManagementModal.tsx` | 143 | 7 | 95.3% |
+| `components/social/ForumManagementModal.tsx` | 147 | 3 | 98.0% |
 | `components/social/PostCard.tsx` | 44 | 2 | 95.7% |
 | `components/social/PostDetailModal.tsx` | 15 | 5 | 75.0% |
 | `components/social/ProfileMenu.tsx` | 27 | 1 | 96.4% |
 | `components/social/SetStatusModal.tsx` | 19 | 0 | 100.0% |
 | `components/social/StatusBubble.tsx` | 1 | 0 | 100.0% |
-| `components/social/UserProfileModal.tsx` | 78 | 6 | 92.9% |
+| `components/social/UserProfileModal.tsx` | 79 | 5 | 94.0% |
 | `components/ui/Avatar.tsx` | 1 | 0 | 100.0% |
 | `components/ui/Badge.tsx` | 1 | 0 | 100.0% |
 | `components/ui/EmojiPicker.tsx` | 5 | 0 | 100.0% |
@@ -90,6 +90,6 @@
 
 ## Verificação manual desta etapa
 
-Foram revisados os controles e estados das páginas de cobrança e do resultado do checkout; as seções de privacidade, notificações, perfil, atualizações, histórico de login e segurança; e os modais de gerenciamento de fórum e perfil. Os textos próprios desses módulos usam o catálogo nos três idiomas. Campos e conteúdo fornecidos por membros ou pelo servidor, incluindo nomes, biografias, tópicos, denúncias, evidências e notas de versão, permanecem sem tradução automática.
+Foram revisados os controles, estados e rótulos acessíveis das páginas de cobrança e do resultado do checkout; das seções de privacidade, notificações, perfil, atualizações, histórico de login e segurança; e dos modais de gerenciamento de fórum e perfil. Os textos de interface desses módulos usam o catálogo nos três idiomas. Nomes, biografias, tópicos, denúncias, evidências, justificativas e notas de versão recebidos como conteúdo permanecem intactos.
 
-A cobertura estática dos dois modais revisados é de 95,3% em `ForumManagementModal.tsx` e 92,9% em `UserProfileModal.tsx`. O restante medido corresponde a identificadores e metadados montados dinamicamente, pontuação e nomes próprios. Essa métrica não certifica toda a interface. O inventário ainda aponta módulos sociais e páginas com textos fixos, como criação e detalhes de fóruns, além de outras áreas que precisam de revisão nas próximas etapas.
+A medição estática aponta 98,0% em `ForumManagementModal.tsx` e 94,0% em `UserProfileModal.tsx`; os itens restantes nesses módulos são símbolos, separadores e conteúdo dinâmico preservado. A medição global de 92,1% é parcial. O inventário ainda identifica outros módulos com textos fixos, incluindo criação e detalhes de fóruns, Explore, Feed, perfil e telas de autenticação; essas áreas continuam pendentes de revisão.
