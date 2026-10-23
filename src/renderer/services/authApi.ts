@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './apiConfig'
 import { isWebPlatform } from '@/platform/platform'
+import { LocalizedUiError } from '@/utils/localizedError'
 
 function redactConnectionOrigin(value: string): string {
   try {
@@ -37,7 +38,7 @@ export type LoginResultDto = AuthSuccessDto | {
   expiresAt: string
 }
 
-export class AuthApiError extends Error {
+export class AuthApiError extends LocalizedUiError {
   constructor(message: string, readonly status = 0) {
     super(message)
     this.name = 'AuthApiError'

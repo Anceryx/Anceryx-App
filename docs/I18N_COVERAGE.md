@@ -2,7 +2,7 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2214**.
+- Chamadas de tradução detectadas: **2213**.
 - Strings visíveis fixas detectadas: **104**.
 - Cobertura medida neste subconjunto: **95.5%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
@@ -20,7 +20,7 @@
 | `components/layout/RealtimeConnectionNotice.tsx` | 1 | 0 | 100.0% |
 | `components/layout/ReleaseNotesModal.tsx` | 5 | 0 | 100.0% |
 | `components/layout/TitleBar.tsx` | 6 | 2 | 75.0% |
-| `components/layout/UpdateModal.tsx` | 15 | 0 | 100.0% |
+| `components/layout/UpdateModal.tsx` | 14 | 0 | 100.0% |
 | `components/messages/CallHistoryMessage.tsx` | 7 | 0 | 100.0% |
 | `components/messages/ConversationHeader.tsx` | 9 | 1 | 90.0% |
 | `components/messages/EmptyConversation.tsx` | 3 | 0 | 100.0% |
@@ -104,6 +104,10 @@
 - `pages/LoginPage.tsx` e `RegisterPage.tsx`: a conjunção entre os links de termos e privacidade é localizada para preservar a gramática nos três idiomas.
 - `pages/WebOAuthCallbackPage.tsx` e `router/WebDeepLinkPage.tsx`: erros/estados do retorno OAuth e a abertura de links internos usam o catálogo. Esses componentes de compatibilidade não reativam o produto web.
 - `services/authApi.ts`: erros de autenticação para códigos conhecidos agora retornam chaves localizáveis; erros desconhecidos continuam com mensagem genérica segura e a resposta livre da API não é interpretada nem traduzida.
+- `pages/LoginPage.tsx` e `pages/RegisterPage.tsx`: estados locais de configuração e abertura do acesso Google usam chaves do catálogo junto com os demais erros de autenticação.
+- `services/apiClient.ts`, `services/mediaApi.ts`, `services/realtimeClient.ts` e `services/webrtc/*`: mensagens próprias do cliente para falhas de conexão, upload, mídia, tela e voz usam erros que consultam o idioma ativo no momento da leitura. Mensagens livres recebidas da API continuam preservadas.
+- `services/apiConfig.ts`: erros locais de URL, protocolo e exigência de HTTPS em produção usam o catálogo; a lista de origens permitidas permanece a mesma.
+- `components/layout/UpdateModal.tsx`: os estados de atualização e falhas seguras são localizados no renderer; textos de notas de versão fornecidos junto com a versão mantêm o idioma original do publicador.
 
 ## Ocorrências restantes e classificação
 
@@ -120,6 +124,6 @@
 - `lib/billingData.ts` e `lib/releaseNotes.ts`: literais residuais são dados não renderizados diretamente; as páginas/modal consomem as traduções do catálogo.
 - `pages/FeedPage.tsx`: resíduos são aspas e marcadores tipográficos ao redor de texto de usuário.
 - `utils/communityVoiceControls.ts`: os literais são chaves tipadas do catálogo, consumidas por `t()` no componente de controles de voz.
-- `services/mediaApi.ts`, `services/apiClient.ts`, `services/realtimeClient.ts`, `services/webrtc/peerConnection.ts`, `services/webrtc/communityVoiceClient.ts` e `main/updater/*`: permanecem mensagens fixas geradas nos serviços/processo principal. A localização desses fluxos, preservando erros livres do servidor e o contrato IPC do updater, ainda requer uma etapa dedicada.
+- `main/updater/*`: mensagens internas ainda chegam no snapshot em português, mas o renderer agora exibe rótulos localizados pelo estado; o texto é usado apenas como marcador interno para identificar a pausa de segurança, sem mostrar a frase original.
 
 A tabela automatizada tem falsos positivos e não consegue medir arrays dinâmicos, strings de serviço ou o conteúdo efetivamente renderizado. O valor de 95,5% é apenas a razão do subconjunto estático contabilizado, não uma declaração de cobertura total. QA visual dos três idiomas ainda é necessário.

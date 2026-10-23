@@ -11,4 +11,5 @@ assert.match(updater, /if \(!this\.snapshot\.configured\) return this\.getSnapsh
 assert.match(updater, /if \(!this\.snapshot\.configured \|\| this\.snapshot\.state !== 'available'\)/)
 assert.match(about, /t\('settings\.about\.securePaused'\)/)
 assert.match(modal, /t\('updates\.securityPaused'\)/)
+for (const key of ['updates.upToDate', 'updates.installing', 'updates.failed']) assert.match(modal, new RegExp(`'${key}'`))
 console.log('updater UI state smoke: PASS (manifest verification remains disabled; paused state is explicit)')

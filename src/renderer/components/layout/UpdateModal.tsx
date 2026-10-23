@@ -41,6 +41,22 @@ const UpdateModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
 
   const restart = async () => { setInfo(await window.electronAPI!.updater.restart()) }
   const busy = info.state === 'checking' || info.state === 'downloading' || info.state === 'installing'
+  const statusKey: Record<UpdateSnapshot['state'], Parameters<typeof t>[0]> = {
+    idle: 'updates.checkStatus',
+    checking: 'updates.checking',
+    available: 'updates.checkStatus',
+    'not-available': 'updates.upToDate',
+    downloading: 'updates.downloading',
+    downloaded: 'updates.ready',
+    installing: 'updates.installing',
+    error: 'updates.failed',
+  }
+  const securePause = !info.configured && info.message?.includes('assinatura criptográfica')
+  const statusText = securePause
+    ? t('updates.securityPaused')
+    : info.state === 'available'
+      ? t('updates.available', { name: info.latestVersion ?? '' })
+      : t(statusKey[info.state])
 
   return (
     <div className="titlebar-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label={t('updates.title')}>
@@ -55,7 +71,7 @@ const UpdateModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
         <div className="space-y-4 p-4">
           <div className="rounded-lg border border-border bg-background-tertiary p-3">
             <p className="text-sm font-medium text-text-primary">
-              {!info.configured && info.message?.includes('assinatura criptográfica') ? t('updates.securityPaused') : info.state === 'available' ? t('updates.available', { name: info.latestVersion ?? '' }) : info.state === 'downloaded' ? t('updates.ready') : info.message || t('updates.checkStatus')}
+              {statusText}
             </p>
           </div>
           {info.releaseNotes.length > 0 && <ul className="list-disc space-y-1 pl-5">{info.releaseNotes.map((item) => <li key={item} className="text-sm text-text-secondary">{item}</li>)}</ul>}

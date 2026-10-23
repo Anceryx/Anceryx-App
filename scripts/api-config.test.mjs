@@ -14,3 +14,9 @@ test('keeps normal development and production API targets unchanged', () => {
 test('does not allow loopback overrides in a normal production build', () => {
   assert.throws(() => resolveApiBaseUrl('http://127.0.0.1:3000', true), /API HTTPS oficial/)
 })
+
+test('localizes invalid API configuration without weakening the production origin guard', () => {
+  assert.throws(() => resolveApiBaseUrl('not a URL', false), /endereço da API da Anceryx é inválido/)
+  assert.throws(() => resolveApiBaseUrl('file:///tmp/api', false), /protocolo do endereço da API da Anceryx é inválido/)
+  assert.throws(() => resolveApiBaseUrl('https://example.invalid', true), /API HTTPS oficial/)
+})

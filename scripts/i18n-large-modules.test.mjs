@@ -27,6 +27,8 @@ const registerPage = await readFile(new URL('../src/renderer/pages/RegisterPage.
 const webOAuthCallback = await readFile(new URL('../src/renderer/pages/WebOAuthCallbackPage.tsx', import.meta.url), 'utf8')
 const webDeepLink = await readFile(new URL('../src/renderer/router/WebDeepLinkPage.tsx', import.meta.url), 'utf8')
 const authApi = await readFile(new URL('../src/renderer/services/authApi.ts', import.meta.url), 'utf8')
+const mediaApi = await readFile(new URL('../src/renderer/services/mediaApi.ts', import.meta.url), 'utf8')
+const apiClient = await readFile(new URL('../src/renderer/services/apiClient.ts', import.meta.url), 'utf8')
 
 for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
   for (const key of [
@@ -72,7 +74,14 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'auth.googleHandoffFailed', 'auth.completingGoogleSignIn', 'common.openingAnceryxLink',
     'auth.detailsInvalid', 'auth.emailAlreadyRegistered', 'auth.usernameAlreadyInUse', 'auth.accountAlreadyInUse',
     'auth.invalidCredentials', 'auth.sessionExpired', 'auth.tooManyAttempts', 'auth.serviceUnavailable',
-    'auth.authenticationFailed', 'auth.apiConnectionFailed',
+    'auth.authenticationFailed', 'auth.apiConnectionFailed', 'auth.browserCannotOpenGoogle',
+    'common.apiConnectionFailed', 'common.apiAttachmentConnectionFailed', 'common.apiUrlInvalid',
+    'common.productionApiHttpsRequired', 'common.apiProtocolInvalid', 'common.realtimeUnavailable',
+    'media.invalidLocalFile', 'media.uploadCanceled', 'media.invalidResponse', 'media.uploadSizeExceeded',
+    'media.premiumUploadExpired', 'media.uploadInterrupted', 'media.updateRequired', 'media.uploadUnconfirmed',
+    'media.uploadForbidden', 'media.signatureMismatch', 'media.integrityInvalid', 'media.storageUnavailable', 'media.uploadFailed',
+    'calls.screenShareUnsupported', 'calls.mediaPermissionDenied', 'calls.mediaDeviceNotFound',
+    'calls.mediaDeviceInUse', 'calls.mediaDeviceUnavailable', 'communityVoice.channelRequiredForScreenShare',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -182,7 +191,9 @@ assert.match(voiceSettings, /t\('settings\.voice\.testAudio'\)/)
 assert.match(settingsNav, /t\('settings\.appVersionLabel', \{ version:/)
 assert.match(messagesPage, /t\('messages\.gifProviderAttribution'\)/)
 assert.match(loginPage, /t\('auth\.termsPrivacyAnd'\)/)
+assert.match(loginPage, /__i18n:auth\.googleNotConfigured/)
 assert.match(registerPage, /t\('auth\.termsPrivacyAnd'\)/)
+assert.match(registerPage, /__i18n:auth\.browserCannotOpenGoogle/)
 assert.match(webOAuthCallback, /t\('auth\.googleHandoffFailed'\)/)
 assert.match(webOAuthCallback, /t\('auth\.backToLogin'\)/)
 assert.match(webOAuthCallback, /t\('auth\.completingGoogleSignIn'\)/)
@@ -191,6 +202,9 @@ assert.match(authApi, /case 'EMAIL_ALREADY_EXISTS': return '__i18n:auth\.emailAl
 assert.match(authApi, /case 'INVALID_CREDENTIALS': return '__i18n:auth\.invalidCredentials'/)
 assert.match(authApi, /case 'SESSION_REVOKED': return '__i18n:auth\.sessionExpired'/)
 assert.doesNotMatch(authApi, /payload\.message|error\?\.message/)
+assert.match(mediaApi, /MEDIA_SIZE_INVALID: '__i18n:media\.uploadSizeExceeded'/)
+assert.match(mediaApi, /payload\.error\?\.message \|\| payload\.message/)
+assert.match(apiClient, /__i18n:common\.apiConnectionFailed/)
 assert.match(privacySettings, /\{user\.displayName\}/)
 assert.match(privacySettings, /\{user\.username\}/)
 assert.match(profileSettings, /\{request\.user\.displayName\}/)

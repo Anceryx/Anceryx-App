@@ -10,6 +10,10 @@
 - Os controles de teste de áudio, a identificação da versão nas configurações e a ligação localizada entre os termos e a política de privacidade agora acompanham o idioma ativo. A atribuição da KLIPY nas mensagens também usa o catálogo.
 - Os estados dos fluxos de retorno OAuth e abertura de links internos também acompanham o idioma ativo nas três localidades.
 - Os erros de autenticação com códigos conhecidos agora são armazenados como chaves e renderizados conforme o idioma atual; respostas livres inesperadas do servidor continuam sem tradução arbitrária.
+- Erros locais de API, upload, conexão em tempo real e permissões de mídia agora usam mensagens dinâmicas do catálogo; respostas livres da API permanecem intactas.
+- O diálogo de atualização localiza estados e erros seguros por estado; notas de versão recebidas pelo updater continuam no idioma fornecido pelo publicador.
+- Os avisos de configuração e abertura do Google nas telas de entrada e cadastro também acompanham o idioma ativo.
+- Erros de configuração inválida da URL da API também passaram a usar o catálogo sem alterar os destinos permitidos em produção.
 
 # Em desenvolvimento
 

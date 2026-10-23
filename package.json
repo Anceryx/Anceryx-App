@@ -48,6 +48,7 @@
     "test:i18n-catalog": "node --experimental-strip-types scripts/i18n-catalog.test.mjs",
     "test:i18n-large-modules": "node --experimental-strip-types scripts/i18n-large-modules.test.mjs",
     "test:i18n-global-ui": "node --experimental-strip-types scripts/i18n-global-ui.test.mjs",
+    "test:localized-errors": "node --experimental-strip-types scripts/localized-error.test.mjs",
     "i18n:coverage": "node scripts/i18n-coverage.mjs",
     "i18n:coverage:write": "node scripts/i18n-coverage.mjs --write",
     "test:keyboard-shortcuts": "node --experimental-strip-types scripts/keyboard-shortcuts.test.mjs",

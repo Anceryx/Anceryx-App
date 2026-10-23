@@ -160,7 +160,7 @@ const LoginPage: React.FC = () => {
     setError(null)
     try {
       const result = await authApi.startGoogleLogin()
-      if (!result.available || !result.authUrl) throw new Error('Google OAuth ainda não está configurado no servidor.')
+      if (!result.available || !result.authUrl) { setError('__i18n:auth.googleNotConfigured'); return }
       if (isWebPlatform) window.location.assign(result.authUrl)
       else window.electronAPI?.openExternal(result.authUrl)
     } catch (reason) {

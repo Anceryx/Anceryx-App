@@ -54,7 +54,7 @@ const RegisterPage: React.FC = () => {
         return
       }
       if (payload.code) void consumeGoogleHandoff(payload.code).catch((reason: unknown) => {
-        setGlobalError(reason instanceof AuthApiError ? reason.message : 'Não foi possível concluir o cadastro com Google.')
+        setGlobalError(reason instanceof AuthApiError ? reason.message : '__i18n:auth.registerGoogleFailed')
       })
     })
     return unsubscribe
@@ -65,12 +65,12 @@ const RegisterPage: React.FC = () => {
     setGlobalError(null)
     try {
       const result = await authApi.startGoogleRegistration()
-      if (!result.available || !result.authUrl) throw new Error('O cadastro com Google não está configurado no servidor.')
+      if (!result.available || !result.authUrl) throw new AuthApiError('__i18n:auth.googleNotConfigured')
       if (isWebPlatform) window.location.assign(result.authUrl)
       else if (window.electronAPI?.openExternal) window.electronAPI.openExternal(result.authUrl)
-      else throw new Error('O navegador não pode abrir o login com Google.')
+      else throw new AuthApiError('__i18n:auth.browserCannotOpenGoogle')
     } catch (error) {
-      setGlobalError(error instanceof AuthApiError || error instanceof Error ? error.message : 'Não foi possível iniciar o cadastro com Google.')
+      setGlobalError(error instanceof AuthApiError || error instanceof Error ? error.message : '__i18n:auth.registerGoogleFailed')
     } finally {
       setGoogleLoading(false)
     }

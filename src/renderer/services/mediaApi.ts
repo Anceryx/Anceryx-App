@@ -1,6 +1,7 @@
 import { apiRequest, API_BASE_URL } from '@/services/apiClient'
 import { resolveMediaUrl } from '@/utils/media'
 import { useAuthStore } from '@/store/authStore'
+import { LocalizedUiError } from '@/utils/localizedError'
 
 export type MediaScope = 'user-avatar' | 'user-banner' | 'forum-icon' | 'forum-banner' | 'post-image' | 'dm-image' | 'community-message'
 export type MediaUploadContext = { recipientUserId?: string; communityId?: string; channelId?: string }
@@ -16,7 +17,7 @@ export interface UploadedMediaAsset {
   publicUrl: string
 }
 
-export class MediaApiError extends Error {
+export class MediaApiError extends LocalizedUiError {
   constructor(message: string, readonly status = 0, readonly code?: string) {
     super(message)
     this.name = 'MediaApiError'
@@ -36,7 +37,7 @@ export { API_BASE_URL }
 
 function dataUrlToPayload(dataUrl: string): { mimeType: string; dataBase64: string } {
   const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/)
-  if (!match) throw new MediaApiError('Arquivo local inválido.', 400)
+  if (!match) throw new MediaApiError('__i18n:media.invalidLocalFile', 400)
   return { mimeType: match[1], dataBase64: match[2] }
 }
 
@@ -56,7 +57,7 @@ async function uploadDataUrl(scope: MediaScope, filename: string, dataUrl: strin
 function uploadFile(scope: MediaScope, file: File, metadata?: Record<string, unknown>, context?: MediaUploadContext, options: MediaUploadOptions = {}): Promise<UploadedMediaAsset> {
   return new Promise((resolve, reject) => {
     if (options.signal?.aborted) {
-      reject(new MediaApiError('Envio cancelado.', 0, 'MEDIA_UPLOAD_CANCELED'))
+      reject(new MediaApiError('__i18n:media.uploadCanceled', 0, 'MEDIA_UPLOAD_CANCELED'))
       return
     }
     const xhr = new XMLHttpRequest()
@@ -79,26 +80,26 @@ function uploadFile(scope: MediaScope, file: File, metadata?: Record<string, unk
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) options.onProgress?.({ loaded: event.loaded, total: event.total, percent: Math.round(event.loaded * 100 / event.total) })
     }
-    xhr.onerror = () => { cleanup(); reject(new MediaApiError('Não foi possível conectar à API da Anceryx. Verifique a conexão e tente novamente.')) }
-    xhr.onabort = () => { cleanup(); reject(new MediaApiError('Envio cancelado.', 0, 'MEDIA_UPLOAD_CANCELED')) }
+    xhr.onerror = () => { cleanup(); reject(new MediaApiError('__i18n:common.apiConnectionFailed')) }
+    xhr.onabort = () => { cleanup(); reject(new MediaApiError('__i18n:media.uploadCanceled', 0, 'MEDIA_UPLOAD_CANCELED')) }
     xhr.onload = () => {
       cleanup()
       let payload: { asset?: UploadedMediaAsset; error?: { message?: string; code?: string }; message?: string }
-      try { payload = JSON.parse(xhr.responseText) as typeof payload } catch { reject(new MediaApiError('A API retornou uma resposta inválida.', xhr.status)); return }
+      try { payload = JSON.parse(xhr.responseText) as typeof payload } catch { reject(new MediaApiError('__i18n:media.invalidResponse', xhr.status)); return }
       if (xhr.status < 200 || xhr.status >= 300 || !payload.asset) {
         const code = payload.error?.code
         const messages: Record<string, string> = {
-          MEDIA_SIZE_INVALID: 'O arquivo ultrapassa o limite permitido para sua conta.',
-          MEDIA_PREMIUM_REQUIRED: 'O benefício Anceryx+ terminou antes da conclusão do envio; o arquivo não foi salvo.',
-          MEDIA_UPLOAD_INTERRUPTED: 'O envio foi interrompido. Tente novamente.',
-          MEDIA_BINARY_REQUIRED: 'Atualize o aplicativo para enviar este anexo.',
-          MEDIA_UPLOAD_IDEMPOTENCY_CONFLICT: 'Não foi possível confirmar este envio. Selecione o arquivo novamente.',
-          MEDIA_UPLOAD_FORBIDDEN: 'Você não tem permissão para anexar arquivos neste local.',
-          MEDIA_SIGNATURE_MISMATCH: 'O conteúdo do arquivo não corresponde ao formato declarado.',
-          MEDIA_INTEGRITY_INVALID: 'Não foi possível validar a integridade deste arquivo.',
-          MEDIA_STORAGE_UNAVAILABLE: 'O armazenamento de mídia está temporariamente indisponível.',
+          MEDIA_SIZE_INVALID: '__i18n:media.uploadSizeExceeded',
+          MEDIA_PREMIUM_REQUIRED: '__i18n:media.premiumUploadExpired',
+          MEDIA_UPLOAD_INTERRUPTED: '__i18n:media.uploadInterrupted',
+          MEDIA_BINARY_REQUIRED: '__i18n:media.updateRequired',
+          MEDIA_UPLOAD_IDEMPOTENCY_CONFLICT: '__i18n:media.uploadUnconfirmed',
+          MEDIA_UPLOAD_FORBIDDEN: '__i18n:media.uploadForbidden',
+          MEDIA_SIGNATURE_MISMATCH: '__i18n:media.signatureMismatch',
+          MEDIA_INTEGRITY_INVALID: '__i18n:media.integrityInvalid',
+          MEDIA_STORAGE_UNAVAILABLE: '__i18n:media.storageUnavailable',
         }
-        reject(new MediaApiError((code && messages[code]) || payload.error?.message || payload.message || 'Não foi possível enviar o arquivo.', xhr.status, code))
+        reject(new MediaApiError((code && messages[code]) || payload.error?.message || payload.message || '__i18n:media.uploadFailed', xhr.status, code))
         return
       }
       uploadRequestIds.delete(file)
