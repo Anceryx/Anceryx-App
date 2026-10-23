@@ -16,6 +16,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
 
 ## [0.15.1] — preparação local (não publicada)
+- O Explore abre em descoberta com publicações e fóruns; a busca só é executada após confirmação e revela então as categorias de resultados.
 - O `.env.example` usa a API local para desenvolvimento; builds empacotados continuam limitados à API oficial de produção.
 - O sino de notificações agora tem uma faixa reservada no layout do Dashboard, separada dos controles das telas Feed, DMs e Fóruns.
 - Separadores de data em DMs deixam de ficar sticky, evitando que se sobreponham às mensagens durante a rolagem.
