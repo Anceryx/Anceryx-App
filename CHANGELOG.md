@@ -18,6 +18,11 @@
 - O compositor e o estado vazio de conversas localizam anexos, envio e acessibilidade sem alterar o texto digitado ou recebido nas mensagens.
 - O cartão de fórum localiza seus rótulos e formata contagens conforme o idioma, mantendo nomes, descrições e tags definidos pelos membros.
 
+## Internacionalização — chamadas e navegação de configurações
+
+- Os controles de chamada, a sobreposição e a seleção de dispositivos de áudio/vídeo agora usam o catálogo pt-BR, en-US e es-ES.
+- A navegação de configurações e os controles de navegação móvel usam rótulos localizados; as seções internas ainda precisam de cobertura.
+
 ## Ajustes locais — 22/10/2026
 
 - A barra de título do Electron agora aparece também no login e no cadastro, sem duplicação no Dashboard; o build web mantém a barra oculta.

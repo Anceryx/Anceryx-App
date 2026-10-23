@@ -16,6 +16,7 @@ import { dmCallClient } from '@/services/webrtc/dmCallClient'
 import DeviceSelector from './DeviceSelector'
 import VideoTile from './VideoTile'
 import { Avatar } from '@/components/ui/index'
+import { useTranslation } from '@/i18n'
 
 interface CallOverlayProps {
   onOpenVoiceSettings?: () => void
@@ -29,6 +30,7 @@ function formatDuration(secs: number): string {
 }
 
 const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
+  const t = useTranslation()
   // ── Estado do store ──────────────────────────────────────────────────────
   const {
     callStatus,
@@ -55,7 +57,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
   const remoteAudioRef = useRef<HTMLAudioElement>(null)
 
   // Dados do usuário remoto
-  const remoteName = remoteUserName ?? 'Usuario'
+  const remoteName = remoteUserName ?? t('calls.user')
   const remoteAvatar = call.remoteAvatar
 
   useEffect(() => {
@@ -130,7 +132,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
       style={{ background: '#0a0a0c' }}
       role="dialog"
       aria-modal="true"
-      aria-label={`Chamada com ${remoteName}`}
+      aria-label={t('calls.withUser', { name: remoteName })}
     >
       {/* Elemento de áudio oculto para stream remoto (futuro signaling) */}
       <audio ref={remoteAudioRef} autoPlay style={{ display: 'none' }} aria-hidden="true" />
@@ -140,8 +142,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
         <button
           type="button"
           onClick={() => useCallStore.getState().setExpanded(false)}
-          aria-label="Minimizar chamada"
-          title="Minimizar"
+          aria-label={t('calls.minimize')}
+          title={t('calls.minimize')}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           <Minimize2 size={18} />
@@ -166,7 +168,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
               <div className="absolute inset-0">
                 <VideoTile
                   stream={screenStream}
-                  label="Sua tela"
+                  label={t('calls.yourScreen')}
                   variant="full"
                   className="w-full h-full"
                 />
@@ -178,7 +180,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
               <VideoTile
                 stream={localStream}
                 mirror
-                label="Você"
+                label={t('common.you')}
                 variant="pip"
                 camDisabled={!remoteStream?.getVideoTracks().length}
                 className="w-full h-full"
@@ -191,11 +193,11 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
                 <p className="text-white font-semibold text-base leading-tight">{remoteName}</p>
                 <p className="text-white/60 text-sm">
                   {legacyStatus === 'connecting'
-                    ? `Conectando${dotsStr}`
+                    ? `${t('calls.connecting')}${dotsStr}`
                     : legacyStatus === 'active'
                       ? formatDuration(duration)
                       : legacyStatus === 'error'
-                        ? 'Erro na chamada'
+                        ? t('calls.callError')
                         : ''}
                 </p>
               </div>
@@ -204,7 +206,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
 
           {/* Controles inferiores */}
           <div className="shrink-0 px-6 py-5 bg-gradient-to-t from-black/80 to-transparent">
-            <div className="flex items-center justify-center gap-3" role="toolbar" aria-label="Controles da chamada">
+            <div className="flex items-center justify-center gap-3" role="toolbar" aria-label={t('calls.controls')}>
               <DeviceSelector
                 type="audio"
                 enabled={micEnabled}
@@ -226,8 +228,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
               <button
                 type="button"
                 onClick={() => { void call.toggleScreen() }}
-                aria-label={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
-                title={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
+                aria-label={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
+                title={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
                 aria-pressed={screenEnabled}
                 className={[
                   'w-12 h-12 flex items-center justify-center rounded-full transition-colors',
@@ -244,8 +246,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
               <button
                 type="button"
                 onClick={call.hangUp}
-                aria-label="Encerrar chamada"
-                title="Encerrar"
+                aria-label={t('calls.end')}
+                title={t('calls.end')}
                 className="w-12 h-12 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-500 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
               >
                 <PhoneOff size={20} />
@@ -278,7 +280,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
               {legacyStatus === 'connecting' && (
                 <>
                   <PhoneCall size={14} className="animate-pulse" />
-                  <span>Conectando{dotsStr}</span>
+                  <span>{t('calls.connecting')}{dotsStr}</span>
                 </>
               )}
               {legacyStatus === 'active' && (
@@ -287,7 +289,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
               {legacyStatus === 'error' && (
                 <>
                   <AlertCircle size={14} className="text-red-400" />
-                  <span className="text-red-400">Não foi possível conectar</span>
+                  <span className="text-red-400">{t('calls.connectFailed')}</span>
                 </>
               )}
             </div>
@@ -296,12 +298,12 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
           {/* Aviso: sem signaling */}
           {legacyStatus === 'active' && (
             <p className="text-xs text-white/30 text-center max-w-xs">
-              Preview local — chamada real requer servidor de signaling.
+              {t('calls.localPreview')}
             </p>
           )}
 
           {/* Controles */}
-          <div className="flex items-center justify-center gap-3" role="toolbar" aria-label="Controles da chamada">
+          <div className="flex items-center justify-center gap-3" role="toolbar" aria-label={t('calls.controls')}>
             <DeviceSelector
               type="audio"
               enabled={micEnabled}
@@ -315,8 +317,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
             <button
               type="button"
               onClick={() => { void call.toggleScreen() }}
-              aria-label={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
-              title={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
+              aria-label={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
+              title={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
               aria-pressed={screenEnabled}
               className={[
                 'w-12 h-12 flex items-center justify-center rounded-full transition-colors',
@@ -333,8 +335,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ onOpenVoiceSettings }) => {
             <button
               type="button"
               onClick={call.hangUp}
-              aria-label="Encerrar chamada"
-              title="Encerrar"
+              aria-label={t('calls.end')}
+              title={t('calls.end')}
               className="w-12 h-12 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-500 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             >
               <PhoneOff size={20} />
