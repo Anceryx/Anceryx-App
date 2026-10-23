@@ -32,6 +32,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - Fóruns participados abrem em uma área integrada ao aplicativo, restauram o último canal acessível e preservam a sessão de voz ao alternar entre módulos. O painel separa organização, cargos/permissões e convites.
 - A criação de Fórum mantém uploads bem-sucedidos para evitar reenvio e oferece continuar sem a imagem opcional cujo envio falhou. O player registra estado de rede e decodificação para distinguir melhor falhas de reprodução.
 - Correções locais de interface: mensagens da comunidade agora usam avatares, emojis e figurinhas existentes; mensagens consecutivas são agrupadas, participantes de voz mostram avatar e estado de áudio, e janelas sobrepostas respeitam a barra de título do Windows.
+- Vídeos MP4 privados em DMs tentam uma única reprodução alternativa com ticket novo e download limitado a 25 MB; erros de permissão, limite temporário, rede, formato e tamanho têm mensagens distintas. A causa da falha observada ainda depende de coleta real no Electron Windows.
 
 - Prepara o cliente e o lockfile para a versão `0.15.1`, com `electron-builder` `26.18.0` e `electron-updater` `6.8.11` estáveis.
 - Mantém o atualizador integrado desativado. Os erros de assinatura inválida/ausente e de integridade passam a ter mensagens específicas, sem expor detalhes internos.
