@@ -41,7 +41,7 @@ const UpdateModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
   const busy = info.state === 'checking' || info.state === 'downloading' || info.state === 'installing'
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Atualização do Anceryx">
+    <div className="titlebar-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Atualização do Anceryx">
       <div className="w-full max-w-md rounded-xl border border-border bg-background-secondary shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>

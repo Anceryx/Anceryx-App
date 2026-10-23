@@ -120,7 +120,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({ src, shape, aspect, out
   const maskId = `crop-mask-${React.useId().replace(/:/g, '')}`
   const cropLeft = (frameWidth + 48) / 2 - frameWidth / 2
   const cropTop = (frameHeight + 32) / 2 - frameHeight / 2
-  return <div ref={overlayRef} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75" onMouseDown={(event) => { if (event.target === event.currentTarget) close() }}>
+  return <div ref={overlayRef} className="titlebar-overlay fixed inset-0 z-[60] flex items-center justify-center bg-black/75" onMouseDown={(event) => { if (event.target === event.currentTarget) close() }}>
     <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={`${maskId}-title`} className="mx-3 flex max-h-[92vh] w-full max-w-[760px] flex-col overflow-auto rounded-xl border border-border bg-background-secondary shadow-2xl" onKeyDown={handleDialogKeyDown}>
       <header className="flex items-center justify-between border-b border-border px-5 py-4"><h2 id={`${maskId}-title`} className="text-base font-semibold text-text-primary">{title}</h2><button ref={closeButtonRef} onClick={close} className="text-text-secondary hover:text-text-primary" aria-label="Fechar edição"><X size={18} /></button></header>
       <div className="flex min-h-[190px] items-center justify-center overflow-auto bg-background-primary py-4">

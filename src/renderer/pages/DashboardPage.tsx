@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore'
 import { useCallStore } from '@/store/callStore'
 import { useUIStore } from '@/store/uiStore'
 import { Avatar } from '@/components/ui/index'
-import TitleBar from '@/components/layout/TitleBar'
 import NotificationToast from '@/components/layout/NotificationToast'
 import NotificationCenter from '@/components/layout/NotificationCenter'
 import AchievementToast from '@/components/layout/AchievementToast'
@@ -150,8 +149,7 @@ const DashboardPage: React.FC = () => {
     }
   }
   return (
-    <div className="relative flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background-primary">
-      <TitleBar />
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background-primary">
       <RealtimeConnectionNotice />
       <AchievementToast />
       <div className="absolute right-24 top-10 z-40 md:right-4">

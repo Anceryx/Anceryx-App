@@ -63,8 +63,8 @@ const TitleBar: React.FC = () => {
             <button
               onClick={() => setUpdateOpen(true)}
               className="h-full px-3 text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors"
-              aria-label="Atualizacao disponivel"
-              title="Atualizacao disponivel"
+              aria-label="Atualização disponível"
+              title="Atualização disponível"
             >
               <Download size={13} />
             </button>

@@ -81,14 +81,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
   return (
     /* Overlay fullscreen */
     <div
-      className="motion-backdrop-in fixed inset-0 z-50 flex bg-black/70 p-0 md:p-4"
+      className="titlebar-overlay motion-backdrop-in fixed inset-0 z-50 flex bg-black/70 p-0 md:p-4"
       aria-modal="true"
       role="dialog"
       data-shortcut-scope="settings"
       aria-label={translate('settings.title', locale)}
     >
       {/* Modal container */}
-      <div className="motion-surface-in mx-auto flex h-[100dvh] w-full max-w-[1160px] overflow-hidden border-border bg-background-primary shadow-2xl md:h-full md:rounded-2xl md:border">
+      <div className="motion-surface-in mx-auto flex h-[calc(100dvh-var(--app-titlebar-height,0px))] w-full max-w-[1160px] overflow-hidden border-border bg-background-primary shadow-2xl md:h-full md:rounded-2xl md:border">
 
         {/* Coluna esquerda — navegação */}
         <div className="hidden md:flex">

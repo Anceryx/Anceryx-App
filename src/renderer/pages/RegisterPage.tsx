@@ -116,7 +116,7 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background-primary">
+    <div className="h-full min-h-0 flex items-center justify-center bg-background-primary">
       <div className="w-full max-w-sm px-4">
         {/* Wordmark */}
         <div className="text-center mb-8">

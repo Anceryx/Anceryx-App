@@ -237,7 +237,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      className="titlebar-overlay fixed inset-0 z-[70] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Detalhes do post"

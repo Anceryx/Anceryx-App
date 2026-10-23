@@ -33,7 +33,7 @@ const CommunityManagementModal: React.FC<CommunityManagementModalProps> = ({
   onClose,
   children,
 }) => (
-  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 sm:p-5" role="dialog" aria-modal="true" aria-label={`Gerenciar ${communityName}`} onClick={(event) => event.target === event.currentTarget && onClose()}>
+  <div className="titlebar-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 sm:p-5" role="dialog" aria-modal="true" aria-label={`Gerenciar ${communityName}`} onClick={(event) => event.target === event.currentTarget && onClose()}>
     <div className="flex h-full max-h-[900px] w-full max-w-[1400px] overflow-hidden rounded-2xl border border-border bg-background-primary shadow-2xl">
       <aside className="hidden w-64 shrink-0 border-r border-border bg-background-secondary p-3 sm:block">
         <div className="mb-4 border-b border-border px-2 pb-3">

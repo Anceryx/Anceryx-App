@@ -1,5 +1,9 @@
 # Registro de alterações
 
+## Ajustes locais — 22/10/2026
+
+- A barra de título do Electron agora aparece também no login e no cadastro, sem duplicação no Dashboard; o build web mantém a barra oculta.
+- Modais, gavetas e sobreposições respeitam a altura da barra de título, e o modal de configurações se ajusta ao espaço vertical disponível.
 
 Este arquivo registra versões preparadas a partir do histórico disponível no repositório. O snapshot independente não importa o histórico privado anterior; por isso, esta versão registra a linha de base do código-fonte e não atribui mudanças específicas a commits antigos.
 
