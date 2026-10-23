@@ -3,6 +3,7 @@ import { realtimeClient } from '@/services/realtimeClient'
 import { useCallStore, getLocalStream, getScreenStream, getRemoteStream } from '@/store/callStore'
 import { useUIStore } from '@/store/uiStore'
 import { createPeerConnection, getDisplayMedia, getUserMedia, stopStream } from './peerConnection'
+import { LocalizedUiError } from '@/utils/localizedError'
 
 let callId: string | null = null
 let remoteUserId: string | null = null
@@ -73,13 +74,13 @@ export const dmCallClient = {
   initialize: ensureListeners,
   async start(params: { remoteUserId: string; remoteUserName: string; remoteAvatar: string | null; callType: 'voice' | 'video' }) {
     ensureListeners(); cleanup(); await Promise.all([ensureConfig(), realtimeClient.waitUntilConnected()])
-    const media = await getUserMedia(params.callType); if ('error' in media) throw new Error(media.error.message)
+    const media = await getUserMedia(params.callType); if ('error' in media) throw new LocalizedUiError(media.error.message)
     callId = crypto.randomUUID(); remoteUserId = params.remoteUserId
     const store = useCallStore.getState(); store.setLocalStream(media.stream); store.startOutgoing(params)
     realtimeClient.initiateCall(callId, params.remoteUserId, params.callType)
   },
   async accept() {
-    if (!callId) return; const store = useCallStore.getState(); const media = await getUserMedia(store.callType ?? 'voice'); if ('error' in media) throw new Error(media.error.message)
+    if (!callId) return; const store = useCallStore.getState(); const media = await getUserMedia(store.callType ?? 'voice'); if ('error' in media) throw new LocalizedUiError(media.error.message)
     store.setLocalStream(media.stream); store.acceptCall(); await createPeer(); realtimeClient.acceptCall(callId)
   },
   reject() { if (callId) realtimeClient.rejectCall(callId); cleanup(); useCallStore.getState().rejectCall() },
@@ -117,7 +118,7 @@ export const dmCallClient = {
     }
     const media = await getDisplayMedia()
     if ('error' in media) {
-      useUIStore.getState().addNotification(media.error.message, 'error')
+      useUIStore.getState().addNotification(new LocalizedUiError(media.error.message).message, 'error')
       return
     }
     store.setScreenStream(media.stream)

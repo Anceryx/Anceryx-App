@@ -1,6 +1,7 @@
 import { communityApi, type VoiceConnectionState } from '@/services/communityApi'
 import { realtimeClient, type VoiceSignalEvent } from '@/services/realtimeClient'
 import { detachTracksFromPeer } from '@/utils/media'
+import { LocalizedUiError } from '@/utils/localizedError'
 
 type Listener = () => void
 
@@ -131,8 +132,8 @@ class CommunityVoiceClient {
   }
 
   async startScreenShare(fps: 15 | 30 | 60 = 30): Promise<void> {
-    if (!this.communityId || !this.channelId) throw new Error('Entre em um canal de voz antes de compartilhar a tela.')
-    if (!navigator.mediaDevices?.getDisplayMedia) throw new Error('Compartilhamento de tela não é compatível com este dispositivo.')
+    if (!this.communityId || !this.channelId) throw new LocalizedUiError('__i18n:communityVoice.channelRequiredForScreenShare')
+    if (!navigator.mediaDevices?.getDisplayMedia) throw new LocalizedUiError('__i18n:calls.screenShareUnsupported')
     this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920, max: 1920 }, height: { ideal: 1080, max: 1080 }, frameRate: { ideal: fps, max: fps } }, audio: false })
     const track = this.screenStream.getVideoTracks()[0]
     track.addEventListener('ended', () => { void this.stopScreenShare() }, { once: true })

@@ -81,14 +81,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
   return (
     /* Overlay fullscreen */
     <div
-      className="motion-backdrop-in fixed inset-0 z-50 flex bg-black/70 p-0 md:p-4"
+      className="titlebar-overlay motion-backdrop-in fixed inset-0 z-50 flex bg-black/70 p-0 md:p-4"
       aria-modal="true"
       role="dialog"
       data-shortcut-scope="settings"
       aria-label={translate('settings.title', locale)}
     >
       {/* Modal container */}
-      <div className="motion-surface-in mx-auto flex h-[100dvh] w-full max-w-[1160px] overflow-hidden border-border bg-background-primary shadow-2xl md:h-full md:rounded-2xl md:border">
+      <div className="motion-surface-in mx-auto flex h-[calc(100dvh-var(--app-titlebar-height,0px))] w-full max-w-[1160px] overflow-hidden border-border bg-background-primary shadow-2xl md:h-full md:rounded-2xl md:border">
 
         {/* Coluna esquerda — navegação */}
         <div className="hidden md:flex">
@@ -134,7 +134,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
             <button
               onClick={onClose}
               className="text-text-secondary hover:text-text-primary transition-colors p-2 rounded-md hover:bg-white/10"
-              aria-label="Fechar configurações"
+              aria-label={translate('settings.close', locale)}
             >
               <X size={20} />
             </button>
@@ -149,9 +149,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialS
 
         <div key={mobileSection ?? 'section-hidden'} className={["motion-view-forward min-w-0 flex-1 flex-col overflow-hidden md:hidden", mobileSection ? 'flex' : 'hidden'].join(' ')}>
           <header className="safe-area-top flex min-h-16 shrink-0 items-center gap-2 border-b border-border px-3">
-            <button type="button" onClick={() => setMobileSection(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label="Voltar para categorias de configurações"><ChevronLeft size={22} /></button>
-            <h2 className="min-w-0 flex-1 break-words text-lg font-bold text-text-primary">{mobileSection ? sectionTitle(mobileSection) : 'Configurações'}</h2>
-            <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label="Fechar configurações"><X size={21} /></button>
+            <button type="button" onClick={() => setMobileSection(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label={translate('settings.backToCategories', locale)}><ChevronLeft size={22} /></button>
+            <h2 className="min-w-0 flex-1 break-words text-lg font-bold text-text-primary">{mobileSection ? sectionTitle(mobileSection) : translate('settings.title', locale)}</h2>
+            <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/10 hover:text-text-primary" aria-label={translate('settings.close', locale)}><X size={21} /></button>
           </header>
           <div className="mobile-scroll flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-5">
             <div className="mx-auto w-full max-w-[820px] break-words">{mobileSection && renderSection()}</div>

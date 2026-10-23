@@ -144,23 +144,23 @@ const SettingsNav: React.FC<SettingsNavProps> = ({ active, onSelect, onClose }) 
           className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
         >
           <LogOut size={16} />
-          Sair da conta
+          {t('common.logout')}
         </button>
 
         <div className="mt-4 px-1 text-[10px] text-zinc-500">
-          <p className="leading-relaxed">Anceryx Desktop • v{appVersion ?? '...'}</p>
+          <p className="leading-relaxed">{t('settings.appVersionLabel', { version: appVersion ?? '...' })}</p>
           <div className="mt-1 flex items-center gap-3">
             <button
               onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}
               className="cursor-pointer hover:text-accent-secondary transition-colors"
             >
-              Privacidade
+              {t('settings.privacy')}
             </button>
             <button
               onClick={() => openExternalUrl(ANCERYX_TERMS_URL)}
               className="cursor-pointer hover:text-accent-secondary transition-colors"
             >
-              Termos
+              {t('settings.terms')}
             </button>
           </div>
         </div>

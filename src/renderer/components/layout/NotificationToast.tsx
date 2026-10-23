@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react'
+﻿import React, { useEffect, useRef } from 'react'
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import type { NotificationItem } from '@/types/index'
 import useNotifications from '@/hooks/useNotifications'
+import { useTranslation } from '@/i18n'
 
 const ICONS: Record<NotificationItem['type'], React.ReactNode> = {
   info: <Info size={16} className="text-blue-400 shrink-0" />,
@@ -16,6 +17,7 @@ interface ToastItemProps {
 }
 
 const ToastItem: React.FC<ToastItemProps> = ({ notification, onDismiss }) => {
+  const t = useTranslation()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -42,7 +44,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ notification, onDismiss }) => {
       <button
         onClick={() => onDismiss(notification.id)}
         className="motion-control shrink-0 p-0.5 text-text-secondary hover:text-text-primary"
-        aria-label="Fechar notificação"
+        aria-label={t('common.close')}
       >
         <X size={14} />
       </button>
@@ -52,13 +54,14 @@ const ToastItem: React.FC<ToastItemProps> = ({ notification, onDismiss }) => {
 
 const NotificationToast: React.FC = () => {
   const { notifications, dismissNotification } = useNotifications()
+  const t = useTranslation()
 
   if (notifications.length === 0) return null
 
   return (
     <div
       className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 items-end"
-      aria-label="Notificações"
+      aria-label={t('notifications.title')}
     >
       {notifications.map((n) => (
         <ToastItem key={n.id} notification={n} onDismiss={dismissNotification} />

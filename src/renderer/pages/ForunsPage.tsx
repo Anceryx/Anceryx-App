@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+﻿import React, { useCallback, useEffect, useState } from 'react'
 import { Search, Plus, Crown, Users, MessageSquare } from 'lucide-react'
 import { useSocialStore } from '@/store/socialStore'
 import { useAuthStore } from '@/store/authStore'
@@ -10,6 +10,7 @@ import CreateForumModal from '@/components/social/CreateForumModal'
 import type { SidebarSection, Forum } from '@/types/index'
 import { realtimeClient } from '@/services/realtimeClient'
 import { communityApi } from '@/services/communityApi'
+import { useTranslation } from '@/i18n'
 
 type Tab = 'todos' | 'meus'
 
@@ -17,6 +18,7 @@ type Tab = 'todos' | 'meus'
 
 // ── Página principal de Fóruns ────────────────────────────────────────────────
 const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => void; onOpenWorkspace?: (forum: Forum) => void }> = ({ onNavigateGlobal, onOpenWorkspace }) => {
+  const t = useTranslation()
   const forums        = useSocialStore((s) => s.forums)
   const upsertRealtimeForumTopic = useSocialStore((s) => s.upsertRealtimeForumTopic)
   const deleteRealtimeForumTopic = useSocialStore((s) => s.deleteRealtimeForumTopic)
@@ -51,19 +53,19 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
     const forumId = consumePendingForumId()
     const forum = forumId ? forums.find((item) => item.id === forumId) : undefined
     if (forum) openForum(forum)
-    else addNotification('Este fórum não está disponível para sua conta.', 'error')
-  }, [addNotification, consumePendingForumId, forums, forumsLoaded, openForum, pendingForumId])
+    else addNotification(t('forumsPage.unavailable'), 'error')
+  }, [addNotification, consumePendingForumId, forums, forumsLoaded, openForum, pendingForumId, t])
 
   const joinInvite = useCallback(async (inviteToken: string) => {
     try {
       const { joined } = await communityApi.joinByInvite(inviteToken)
       await hydrateSocial()
       setActiveTab('meus')
-      addNotification(joined.channelId ? 'Você entrou no fórum pelo convite. Abra o canal indicado para continuar.' : 'Você entrou no fórum pelo convite.', 'success')
+      addNotification(joined.channelId ? t('forumsPage.joinedFromInviteOpenChannel') : t('forumsPage.joinedFromInvite'), 'success')
     } catch (reason) {
-      addNotification(reason instanceof Error ? reason.message : 'Não foi possível entrar pelo convite.', 'error')
+      addNotification(reason instanceof Error ? reason.message : t('forumsPage.inviteFailed'), 'error')
     }
-  }, [addNotification, hydrateSocial])
+  }, [addNotification, hydrateSocial, t])
 
   useEffect(() => {
     if (!token) return
@@ -73,13 +75,13 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
       realtimeClient.subscribe('forum.topic.updated', (event) => upsertRealtimeForumTopic(event.payload)),
       realtimeClient.subscribe('forum.topic.deleted', (event) => deleteRealtimeForumTopic(event.payload.forumId, event.payload.topicId)),
       realtimeClient.subscribe('forum.topic.state.updated', (event) => setForumTopicFlag(event.payload.forumId, event.payload.topicId, event.payload.flag, event.payload.value)),
-      realtimeClient.subscribe('forum.reply.created', () => addNotification('Nova resposta em um fórum que você acompanha.', 'info')),
+      realtimeClient.subscribe('forum.reply.created', () => addNotification(t('forumsPage.newReply'), 'info')),
       realtimeClient.subscribe('notification.created', (event) => {
-        if (event.payload.type === 'forum.reply') addNotification('Nova resposta em um tópico relevante.', 'info')
+        if (event.payload.type === 'forum.reply') addNotification(t('forumsPage.relevantReply'), 'info')
       }),
     ]
     return () => unsubs.forEach((unsubscribe) => unsubscribe())
-  }, [addNotification, deleteRealtimeForumTopic, setForumTopicFlag, token, upsertRealtimeForumTopic])
+  }, [addNotification, deleteRealtimeForumTopic, setForumTopicFlag, token, upsertRealtimeForumTopic, t])
 
   useEffect(() => {
     const unsubscribe = window.electronAPI?.community.onInvite((inviteToken) => { void joinInvite(inviteToken) })
@@ -120,16 +122,16 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
           <input
             type="text"
             className="min-w-0 flex-1 text-sm bg-background-tertiary border border-border rounded-md px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
-            placeholder="Procurar fóruns..."
+            placeholder={t('forumsPage.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Procurar fóruns"
+            aria-label={t('forumsPage.search')}
           />
           <button
             className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onClick={() => setShowCreate(true)}
-            aria-label="Criar fórum"
-            title="Criar fórum"
+            aria-label={t('forumsPage.create')}
+            title={t('forumsPage.create')}
           >
             <Plus size={18} />
           </button>
@@ -149,7 +151,7 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
               onClick={() => setActiveTab(tab)}
               aria-current={activeTab === tab ? 'page' : undefined}
             >
-              {tab === 'todos' ? 'Todos' : `Meus Fóruns${myForums.length > 0 ? ` (${myForums.length})` : ''}`}
+              {tab === 'todos' ? t('forumsPage.all') : `${t('forumsPage.mine')}${myForums.length > 0 ? ` (${myForums.length})` : ''}`}
             </button>
           ))}
         </div>
@@ -166,11 +168,11 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
                 <MessageSquare size={28} style={{ color: 'var(--color-accent)' }} />
               </div>
               <div>
-                <p className="font-semibold text-text-primary mb-1">Nenhum fórum criado ainda</p>
-                <p className="text-sm text-text-secondary">Seja o primeiro a criar uma comunidade.</p>
+                <p className="font-semibold text-text-primary mb-1">{t('forumsPage.emptyTitle')}</p>
+                <p className="text-sm text-text-secondary">{t('forumsPage.emptyHint')}</p>
               </div>
               <Button variant="primary" size="sm" onClick={() => setShowCreate(true)} leftIcon={<Plus size={14} />}>
-                Criar fórum
+                {t('forumsPage.create')}
               </Button>
             </div>
           )}
@@ -179,9 +181,9 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
           {forums.length > 0 && activeTab === 'meus' && myForums.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
               <Users size={28} className="text-text-secondary opacity-40" />
-              <p className="text-sm text-text-secondary">Você ainda não entrou em nenhum fórum.</p>
+              <p className="text-sm text-text-secondary">{t('forumsPage.noMembership')}</p>
               <Button variant="ghost" size="sm" onClick={() => setActiveTab('todos')}>
-                Ver todos os fóruns
+                {t('forumsPage.viewAll')}
               </Button>
             </div>
           )}
@@ -193,9 +195,7 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Crown size={13} style={{ color: 'var(--color-accent)' }} />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                      Criados por você
-                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{t('forumsPage.createdByYou')}</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     {ownedForums.map((f) => (
@@ -208,9 +208,7 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Users size={13} className="text-text-secondary" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                      Onde você é membro
-                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{t('forumsPage.memberOf')}</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     {joinedForums.map((f) => (
@@ -226,9 +224,7 @@ const ForunsPage: React.FC<{ onNavigateGlobal?: (section: SidebarSection) => voi
           {activeTab === 'todos' && forums.length > 0 && (
             <>
               {filtered.length === 0 ? (
-                <p className="text-center text-text-secondary text-sm py-8">
-                  Nenhum fórum corresponde à busca.
-                </p>
+                <p className="text-center text-text-secondary text-sm py-8">{t('forumsPage.noSearchResults')}</p>
               ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {filtered.map((forum) => (

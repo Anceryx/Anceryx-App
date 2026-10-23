@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { SmilePlus } from 'lucide-react'
 import { anceryxEmojis, type AnceryxEmoji } from '@/lib/anceryxEmojis'
+import { useTranslation } from '@/i18n'
 
 interface EmojiPickerProps {
   isOpen: boolean
@@ -16,8 +17,10 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
   onToggle,
   onClose,
   onSelect,
-  label = 'Abrir emojis Anceryx',
+  label,
 }) => {
+  const t = useTranslation()
+  const accessibleLabel = label ?? t('messages.openAnceryxEmojis')
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -84,10 +87,10 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
           onToggle()
         }}
         className="motion-control grid h-8 w-8 place-items-center rounded-lg text-text-secondary hover:bg-white/10 hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-        aria-label={label}
+        aria-label={accessibleLabel}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        title="Emojis Anceryx"
+        title={t('messages.anceryxEmojis')}
       >
         <SmilePlus size={17} />
       </button>
@@ -96,12 +99,12 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
         <div
           ref={panelRef}
           role="dialog"
-          aria-label="Emojis Anceryx"
+          aria-label={t('messages.anceryxEmojis')}
           style={panelStyle}
           className="motion-menu-in z-[80] rounded-2xl border border-border bg-background-elevated p-3 shadow-2xl"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">Emojis Anceryx</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">{t('messages.anceryxEmojis')}</p>
             <span className="text-[10px] text-text-secondary">{anceryxEmojis.length}</span>
           </div>
           <div className="grid max-h-56 grid-cols-6 gap-1 overflow-y-auto pr-1 anceryx-scroll">
@@ -115,7 +118,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
                   onClose()
                 }}
                 className="motion-control grid h-9 w-9 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                aria-label={`Inserir ${emoji.shortcode}`}
+                aria-label={t('messages.insertEmoji', { name: emoji.name })}
                 title={`${emoji.name} ${emoji.shortcode}`}
               >
                 <img src={emoji.asset} alt="" className="h-6 w-6 object-contain" draggable={false} />

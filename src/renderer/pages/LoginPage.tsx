@@ -13,6 +13,7 @@ import { ANCERYX_PRIVACY_URL, ANCERYX_TERMS_URL } from '@/lib/premium'
 import { authApi } from '@/services/authApi'
 import { useAuthStore } from '@/store/authStore'
 import { isWebPlatform, openExternalUrl, safeReturnTo } from '@/platform/platform'
+import { useTranslation, type TranslationKey } from '@/i18n'
 
 // ── Mascotes usados nesta tela (pré-carregados) ────────────────────────────────
 import mascotDefault  from '@/assets/mascot/mascot-default.png'
@@ -120,6 +121,7 @@ const MascotDisplay: React.FC<MascotDisplayProps> = ({ state, parallaxRef }) => 
 
 // ── Página principal ───────────────────────────────────────────────────────────
 const LoginPage: React.FC = () => {
+  const t = useTranslation()
   const navigate      = useNavigate()
   const location = useLocation()
   const { login, completeMfa, forgotPassword, isLoading, isAuthenticated, status } = useAuth()
@@ -134,12 +136,12 @@ const LoginPage: React.FC = () => {
     const unsubscribe = window.electronAPI?.auth.onGoogleHandoff((payload) => {
       if (payload.error) {
         const messages: Record<string, string> = {
-          access_denied: 'A autenticação Google foi cancelada.',
-          GOOGLE_NOT_CONNECTED: 'Esta conta Google ainda não está vinculada. Se você não tem uma conta Anceryx, use “Criar conta com Google”.',
-          GOOGLE_ACCOUNT_EXISTS: 'Já existe uma conta com este e-mail. Entre com ela e vincule o Google nas configurações.',
-          GOOGLE_EMAIL_UNVERIFIED: 'Confirme o e-mail da conta Google antes de criar uma conta Anceryx.',
+          access_denied: '__i18n:auth.googleCancelled',
+          GOOGLE_NOT_CONNECTED: '__i18n:auth.accountGoogleNotConnected',
+          GOOGLE_ACCOUNT_EXISTS: '__i18n:auth.accountGoogleExists',
+          GOOGLE_EMAIL_UNVERIFIED: '__i18n:auth.googleEmailUnverified',
         }
-        setError(messages[payload.error] ?? 'Não foi possível concluir a autenticação Google.')
+        setError(messages[payload.error] ?? '__i18n:auth.googleFailed')
         return
       }
       if (payload.code) void consumeGoogleHandoff(payload.code).then((result) => {
@@ -148,21 +150,21 @@ const LoginPage: React.FC = () => {
           setMfaCode('')
           setMfaRecoveryMode(false)
         }
-      }).catch(() => setError('Não foi possível concluir a autenticação Google.'))
+      }).catch(() => setError('__i18n:auth.googleFailed'))
     })
     return unsubscribe
-  }, [consumeGoogleHandoff])
+  }, [consumeGoogleHandoff, t])
 
   const startGoogleLogin = async () => {
     setGoogleLoading(true)
     setError(null)
     try {
       const result = await authApi.startGoogleLogin()
-      if (!result.available || !result.authUrl) throw new Error('Google OAuth ainda não está configurado no servidor.')
+      if (!result.available || !result.authUrl) { setError('__i18n:auth.googleNotConfigured'); return }
       if (isWebPlatform) window.location.assign(result.authUrl)
       else window.electronAPI?.openExternal(result.authUrl)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Não foi possível iniciar a autenticação Google.')
+      setError(reason instanceof Error ? reason.message : '__i18n:auth.googleFailed')
     } finally {
       setGoogleLoading(false)
     }
@@ -265,7 +267,7 @@ const LoginPage: React.FC = () => {
 
     if (recoveryMode) {
       if (!isValidEmail(email)) {
-        setError('Por favor, insira um e-mail válido')
+        setError('__i18n:auth.validEmailRequired')
         setMascotState('thinkng')
         triggerShake()
         return
@@ -276,7 +278,7 @@ const LoginPage: React.FC = () => {
         setRecoverySent(true)
         setMascotState('happy')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Nao foi possivel solicitar a recuperacao')
+        setError(err instanceof Error ? err.message : '__i18n:auth.recoveryRequestFailed')
         setMascotState('thinkng')
       }
       return
@@ -285,27 +287,27 @@ const LoginPage: React.FC = () => {
     if (mfaChallenge) {
       const submittedCode = mfaCode.trim()
       if (mfaRecoveryMode ? !/^[a-fA-F0-9]{8}-[a-fA-F0-9]{8}$/.test(submittedCode) : !/^\d{6}$/.test(submittedCode)) {
-        setError(mfaRecoveryMode ? 'Informe um código de recuperação válido.' : 'Informe o código de seis dígitos do autenticador.')
+        setError(mfaRecoveryMode ? '__i18n:auth.mfaRecoveryInvalid' : '__i18n:auth.mfaCodeInvalid')
         return
       }
       try {
         await completeMfa(mfaChallenge, submittedCode)
         navigate(safeReturnTo(location.state))
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Codigo de autenticacao invalido')
+        setError(err instanceof Error ? err.message : '__i18n:auth.mfaCodeInvalid')
       }
       return
     }
 
     // Validação local (existente)
     if (!email.trim()) {
-      setError('Informe seu e-mail ou nome de usuario')
+      setError('__i18n:auth.emailOrUsernameRequired')
       setMascotState('thinkng')
       triggerShake()
       return
     }
     if (password.length === 0) {
-      setError('Por favor, insira sua senha')
+      setError('__i18n:auth.passwordRequired')
       setMascotState('thinkng')
       triggerShake()
       return
@@ -327,7 +329,7 @@ const LoginPage: React.FC = () => {
       await new Promise<void>((r) => setTimeout(r, 500))
       navigate('/app')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login')
+      setError(err instanceof Error ? err.message : '__i18n:auth.loginFailed')
       setMascotState('thinkng')
       triggerShake()
       // Após 2.5s volta ao estado do campo atual
@@ -354,7 +356,7 @@ const LoginPage: React.FC = () => {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-stretch bg-background-primary overflow-hidden">
+    <div className="h-full min-h-0 flex items-stretch bg-background-primary overflow-hidden">
 
       {/* ── Coluna esquerda: formulário ──────────────────────────────────── */}
       <div className="flex flex-1 flex-col justify-center px-8 py-12 md:px-16 lg:px-20 lg:max-w-[520px] xl:max-w-[560px]">
@@ -365,10 +367,10 @@ const LoginPage: React.FC = () => {
             Anceryx
           </h1>
           <p className="text-2xl font-bold text-text-primary leading-snug">
-            Bem-vindo de volta.
+            {t('auth.welcome')}
           </p>
           <p className="text-sm text-text-secondary mt-1">
-            Sua galera está por aqui.
+            {t('auth.tagline')}
           </p>
         </div>
 
@@ -386,7 +388,7 @@ const LoginPage: React.FC = () => {
               htmlFor={emailId}
               className="text-xs font-semibold uppercase tracking-wide text-text-secondary"
             >
-              E-mail
+              {t('auth.email')}
             </label>
             <input
               id={emailId}
@@ -398,7 +400,7 @@ const LoginPage: React.FC = () => {
                 setMascotState('happy')
               }}
               onBlur={() => setFocusedField(null)}
-              placeholder="seu@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               autoComplete="email"
               required
               disabled={isLoading}
@@ -421,7 +423,7 @@ const LoginPage: React.FC = () => {
               htmlFor={passwordId}
               className="text-xs font-semibold uppercase tracking-wide text-text-secondary"
             >
-              Senha
+              {t('auth.password')}
             </label>
             <div className="relative">
               <input
@@ -453,7 +455,7 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={handleTogglePassword}
                 disabled={isLoading}
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -462,11 +464,11 @@ const LoginPage: React.FC = () => {
           </div>}
 
           {mfaChallenge && <div className="flex flex-col gap-2">
-            <label htmlFor="mfa-code" className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{mfaRecoveryMode ? 'Código de recuperação' : 'Verificação em duas etapas'}</label>
+            <label htmlFor="mfa-code" className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{mfaRecoveryMode ? t('auth.mfaRecoveryCode') : t('auth.mfaTitle')}</label>
             <input id="mfa-code" value={mfaCode} onChange={(event) => setMfaCode(mfaRecoveryMode ? event.target.value.trim().slice(0, 17) : event.target.value.replace(/\D/g, '').slice(0, 6))} autoComplete="one-time-code" inputMode={mfaRecoveryMode ? 'text' : 'numeric'} maxLength={mfaRecoveryMode ? 17 : 6} disabled={isLoading} aria-describedby="mfa-help" className="w-full rounded-lg px-4 py-3 text-sm text-text-primary bg-background-secondary border border-border outline-none focus:border-accent/60" />
-            <p id="mfa-help" className="text-xs text-text-secondary">{mfaRecoveryMode ? 'Cada código de recuperação pode ser usado uma única vez.' : 'Digite o código de seis dígitos do seu aplicativo autenticador.'}</p>
-            <button type="button" className="self-start text-xs text-accent hover:underline" onClick={() => { setMfaRecoveryMode(!mfaRecoveryMode); setMfaCode(''); setError(null) }}>{mfaRecoveryMode ? 'Usar aplicativo autenticador' : 'Usar código de recuperação'}</button>
-            <button type="button" className="self-start text-xs text-text-secondary hover:underline" onClick={() => { setMfaChallenge(null); setMfaRecoveryMode(false); setMfaCode(''); setError(null) }}>Voltar</button>
+            <p id="mfa-help" className="text-xs text-text-secondary">{mfaRecoveryMode ? t('auth.mfaRecoveryHelp') : t('auth.mfaHelp')}</p>
+            <button type="button" className="self-start text-xs text-accent hover:underline" onClick={() => { setMfaRecoveryMode(!mfaRecoveryMode); setMfaCode(''); setError(null) }}>{mfaRecoveryMode ? t('auth.useAuthenticator') : t('auth.useRecoveryCode')}</button>
+            <button type="button" className="self-start text-xs text-text-secondary hover:underline" onClick={() => { setMfaChallenge(null); setMfaRecoveryMode(false); setMfaCode(''); setError(null) }}>{t('common.back')}</button>
           </div>}
 
           {/* Erro */}
@@ -476,7 +478,7 @@ const LoginPage: React.FC = () => {
               role="alert"
               aria-live="polite"
             >
-              {error}
+              {error?.startsWith('__i18n:') ? t(error.slice(8) as TranslationKey) : error}
             </p>
           )}
 
@@ -508,10 +510,10 @@ const LoginPage: React.FC = () => {
                   className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
                   aria-hidden="true"
                 />
-                {recoveryMode ? 'Enviando…' : 'Entrando…'}
+            {recoveryMode ? t('auth.sending') : t('auth.loggingIn')}
               </span>
             ) : (
-              recoveryMode ? 'Enviar recuperação' : 'Entrar'
+              recoveryMode ? t('auth.sendRecovery') : t('auth.submitLogin')
             )}
           </button>
         </form>
@@ -525,26 +527,26 @@ const LoginPage: React.FC = () => {
             aria-busy={googleLoading}
           >
             <Chrome size={16} />
-            {googleLoading ? 'Abrindo Google…' : 'Continuar com Google'}
+            {googleLoading ? t('auth.openingGoogle') : t('auth.continueGoogle')}
           </button>
         )}
 
         {recoverySent && (
           <p className="mt-4 text-sm text-emerald-400" role="status">
-            Se esse e-mail estiver cadastrado, enviaremos instruções para redefinir sua senha.
+            {t('auth.recoverySent')}
           </p>
         )}
 
         {/* Links */}
         <div className="mt-8 flex flex-col gap-2 text-center">
           <p className="text-sm text-text-secondary">
-            Não tem conta?{' '}
+            {t('auth.noAccount')}{' '}
             <Link
               to="/register"
               state={location.state}
               className="text-accent hover:text-accent/80 font-medium transition-colors"
             >
-              Registre-se
+              {t('auth.register')}
             </Link>
           </p>
           <p className="text-xs text-text-secondary/60">
@@ -558,25 +560,25 @@ const LoginPage: React.FC = () => {
                 setMascotState('default')
               }}
             >
-              {recoveryMode ? 'Voltar ao login' : 'Esqueci minha senha'}
+              {recoveryMode ? t('auth.backToLogin') : t('auth.forgotPassword')}
             </button>
           </p>
           <p className="text-xs text-text-secondary/70">
-            Ao entrar, você concorda com os{' '}
+            {t('auth.termsIntro')}{' '}
             <button
               type="button"
               onClick={() => openExternalUrl(ANCERYX_TERMS_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
-              Termos de Uso
+              {t('auth.terms')}
             </button>{' '}
-            e a{' '}
+            {t('auth.termsPrivacyAnd')}{' '}
             <button
               type="button"
               onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
-              Privacidade
+              {t('auth.privacy')}
             </button>
             .
           </p>

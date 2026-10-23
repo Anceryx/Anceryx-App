@@ -7,6 +7,7 @@ import type { KaoliStickerKey } from '@/lib/kaoliStickers'
 import ExpressionPicker from './ExpressionPicker'
 import StickerPicker from './StickerPicker'
 import { MediaAttachment } from '@/components/ui/MediaAttachment'
+import { useTranslation } from '@/i18n'
 
 interface MessageComposerProps {
   value: string
@@ -36,7 +37,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   onChange,
   onDraftBlur,
   onDiscardDraft,
-  discardDraftLabel = 'Descartar rascunho',
+  discardDraftLabel,
   onSend,
   disabled,
   imagePreview,
@@ -51,6 +52,8 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   onPickGif,
   onPickSticker,
 }) => {
+  const t = useTranslation()
+  const discardLabel = discardDraftLabel ?? t('messages.discardDraft')
   const ref = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [expressionOpen, setExpressionOpen] = React.useState(false)
@@ -92,13 +95,13 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
         <div className="ml-10 flex flex-col gap-2">
           {imagePreview && (
             <div className="relative w-fit max-w-full">
-              {imagePreview.url ? <MediaAttachment src={imagePreview.previewUrl ?? imagePreview.url} mimeType={imagePreview.mimeType} alt="Pré-visualização do anexo" className="max-h-36 max-w-[260px] rounded-xl border border-border bg-background-tertiary object-contain" /> : <span className="block rounded-xl border border-border bg-background-tertiary px-3 py-2 text-xs text-text-secondary">{imagePreview.name}</span>}
+              {imagePreview.url ? <MediaAttachment src={imagePreview.previewUrl ?? imagePreview.url} mimeType={imagePreview.mimeType} alt={t('messages.attachmentPreview')} className="max-h-36 max-w-[260px] rounded-xl border border-border bg-background-tertiary object-contain" /> : <span className="block rounded-xl border border-border bg-background-tertiary px-3 py-2 text-xs text-text-secondary">{imagePreview.name}</span>}
               <button
                 type="button"
                 onClick={onRemoveImage}
                 disabled={disabled || imageLoading}
                 className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/70 text-white transition-colors hover:bg-black/90 disabled:opacity-50"
-                aria-label="Remover imagem"
+                aria-label={t('messages.removeImage')}
               >
                 <X size={14} />
               </button>
@@ -107,8 +110,8 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
           {imageLoading && (
             <div className="inline-flex items-center gap-2 text-xs text-text-secondary" aria-live="polite">
               <Loader2 size={14} className="animate-spin" />
-              Enviando arquivo... {imageProgress ?? 0}%
-              {onCancelUpload && <button type="button" onClick={onCancelUpload} className="ml-1 underline hover:text-text-primary">Cancelar</button>}
+              {t('messages.uploadingFile')} {imageProgress ?? 0}%
+              {onCancelUpload && <button type="button" onClick={onCancelUpload} className="ml-1 underline hover:text-text-primary">{t('common.cancel')}</button>}
             </div>
           )}
           {imageError && (
@@ -123,7 +126,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
                   className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold text-red-100 transition-colors hover:bg-red-500/20 disabled:opacity-50"
                 >
                   <RotateCcw size={12} />
-                  Tentar novamente
+                  {t('common.retry')}
                 </button>
               )}
             </div>
@@ -137,8 +140,8 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
           onClick={() => fileRef.current?.click()}
           disabled={disabled || imageLoading}
           className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Anexar imagem"
-          title="Anexar imagem"
+          aria-label={t('messages.attachImage')}
+          title={t('messages.attachImage')}
         >
           <Plus size={18} />
         </button>
@@ -159,17 +162,17 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
           ref={ref}
           rows={1}
           className="min-w-0 flex-1 resize-none rounded-xl border border-border bg-background-tertiary px-3 py-2.5 text-sm text-text-primary transition-colors placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent sm:px-4"
-          placeholder="Mensagem..."
+          placeholder={t('messages.composePlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onDraftBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          aria-label="Campo de mensagem. Enter para enviar, Shift+Enter para nova linha."
+          aria-label={t('messages.composeAria')}
           aria-multiline="true"
         />
 
-        {onDiscardDraft && value.trim() && <button type="button" onClick={onDiscardDraft} disabled={disabled} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-text-secondary hover:bg-background-tertiary hover:text-text-primary disabled:opacity-50" aria-label={discardDraftLabel} title={discardDraftLabel}><X size={15} /></button>}
+        {onDiscardDraft && value.trim() && <button type="button" onClick={onDiscardDraft} disabled={disabled} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-text-secondary hover:bg-background-tertiary hover:text-text-primary disabled:opacity-50" aria-label={discardLabel} title={discardLabel}><X size={15} /></button>}
 
         <ExpressionPicker
           isOpen={expressionOpen}
@@ -195,7 +198,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
               ? 'bg-accent text-white hover:bg-accent/90'
               : 'bg-background-tertiary text-text-secondary opacity-40 cursor-not-allowed',
           ].join(' ')}
-          aria-label="Enviar mensagem"
+          aria-label={t('messages.send')}
         >
           <Send size={16} />
         </button>

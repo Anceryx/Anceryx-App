@@ -9,6 +9,7 @@ import { useUIStore } from '@/store/uiStore'
 import { formatTimestamp } from '@/utils/formatters'
 import { insertAtCursor, renderAnceryxText, type AnceryxEmoji } from '@/lib/anceryxEmojis'
 import { MediaAttachment } from '@/components/ui/MediaAttachment'
+import { useTranslation } from '@/i18n'
 
 interface PostDetailModalProps {
   postId: string
@@ -48,6 +49,7 @@ const CommentRow: React.FC<{ comment: Comment }> = ({ comment }) => {
 }
 
 const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
+  const t = useTranslation()
   const user = useAuthStore((s) => s.user)
   const addComment = useSocialStore((s) => s.addComment)
   const [value, setValue] = useState('')
@@ -79,7 +81,7 @@ const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
       await addComment(postId, trimmed)
       setValue('')
     } catch {
-      setError('Não foi possível comentar agora.')
+      setError(t('post.commentFailed'))
     } finally {
       submittingRef.current = false
       setSubmitting(false)
@@ -94,7 +96,7 @@ const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
             <AlertCircle size={14} /> {error}
           </span>
           <button type="button" className="font-semibold text-red-100 hover:text-white" onClick={handleSubmit}>
-            Tentar novamente
+            {t('post.retryComment')}
           </button>
         </div>
       )}
@@ -111,23 +113,23 @@ const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
             }
           }}
           disabled={submitting}
-          placeholder="Adicione um comentário..."
+          placeholder={t('post.addComment')}
           className="min-h-[42px] flex-1 resize-none rounded-xl border border-border bg-background-tertiary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
-          aria-label="Adicionar comentário"
+          aria-label={t('post.addCommentAria')}
         />
         <EmojiPicker
           isOpen={emojiOpen}
           onToggle={() => setEmojiOpen((open) => !open)}
           onClose={() => setEmojiOpen(false)}
           onSelect={handleInsertEmoji}
-          label="Abrir emojis para comentário"
+          label={t('post.commentEmojiAria')}
         />
         <button
           type="button"
           onClick={() => void handleSubmit()}
           disabled={!value.trim() || submitting}
           className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-background-tertiary disabled:text-text-secondary disabled:opacity-50"
-          aria-label="Enviar comentário"
+          aria-label={t('post.sendComment')}
         >
           <Send size={16} />
         </button>
@@ -137,6 +139,7 @@ const CommentComposer: React.FC<{ postId: string }> = ({ postId }) => {
 }
 
 const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode = 'detail', onClose }) => {
+  const t = useTranslation()
   const post = useSocialStore((s) => s.posts.find((item) => item.id === postId))
   const toggleLike = useSocialStore((s) => s.toggleLike)
   const loadComments = useSocialStore((s) => s.loadComments)
@@ -172,8 +175,8 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
   }
 
   const handleShare = async () => {
-    try { await navigator.clipboard.writeText(`anceryx://post/${postId}`); addNotification('Link do aplicativo copiado!', 'success') }
-    catch { addNotification('Não foi possível copiar o link.', 'error') }
+    try { await navigator.clipboard.writeText(`anceryx://post/${postId}`); addNotification(t('post.linkCopied'), 'success') }
+    catch { addNotification(t('post.linkCopyFailed'), 'error') }
   }
 
   const details = (
@@ -200,7 +203,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
             type="button"
             onClick={handleLike}
             className="motion-reaction flex items-center gap-1.5 rounded text-xs hover:text-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-            aria-label={isLiked ? 'Descurtir post' : 'Curtir post'}
+            aria-label={isLiked ? t('post.unlike') : t('post.like')}
             aria-pressed={isLiked}
           >
             <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className={isLiked ? 'text-accent' : 'text-text-secondary'} />
@@ -213,7 +216,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
             type="button"
               onClick={() => void handleShare()}
             className="flex items-center gap-1.5 rounded text-xs text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-            aria-label="Compartilhar post"
+            aria-label={t('post.share')}
           >
             <Share2 size={16} /> {post.shares}
           </button>
@@ -222,8 +225,8 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
         <div className="mt-4 flex flex-col gap-3">
           {post.comments.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-center">
-              <p className="text-sm font-medium text-text-primary">Seja o primeiro a comentar</p>
-              <p className="mt-1 text-xs text-text-secondary">Comentários com texto e emojis Anceryx aparecem aqui.</p>
+              <p className="text-sm font-medium text-text-primary">{t('post.firstComment')}</p>
+              <p className="mt-1 text-xs text-text-secondary">{t('post.commentsHint')}</p>
             </div>
           ) : (
             post.comments.map((comment) => <CommentRow key={comment.id} comment={comment} />)
@@ -237,12 +240,12 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      className="titlebar-overlay fixed inset-0 z-[70] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Detalhes do post"
+      aria-label={t('post.detailAria')}
     >
-      <button className="motion-backdrop-in absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} aria-label="Fechar detalhes do post" />
+      <button className="motion-backdrop-in absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} aria-label={t('post.closeDetails')} />
       <div
         ref={dialogRef}
         tabIndex={-1}
@@ -255,14 +258,14 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ postId, initialMode =
           type="button"
           onClick={onClose}
           className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-xl bg-black/45 text-white transition-colors hover:bg-black/70"
-          aria-label="Fechar"
+          aria-label={t('common.close')}
         >
           <X size={18} />
         </button>
 
         {isMediaMode && post.mediaUrl && (
           <div className="grid min-h-0 flex-[1.35] place-items-center bg-black/70 p-4 max-[900px]:max-h-[52vh]">
-            <MediaAttachment src={post.mediaUrl} mimeType={post.mediaType === 'video' ? 'video/mp4' : post.mediaType === 'gif' ? 'image/gif' : 'image/jpeg'} alt="Mídia do post" className="max-h-full max-w-full rounded-xl object-contain" />
+            <MediaAttachment src={post.mediaUrl} mimeType={post.mediaType === 'video' ? 'video/mp4' : post.mediaType === 'gif' ? 'image/gif' : 'image/jpeg'} alt={t('post.mediaAlt')} className="max-h-full max-w-full rounded-xl object-contain" />
           </div>
         )}
 

@@ -16,6 +16,7 @@ import {
   Check,
   Settings,
 } from 'lucide-react'
+import { useTranslation } from '@/i18n'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -38,8 +39,8 @@ interface DeviceGroups {
 
 const supportsSinkId = 'setSinkId' in HTMLMediaElement.prototype
 
-function deviceLabel(d: MediaDeviceInfo, idx: number): string {
-  return d.label.trim() !== '' ? d.label : `Dispositivo ${idx + 1}`
+function deviceLabel(d: MediaDeviceInfo, idx: number, fallback: (count: number) => string): string {
+  return d.label.trim() !== '' ? d.label : fallback(idx + 1)
 }
 
 // ── Componente ─────────────────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   type, enabled, onToggle, stream: _stream,
   onDeviceChange, onOpenVoiceSettings,
 }) => {
+  const t = useTranslation()
   const [devices,        setDevices]        = useState<DeviceGroups>({ audioinput: [], audiooutput: [], videoinput: [] })
   const [selectedInput,  setSelectedInput]  = useState<string>('default')
   const [selectedOutput, setSelectedOutput] = useState<string>('default')
@@ -122,14 +124,14 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         onClick={onToggle}
         aria-label={
           type === 'audio'
-            ? (enabled ? 'Silenciar microfone' : 'Ativar microfone')
-            : (enabled ? 'Desligar câmera'     : 'Ligar câmera')
+            ? (enabled ? t('calls.muteMic') : t('calls.unmuteMic'))
+            : (enabled ? t('calls.cameraOff') : t('calls.cameraOn'))
         }
         aria-pressed={isActive}
         title={
           type === 'audio'
-            ? (enabled ? 'Silenciar' : 'Ativar mic')
-            : (enabled ? 'Desligar câmera' : 'Ligar câmera')
+            ? (enabled ? t('calls.mute') : t('calls.unmuteMic'))
+            : (enabled ? t('calls.cameraOff') : t('calls.cameraOn'))
         }
         className={[
           'w-12 h-12 flex items-center justify-center transition-colors',
@@ -148,8 +150,8 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         ref={chevronRef}
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        aria-label="Selecionar dispositivo"
-        title="Selecionar dispositivo"
+        aria-label={t('calls.selectDevice')}
+        title={t('calls.selectDevice')}
         aria-expanded={isOpen}
         className={[
           'w-6 h-12 flex items-center justify-center transition-colors',
@@ -168,7 +170,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         <div
           ref={popoverRef}
           role="menu"
-          aria-label="Dispositivos de áudio"
+          aria-label={t('calls.audioDevices')}
           className={[
             'absolute bottom-full mb-2 left-0',
             'bg-background-secondary border border-border rounded-xl shadow-2xl',
@@ -179,10 +181,10 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
           {type === 'audio' && (
             <>
               <p className="text-[10px] font-semibold text-text-secondary uppercase tracking-widest mb-1.5 px-1">
-                Microfone
+                {t('calls.microphone')}
               </p>
               {devices.audioinput.length === 0 ? (
-                <p className="text-xs text-text-secondary px-1 py-1">Nenhum dispositivo encontrado</p>
+                <p className="text-xs text-text-secondary px-1 py-1">{t('calls.noDevice')}</p>
               ) : (
                 devices.audioinput.map((d, i) => (
                   <button
@@ -196,7 +198,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                     <span className="w-4 shrink-0">
                       {selectedInput === d.deviceId && <Check size={14} className="text-accent" />}
                     </span>
-                    <span className="truncate">{deviceLabel(d, i)}</span>
+                    <span className="truncate">{deviceLabel(d, i, (count) => t('calls.deviceNumber', { count }))}</span>
                   </button>
                 ))
               )}
@@ -206,14 +208,14 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
               {/* ── AUDIOOUTPUT ───────────────────────────────────── */}
               <p className="text-[10px] font-semibold text-text-secondary uppercase tracking-widest mb-1.5 px-1">
-                Saída de áudio
+                {t('calls.audioOutput')}
               </p>
               {!supportsSinkId ? (
                 <p className="text-xs text-text-secondary px-1 py-1 italic">
-                  Saída padrão do sistema (troca não suportada neste navegador)
+                  {t('calls.audioOutputUnsupported')}
                 </p>
               ) : devices.audiooutput.length === 0 ? (
-                <p className="text-xs text-text-secondary px-1 py-1">Nenhum dispositivo encontrado</p>
+                <p className="text-xs text-text-secondary px-1 py-1">{t('calls.noDevice')}</p>
               ) : (
                 devices.audiooutput.map((d, i) => (
                   <button
@@ -227,7 +229,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                     <span className="w-4 shrink-0">
                       {selectedOutput === d.deviceId && <Check size={14} className="text-accent" />}
                     </span>
-                    <span className="truncate">{deviceLabel(d, i)}</span>
+                    <span className="truncate">{deviceLabel(d, i, (count) => t('calls.deviceNumber', { count }))}</span>
                   </button>
                 ))
               )}
@@ -243,7 +245,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-text-secondary hover:bg-white/5 hover:text-text-primary transition-colors text-left"
                 >
                   <Settings size={14} className="shrink-0" />
-                  <span>Configurações de voz</span>
+                  <span>{t('calls.voiceSettings')}</span>
                 </button>
               </div>
             </>
@@ -253,10 +255,10 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
           {type === 'video' && (
             <>
               <p className="text-[10px] font-semibold text-text-secondary uppercase tracking-widest mb-1.5 px-1">
-                Câmera
+                {t('calls.camera')}
               </p>
               {devices.videoinput.length === 0 ? (
-                <p className="text-xs text-text-secondary px-1 py-1">Nenhum dispositivo encontrado</p>
+                <p className="text-xs text-text-secondary px-1 py-1">{t('calls.noDevice')}</p>
               ) : (
                 devices.videoinput.map((d, i) => (
                   <button
@@ -270,7 +272,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                     <span className="w-4 shrink-0">
                       {selectedInput === d.deviceId && <Check size={14} className="text-accent" />}
                     </span>
-                    <span className="truncate">{deviceLabel(d, i)}</span>
+                    <span className="truncate">{deviceLabel(d, i, (count) => t('calls.deviceNumber', { count }))}</span>
                   </button>
                 ))
               )}

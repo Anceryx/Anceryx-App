@@ -1,12 +1,14 @@
-import React from 'react'
+﻿import React from 'react'
 import type { CustomStatus } from '@/types/social'
 import { isOnlyAnceryxEmojis, renderAnceryxText } from '@/lib/anceryxEmojis'
+import { useTranslation } from '@/i18n'
 
 interface StatusBubbleProps {
   status: CustomStatus | null
 }
 
 const StatusBubble: React.FC<StatusBubbleProps> = ({ status }) => {
+  const t = useTranslation()
   if (!status) return null
   if (status.expiresAt !== null && new Date(status.expiresAt) < new Date()) return null
   const onlyEmoji = isOnlyAnceryxEmojis(status.text)
@@ -16,7 +18,7 @@ const StatusBubble: React.FC<StatusBubbleProps> = ({ status }) => {
       {/* Thought-bubble pill */}
       <div
         role="status"
-        aria-label={`Status: ${status.text}`}
+        aria-label={t('common.statusWithValue', { value: status.text })}
         className={[
           'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl px-3 py-1.5 text-text-primary shadow-sm max-w-[180px]',
           onlyEmoji ? 'text-2xl leading-none' : 'truncate text-xs',

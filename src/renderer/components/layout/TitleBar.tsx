@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { Download, Minus, Square, X, Copy } from 'lucide-react'
 import appIcon from '@/assets/icon.png'
 import UpdateModal from './UpdateModal'
+import { useTranslation } from '@/i18n'
 
 const TitleBar: React.FC = () => {
+  const t = useTranslation()
   const hasElectronAPI = typeof window !== 'undefined' && !!window.electronAPI
   const [isMaximized, setIsMaximized] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -63,8 +65,8 @@ const TitleBar: React.FC = () => {
             <button
               onClick={() => setUpdateOpen(true)}
               className="h-full px-3 text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors"
-              aria-label="Atualizacao disponivel"
-              title="Atualizacao disponivel"
+              aria-label={t('title.updateAvailable')}
+              title={t('title.updateAvailable')}
             >
               <Download size={13} />
             </button>
@@ -72,21 +74,21 @@ const TitleBar: React.FC = () => {
           <button
             onClick={() => window.electronAPI?.windowControls.minimize()}
             className="h-full px-4 text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors"
-            aria-label="Minimizar"
+            aria-label={t('title.minimize')}
           >
             <Minus size={12} />
           </button>
           <button
             onClick={() => window.electronAPI?.windowControls.maximize()}
             className="h-full px-4 text-text-secondary hover:text-text-primary hover:bg-white/10 transition-colors"
-            aria-label={isMaximized ? 'Restaurar' : 'Maximizar'}
+            aria-label={isMaximized ? t('title.restore') : t('title.maximize')}
           >
             {isMaximized ? <Copy size={12} /> : <Square size={12} />}
           </button>
           <button
             onClick={() => window.electronAPI?.windowControls.close()}
             className="h-full px-4 text-text-secondary hover:text-white hover:bg-accent-red transition-colors"
-            aria-label="Fechar"
+            aria-label={t('title.close')}
           >
             <X size={12} />
           </button>

@@ -2,6 +2,7 @@ import { API_BASE_URL } from '@/services/mediaApi'
 import type { DirectMessageDto } from '@/services/messagesApi'
 import type { CommunityVoiceRealtimePayload } from '@/utils/communityVoiceRealtime'
 import { RealtimeTransport, type RealtimeSocketLike, type TransportStatus } from './realtimeTransport'
+import { LocalizedUiError } from '@/utils/localizedError'
 
 export type RealtimeStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected'
 
@@ -184,7 +185,7 @@ class RealtimeClient {
   waitUntilConnected(timeoutMs = 10_000): Promise<void> {
     if (this.status === 'connected') return Promise.resolve()
     return new Promise((resolve, reject) => {
-      const timeout = window.setTimeout(() => { unsubscribe(); reject(new Error('Realtime indisponivel.')) }, timeoutMs)
+      const timeout = window.setTimeout(() => { unsubscribe(); reject(new LocalizedUiError('__i18n:common.realtimeUnavailable')) }, timeoutMs)
       const unsubscribe = this.subscribeStatus((status) => {
         if (status !== 'connected') return
         window.clearTimeout(timeout)

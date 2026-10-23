@@ -5,6 +5,7 @@ import {
   Monitor, MonitorOff,
   PhoneOff,
 } from 'lucide-react'
+import { useTranslation } from '@/i18n'
 
 interface CallControlsProps {
   micEnabled:    boolean
@@ -49,13 +50,15 @@ const ControlBtn: React.FC<{
 const CallControls: React.FC<CallControlsProps> = ({
   micEnabled, camEnabled, screenEnabled, showCamera = true,
   onToggleMic, onToggleCam, onToggleScreen, onHangUp,
-}) => (
-  <div className="flex items-center justify-center gap-3" role="toolbar" aria-label="Controles da chamada">
+}) => {
+  const t = useTranslation()
+  return (
+  <div className="flex items-center justify-center gap-3" role="toolbar" aria-label={t('calls.controls')}>
     <ControlBtn
       active={micEnabled}
       onClick={onToggleMic}
-      ariaLabel={micEnabled ? 'Silenciar microfone' : 'Ativar microfone'}
-      title={micEnabled ? 'Silenciar' : 'Ativar mic'}
+      ariaLabel={micEnabled ? t('calls.muteMic') : t('calls.unmuteMic')}
+      title={micEnabled ? t('calls.mute') : t('calls.unmuteMic')}
     >
       {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
     </ControlBtn>
@@ -64,8 +67,8 @@ const CallControls: React.FC<CallControlsProps> = ({
       <ControlBtn
         active={camEnabled}
         onClick={onToggleCam}
-        ariaLabel={camEnabled ? 'Desligar câmera' : 'Ligar câmera'}
-        title={camEnabled ? 'Desligar câmera' : 'Ligar câmera'}
+        ariaLabel={camEnabled ? t('calls.cameraOff') : t('calls.cameraOn')}
+        title={camEnabled ? t('calls.cameraOff') : t('calls.cameraOn')}
       >
         {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
       </ControlBtn>
@@ -74,8 +77,8 @@ const CallControls: React.FC<CallControlsProps> = ({
     <ControlBtn
       active={screenEnabled}
       onClick={onToggleScreen}
-      ariaLabel={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
-      title={screenEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}
+      ariaLabel={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
+      title={screenEnabled ? t('calls.stopSharing') : t('calls.shareScreen')}
     >
       {screenEnabled ? <MonitorOff size={20} /> : <Monitor size={20} />}
     </ControlBtn>
@@ -84,12 +87,13 @@ const CallControls: React.FC<CallControlsProps> = ({
       active
       danger
       onClick={onHangUp}
-      ariaLabel="Encerrar chamada"
-      title="Encerrar"
+      ariaLabel={t('calls.end')}
+      title={t('calls.end')}
     >
       <PhoneOff size={20} />
     </ControlBtn>
   </div>
-)
+  )
+}
 
 export default CallControls

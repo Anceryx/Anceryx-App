@@ -1,3 +1,54 @@
+import type { TranslationKey } from '@/i18nCatalog'
+
+export const PRIVATE_VIDEO_BLOB_MAX_BYTES = 25 * 1024 * 1024
+
+export type PrivateVideoFailureCategory = 'permission' | 'rateLimited' | 'network' | 'format' | 'tooLarge'
+
+export function classifyPrivateVideoFailure(input: {
+  status?: number
+  contentType?: string | null
+  contentLength?: string | number | null
+  actualSize?: number
+  networkError?: boolean
+  formatError?: boolean
+}): PrivateVideoFailureCategory | null {
+  const status = input.status ?? 0
+  if ([401, 403, 404].includes(status)) return 'permission'
+  if (status === 429) return 'rateLimited'
+  if (input.formatError) return 'format'
+  if (input.networkError || status === 0 || status >= 500) return 'network'
+
+  const contentLength = typeof input.contentLength === 'string' && input.contentLength.trim()
+    ? Number(input.contentLength)
+    : input.contentLength
+  if (typeof contentLength === 'number' && Number.isFinite(contentLength) && contentLength > PRIVATE_VIDEO_BLOB_MAX_BYTES) return 'tooLarge'
+  if (typeof input.actualSize === 'number' && input.actualSize > PRIVATE_VIDEO_BLOB_MAX_BYTES) return 'tooLarge'
+  if (input.contentType !== undefined && input.contentType !== null && input.contentType.split(';', 1)[0].trim().toLowerCase() !== 'video/mp4') return 'format'
+  if (status >= 200 && status < 300 && input.contentType?.split(';', 1)[0].trim().toLowerCase() === 'video/mp4') return null
+  if (status < 200 || status >= 300) return 'network'
+  return 'format'
+}
+
+export function shouldFallbackPrivateVideo(input: {
+  privateMedia: boolean
+  mediaErrorCode: number
+  alreadyAttempted: boolean
+}): boolean {
+  return input.privateMedia && !input.alreadyAttempted && [2, 3, 4].includes(input.mediaErrorCode)
+}
+
+const privateVideoFailureKeys: Record<PrivateVideoFailureCategory, TranslationKey> = {
+  permission: 'media.privateVideo.permission',
+  rateLimited: 'media.privateVideo.rateLimited',
+  network: 'media.privateVideo.network',
+  format: 'media.privateVideo.format',
+  tooLarge: 'media.privateVideo.tooLarge',
+}
+
+export function privateVideoFailureTranslationKey(category: PrivateVideoFailureCategory): TranslationKey {
+  return privateVideoFailureKeys[category]
+}
+
 export function resolveMediaUrl(publicUrl: string, apiBaseUrl: string): string {
   const value = publicUrl.trim()
   if (!value) return ''

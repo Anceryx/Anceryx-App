@@ -1,4 +1,5 @@
-import React from 'react'
+﻿import React from 'react'
+import { useTranslation } from '@/i18n'
 
 export interface BadgeProps {
   count: number
@@ -19,6 +20,7 @@ const Badge: React.FC<BadgeProps> = ({
   variant = 'default',
   className = ''
 }) => {
+  const t = useTranslation()
   if (count <= 0) return null
 
   const label = count > max ? `${max}+` : String(count)
@@ -31,7 +33,7 @@ const Badge: React.FC<BadgeProps> = ({
         variantClasses[variant],
         className
       ].join(' ')}
-      aria-label={`${count} unread`}
+      aria-label={t('notifications.unreadCount', { count })}
     >
       <span key={count} className="motion-pop-in">{label}</span>
     </span>

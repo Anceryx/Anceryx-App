@@ -5,8 +5,10 @@ import { realtimeClient } from '@/services/realtimeClient'
 import { useCallStore } from '@/store/callStore'
 import { useSocialStore } from '@/store/socialStore'
 import BadgeIcon from '@/components/ui/BadgeIcon'
+import { useTranslation } from '@/i18n'
 
 const AchievementToast: React.FC = () => {
+  const t = useTranslation()
   const [queue, setQueue] = useState<PendingAchievement[]>([])
   const [busy, setBusy] = useState(false)
   const [safeToDisplay, setSafeToDisplay] = useState(false)
@@ -71,19 +73,19 @@ const AchievementToast: React.FC = () => {
   if (!current || !safeToDisplay) return null
   const badge = { id: current.badgeSlug, label: current.badgeName } as React.ComponentProps<typeof BadgeIcon>['badge']
 
-  return <section aria-live="polite" aria-label="Nova conquista" className="fixed bottom-5 right-5 z-[80] w-[min(24rem,calc(100vw-2.5rem))] rounded-2xl border border-border bg-background-elevated p-4 text-text-primary shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-right-4">
+  return <section aria-live="polite" aria-label={t('achievement.new')} className="fixed bottom-5 right-5 z-[80] w-[min(24rem,calc(100vw-2.5rem))] rounded-2xl border border-border bg-background-elevated p-4 text-text-primary shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-right-4">
     <div className="flex items-start gap-3">
       <BadgeIcon badge={badge} size={44} className="mt-1" />
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent"><BadgeCheck size={14} /> Nova conquista!</p>
+        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent"><BadgeCheck size={14} /> {t('achievement.new')}</p>
         <h2 className="mt-1 truncate text-base font-bold">{current.badgeName}</h2>
         <p className="mt-1 line-clamp-2 text-sm text-text-secondary">{current.badgeDescription}</p>
       </div>
-      <button type="button" onClick={() => void complete('dismissed')} disabled={busy} aria-label="Dispensar conquista" className="rounded-lg p-1 text-text-secondary hover:bg-background-secondary"><X size={16} /></button>
+      <button type="button" onClick={() => void complete('dismissed')} disabled={busy} aria-label={t('achievement.dismiss')} className="rounded-lg p-1 text-text-secondary hover:bg-background-secondary"><X size={16} /></button>
     </div>
     <div className="mt-3 flex items-center justify-between gap-2">
-      <button type="button" onClick={() => { setActiveSection('perfil'); window.setTimeout(() => window.dispatchEvent(new CustomEvent('anceryx:open-achievement', { detail: { badgeSlug: current.badgeSlug } })), 50); void complete('presented') }} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-accent hover:bg-background-secondary">Ver conquistas <ChevronRight size={15} /></button>
-      {queue.length > 1 && <div className="flex items-center gap-2"><span className="text-xs text-text-secondary">{queue.length} pendentes</span><button type="button" onClick={() => void complete('dismissed', true)} disabled={busy} className="rounded-lg px-2 py-1 text-xs text-text-secondary hover:bg-background-secondary">Pular fila</button></div>}
+      <button type="button" onClick={() => { setActiveSection('perfil'); window.setTimeout(() => window.dispatchEvent(new CustomEvent('anceryx:open-achievement', { detail: { badgeSlug: current.badgeSlug } })), 50); void complete('presented') }} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-accent hover:bg-background-secondary">{t('achievement.view')} <ChevronRight size={15} /></button>
+      {queue.length > 1 && <div className="flex items-center gap-2"><span className="text-xs text-text-secondary">{t('achievement.pending', { count: queue.length })}</span><button type="button" onClick={() => void complete('dismissed', true)} disabled={busy} className="rounded-lg px-2 py-1 text-xs text-text-secondary hover:bg-background-secondary">{t('achievement.skipQueue')}</button></div>}
     </div>
   </section>
 }

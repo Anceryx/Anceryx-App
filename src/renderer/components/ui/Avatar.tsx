@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import type { UserStatus } from '@/types/index'
 import { getAvatarInitials } from '@/utils/avatar'
 import { mediaApi } from '@/services/mediaApi'
+import { useTranslation } from '@/i18n'
 
 export { getAvatarInitials } from '@/utils/avatar'
 
@@ -59,6 +60,7 @@ const Avatar: React.FC<AvatarProps> = ({
   status,
   className = ''
 }) => {
+  const t = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
   const safeName = name?.trim() || 'Anceryx'
   const initials = getAvatarInitials(name)
@@ -96,7 +98,7 @@ const Avatar: React.FC<AvatarProps> = ({
             statusSizeClasses[size],
             statusColorClasses[status]
           ].join(' ')}
-          aria-label={`Status: ${status}`}
+          aria-label={t(`presence.${status === 'idle' ? 'idle' : status === 'dnd' ? 'dnd' : status}`)}
         />
       )}
     </div>

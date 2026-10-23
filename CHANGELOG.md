@@ -1,5 +1,79 @@
 # Registro de alterações
+- A auditoria final removeu literais antigos não utilizados dos dados de cobrança/notas, localizou o selo Popular e documentou os candidatos restantes da métrica como símbolos, marcas, identificadores ou conteúdo de teste. O teste de publicações comunitárias agora aceita um caminho explícito para o checkout separado da API.
+- Os nomes dos canais stable e beta do atualizador agora acompanham o idioma selecionado no modal e nas configurações.
+- A versão do pacote foi preparada como 0.17.0. A publicação estável continua bloqueada: o lockfile usa electron-builder 26.x/electron-updater 6.x, enquanto o workflow exige 27.x/7.x e assinatura Ed25519; nenhuma Release ou tag foi criada.
+- O workspace comunitário agora localiza controles, moderação, recursos, convites, canais, mensagens, eventos e voz em pt-BR, inglês e espanhol. Permissões, conteúdo enviado por membros e mensagens de erro livres da API permanecem preservados.
+- O modal de publicações do Fórum também localiza seus controles e estados, mantendo títulos, respostas e conteúdo dos membros no idioma original.
+- O modal de detalhes do Fórum agora localiza ações, contadores, descrição acessível e estados nos três idiomas; nomes e descrições do fórum continuam sendo conteúdo original.
+- A criação de fóruns localiza os modelos iniciais, configurações, validações, upload de imagens e controles em português, inglês e espanhol. Os campos digitados e erros livres da API continuam preservados.
+- A descoberta do Explore localiza os rótulos de fallback de mídia e mantém a página inicial, pesquisa contextual, filtros e conteúdo público existente.
+- O feed localiza notificações de interação e mensagens genéricas de falha; a validação de upload reaproveita mensagens localizadas sem substituir erros específicos da API. O detalhe da publicação localiza o estado de nova tentativa.
+- O perfil próprio localiza mensagens de conta, imagens, badges, fóruns públicos e listas; nomes, biografias, status e descrições de membros permanecem no idioma de origem. A busca de conexões agora respeita a região ativa.
+- As prévias de publicações compartilhadas e os rótulos acessíveis de GIFs agora acompanham o idioma ativo; a atribuição da KLIPY é localizada e o título do GIF permanece como conteúdo original.
+- Os controles de teste de áudio, a identificação da versão nas configurações e a ligação localizada entre os termos e a política de privacidade agora acompanham o idioma ativo. A atribuição da KLIPY nas mensagens também usa o catálogo.
+- Os estados dos fluxos de retorno OAuth e abertura de links internos também acompanham o idioma ativo nas três localidades.
+- Os erros de autenticação com códigos conhecidos agora são armazenados como chaves e renderizados conforme o idioma atual; respostas livres inesperadas do servidor continuam sem tradução arbitrária.
+- Erros locais de API, upload, conexão em tempo real e permissões de mídia agora usam mensagens dinâmicas do catálogo; respostas livres da API permanecem intactas.
+- O diálogo de atualização localiza estados e erros seguros por estado; notas de versão recebidas pelo updater continuam no idioma fornecido pelo publicador.
+- Os avisos de configuração e abertura do Google nas telas de entrada e cadastro também acompanham o idioma ativo.
+- Erros de configuração inválida da URL da API também passaram a usar o catálogo sem alterar os destinos permitidos em produção.
 
+# Em desenvolvimento
+
+- As seções de privacidade, notificações, perfil, atualizações e histórico de login, além das páginas de cobrança, agora acompanham o idioma ativo em português, inglês e espanhol. Textos livres do servidor e conteúdo de notas de versão continuam intactos.
+- O gerenciamento de fóruns agora localiza moderação, filtros, configurações, ações e confirmações. A janela de perfil também localiza detalhes de cargos, conquistas e estados das listas, preservando nomes, descrições, motivos e justificativas enviados por membros ou pelo servidor.
+- A seção de segurança da conta agora usa as traduções existentes também nos fluxos de configuração do autenticador e dos códigos de recuperação; o nome premium dos temas acompanha o idioma nas descrições acessíveis.
+- Os rótulos acessíveis do gerenciamento de fóruns e das conquistas no perfil também foram localizados, incluindo descrições de ingresso e decisão.
+- O canal de publicações da comunidade agora localiza controles, estados vazios e mensagens de erro genéricas nos três idiomas; títulos, respostas, conteúdo e nomes de membros continuam intactos.
+- A área inicial de moderação do workspace localiza filtros de denúncias e rótulos de ações em pt-BR, inglês e espanhol, preservando mensagens, motivos e conteúdo fornecido por membros.
+- O modal de perfil passou a localizar os principais estados, navegação, ações, listas, recursos de moderação e metadados de data; nomes, biografias, nomes de Fóruns e justificativas livres permanecem intactos. As abas e rótulos de cargos do gerenciamento de Fóruns agora acompanham o idioma ativo.
+- A área do perfil agora localiza navegação, cabeçalho, estatísticas e edição de perfil; nomes, biografias, badges e status personalizados continuam sendo conteúdo de usuário.
+- A seção de segurança localiza a verificação de e-mail, senha e etapas principais da configuração de autenticação em duas etapas. Mensagens de erro livres da API permanecem sem tradução automática.
+- A área de mensagens diretas localiza busca, estados vazios, acessibilidade, chamadas, envio de denúncias e textos do próprio aplicativo, mantendo intactos o conteúdo das mensagens e os erros dinâmicos recebidos da API.
+
+## Internacionalização — chamadas e componentes compartilhados
+
+- Localizados em português, inglês e espanhol os estados e controles do cartão de chamada, o histórico de chamadas, os indicadores de presença e os seletores de emojis e figurinhas.
+- Os avisos de conquistas e os rótulos acessíveis do visualizador de imagens acompanham o idioma ativo; nomes de conquistas, figurinhas e conteúdos recebidos permanecem intactos.
+- A seção de voz das configurações agora localiza controles de dispositivos, volumes, permissões e testes de áudio.
+- O seletor de recorte de imagens localiza instruções, mensagens de erro, zoom e ações sem substituir o título fornecido pelo fluxo que o abriu.
+- A página de publicações salvas e a lista de pessoas seguidas localizam estados vazios, busca, ações e carregamento sem traduzir conteúdo dos membros.
+- A página de descoberta de fóruns localiza busca, abas, estados vazios, convites e notificações geradas pelo aplicativo.
+- As notas de versão e os estados da janela de atualização agora usam o catálogo; mensagens dinâmicas de erro do processo principal continuam sendo exibidas sem interpretação arbitrária.
+- A área de cobrança localiza informações do plano e do portal do Stripe e formata a data de renovação conforme a preferência regional selecionada.
+- Os controles de voz comunitária e a estrutura reutilizável do modal de gerenciamento de fóruns também acompanham o idioma, preservando os rótulos de seções enviados por seus chamadores.
+- As categorias dos emojis Unicode e os rótulos de acessibilidade de emojis e figurinhas agora são localizados sem traduzir os nomes das figurinhas.
+- As seções de conta e conexões de login localizam os campos, ações e estados do Google, mantendo intactas as mensagens livres do servidor e formatando datas na região escolhida.
+- A lista de sessões e dispositivos agora localiza seus estados e ações e formata horários conforme a região, preservando os nomes de dispositivo e método informados pelo servidor.
+
+## Internacionalização — autenticação e navegação global
+
+- Adicionadas 96 chaves de interface em português brasileiro, inglês e espanhol para autenticação, recuperação de senha, MFA, navegação e componentes compartilhados.
+- A preferência de idioma agora atualiza `document.documentElement.lang` imediatamente e permanece salva neste dispositivo.
+- O ErrorBoundary, notificações globais e rótulos da navegação acompanham a troca de idioma sem reiniciar o aplicativo.
+
+## Internacionalização — Feed e ações sociais
+
+- O Feed, os cartões e detalhes de publicações, comentários, denúncias, bloqueios e status personalizados agora usam o catálogo nos três idiomas.
+- Conteúdos escritos pelos usuários, incluindo publicações, comentários, nomes e status, continuam no idioma original.
+- O relatório de cobertura inclui as novas chamadas de tradução; a métrica automatizada continua sendo parcial.
+- Os controles e a sobreposição de chamadas, a seleção de dispositivos e rótulos da navegação de configurações também acompanham o idioma ativo.
+- A tela de notificações localiza ações, estados vazios e falhas padrão; textos dinâmicos recebidos da API permanecem intactos.
+- O compositor e o estado vazio de conversas localizam anexos, envio e acessibilidade sem alterar o texto digitado ou recebido nas mensagens.
+- O cartão de fórum localiza seus rótulos e formata contagens conforme o idioma, mantendo nomes, descrições e tags definidos pelos membros.
+- A auditoria de cobertura passou a contar texto estático em expressões JSX e templates de atributos/objetos; seu relatório continua identificando uma amostra parcial.
+
+## Internacionalização — chamadas e navegação de configurações
+
+- Os controles de chamada, a sobreposição e a seleção de dispositivos de áudio/vídeo agora usam o catálogo pt-BR, en-US e es-ES.
+- A navegação de configurações e os controles de navegação móvel usam rótulos localizados; as seções internas ainda precisam de cobertura.
+
+## Ajustes locais — 22/10/2026
+
+- A barra de título do Electron agora aparece também no login e no cadastro, sem duplicação no Dashboard; o build web mantém a barra oculta.
+- Modais, gavetas e sobreposições respeitam a altura da barra de título, e o modal de configurações se ajusta ao espaço vertical disponível.
+- Os handlers IPC da janela são registrados uma vez e resolvem a janela pelo remetente validado.
+- Todos os canais IPC do renderer verificam a origem e o frame principal antes de operar, incluindo tokens de sessão e comandos do atualizador.
 
 Este arquivo registra versões preparadas a partir do histórico disponível no repositório. O snapshot independente não importa o histórico privado anterior; por isso, esta versão registra a linha de base do código-fonte e não atribui mudanças específicas a commits antigos.
 
@@ -10,7 +84,12 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - A publicação de binários e a ativação do fluxo de atualização exigem revisão e aprovação próprias.
 
 ## [0.15.1] — preparação local (não publicada)
+- O Explore abre em descoberta com publicações e fóruns; a busca só é executada após confirmação e revela então as categorias de resultados.
 - O `.env.example` usa a API local para desenvolvimento; builds empacotados continuam limitados à API oficial de produção.
+- O sino de notificações agora tem uma faixa reservada no layout do Dashboard, separada dos controles das telas Feed, DMs e Fóruns.
+- Separadores de data em DMs deixam de ficar sticky, evitando que se sobreponham às mensagens durante a rolagem.
+- A URL de desenvolvimento do renderer só é considerada em builds não empacotados, preservando webSecurity, CSP, navegação, carregamento local e menu de produção.
+- A CSP passa a ter uma única política no HTML, com `connect-src` limitado às APIs, aos hosts de mídia necessários e às origens Klipy usadas para baixar GIFs.
 - O chat lateral de voz agora reserva largura previsível, mantém a área de mensagens rolável e usa controles compactos acessíveis; cartões de participantes e prévias de compartilhamento se ajustam à janela.
 - A navegação do workspace destaca o canal selecionado, expõe a relação entre categorias expansíveis e seus canais e apresenta a quantidade de participantes conectados em canais de voz.
 - Mensagens agrupam mensagens consecutivas, mostram separadores de data, avatares e horários com adaptação para janelas estreitas; a tela ganhou estados de carregamento e erro mais claros.
@@ -26,6 +105,7 @@ Este arquivo registra versões preparadas a partir do histórico disponível no 
 - Fóruns participados abrem em uma área integrada ao aplicativo, restauram o último canal acessível e preservam a sessão de voz ao alternar entre módulos. O painel separa organização, cargos/permissões e convites.
 - A criação de Fórum mantém uploads bem-sucedidos para evitar reenvio e oferece continuar sem a imagem opcional cujo envio falhou. O player registra estado de rede e decodificação para distinguir melhor falhas de reprodução.
 - Correções locais de interface: mensagens da comunidade agora usam avatares, emojis e figurinhas existentes; mensagens consecutivas são agrupadas, participantes de voz mostram avatar e estado de áudio, e janelas sobrepostas respeitam a barra de título do Windows.
+- Vídeos MP4 privados em DMs tentam uma única reprodução alternativa com ticket novo e download limitado a 25 MB; erros de permissão, limite temporário, rede, formato e tamanho têm mensagens distintas. A causa da falha observada ainda depende de coleta real no Electron Windows.
 
 - Prepara o cliente e o lockfile para a versão `0.15.1`, com `electron-builder` `26.18.0` e `electron-updater` `6.8.11` estáveis.
 - Mantém o atualizador integrado desativado. Os erros de assinatura inválida/ausente e de integridade passam a ter mensagens específicas, sem expor detalhes internos.

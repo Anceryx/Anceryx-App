@@ -5,6 +5,7 @@ import { renderAnceryxText, isOnlyAnceryxEmojis } from '@/lib/anceryxEmojis'
 import { getKaoliSticker } from '@/lib/kaoliStickers'
 import { isSafeKlipyMediaUrl } from '@/services/klipyApi'
 import { formatTime as formatAppTime } from '@/utils/formatters'
+import { useTranslation } from '@/i18n'
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -18,7 +19,8 @@ interface MessageBubbleProps {
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, showMeta, senderName, isNew = false, onEntryAnimationEnd, onOpenImage }) => {
-// Hist?rico de chamadas, exibido como evento centralizado.
+  const t = useTranslation()
+  // Histórico de chamadas, exibido como evento centralizado.
   if (message.type === 'call') {
     return <div className={isNew ? 'motion-message-new' : ''} onAnimationEnd={onEntryAnimationEnd}><CallHistoryMessage entry={message.callEntry} /></div>
   }
@@ -57,17 +59,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, showMeta
               type="button"
               onClick={() => onOpenImage?.(_exhaustive.image)}
               className="overflow-hidden rounded-xl border border-white/10 bg-black/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-              aria-label="Abrir imagem da mensagem"
+              aria-label={t('messages.openImage')}
             >
               <img
                 src={_exhaustive.image.url}
-                alt={_exhaustive.image.name || 'Imagem da mensagem'}
+                alt={_exhaustive.image.name || t('messages.openImage')}
                 className="max-h-64 max-w-[min(320px,58vw)] object-contain"
                 draggable={false}
               />
             </button>
           )}
-          {_exhaustive.type === 'gif' && _exhaustive.image && <span className="text-[10px] opacity-60">Powered by KLIPY</span>}
+          {_exhaustive.type === 'gif' && _exhaustive.image && <span className="text-[10px] opacity-60">{t('messages.gifProviderAttribution')}</span>}
           {hasText && (
             <span className="whitespace-pre-wrap">
               {renderAnceryxText(_exhaustive.content)}

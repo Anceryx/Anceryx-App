@@ -1,9 +1,10 @@
 import { useAuthStore } from '@/store/authStore'
 import { API_BASE_URL } from './apiConfig'
 import { isWebPlatform } from '@/platform/platform'
+import { LocalizedUiError } from '@/utils/localizedError'
 export { API_BASE_URL }
 
-export class ApiError extends Error {
+export class ApiError extends LocalizedUiError {
   constructor(message: string, readonly status = 0, readonly code?: string, readonly requestId?: string, readonly operation?: string) {
     super(message)
     this.name = 'ApiError'
@@ -37,7 +38,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, retrie
     response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, credentials: isWebPlatform ? 'include' : init.credentials })
   } catch {
     logApiDiagnostic(method, route, 0)
-    throw new ApiError('Não foi possível conectar à API da Anceryx. Verifique a conexão e tente novamente.', 0, undefined, undefined, operation)
+    throw new ApiError('__i18n:common.apiConnectionFailed', 0, undefined, undefined, operation)
   }
   if (response.status === 401 && !retried) {
     const refreshed = await useAuthStore.getState().refreshSession()
@@ -97,7 +98,7 @@ export async function apiStream(path: string, retried = false): Promise<Response
   } catch {
     const route = diagnosticRoute(path)
     logApiDiagnostic('GET', route, 0)
-    throw new ApiError('Não foi possível conectar à API da Anceryx para baixar o anexo.', 0, undefined, undefined, `GET ${route}`)
+    throw new ApiError('__i18n:common.apiAttachmentConnectionFailed', 0, undefined, undefined, `GET ${route}`)
   }
   if (response.status === 401 && !retried && await useAuthStore.getState().refreshSession()) return apiStream(path, true)
   if (!response.ok) {

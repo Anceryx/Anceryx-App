@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { moderationApi, type ModerationNotice } from '@/services/moderationApi'
 import ToggleSwitch from '../ToggleSwitch'
 import { realtimeClient } from '@/services/realtimeClient'
+import { useTranslation } from '@/i18n'
 
 // ── helpers de layout ─────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ const Group: React.FC<GroupProps> = ({ title, children }) => (
 // ── componente principal ──────────────────────────────────────────────────────
 
 const NotificacoesSection: React.FC = () => {
+  const t = useTranslation()
   const [kaoliNotices, setKaoliNotices] = useState<ModerationNotice[]>([])
   const [kaoliError, setKaoliError] = useState<string | null>(null)
 
@@ -46,22 +48,22 @@ const NotificacoesSection: React.FC = () => {
       void moderationApi.listNotices().then((response) => {
         if (mounted) setKaoliNotices(response.notices)
       }).catch(() => {
-        if (mounted) setKaoliError('Não foi possível atualizar os avisos do Kaoli Mod.')
+        if (mounted) setKaoliError(t('settings.notifications.updateNoticeError'))
       })
     })
     void moderationApi.listNotices().then((response) => {
       if (mounted) setKaoliNotices(response.notices)
     }).catch(() => {
-      if (mounted) setKaoliError('Não foi possível carregar os avisos do Kaoli Mod.')
+      if (mounted) setKaoliError(t('settings.notifications.loadNoticeError'))
     })
     return () => { mounted = false; unsubscribe() }
-  }, [])
+  }, [t])
 
   const markKaoliNoticeRead = async (noticeId: string) => {
     try {
       await moderationApi.markNoticeRead(noticeId)
       setKaoliNotices((current) => current.map((notice) => notice.id === noticeId ? { ...notice, readAt: new Date().toISOString() } : notice))
-    } catch { setKaoliError('Não foi possível marcar o aviso como lido.') }
+    } catch { setKaoliError(t('settings.notifications.markNoticeReadError')) }
   }
 
   // Mensagens
@@ -83,64 +85,65 @@ const NotificacoesSection: React.FC = () => {
     <div className="max-w-2xl">
 
 
-      <Group title="Mensagens">
+      {kaoliError && <p role="alert" className="mb-4 rounded-lg border border-red-500/30 p-3 text-sm text-red-300">{kaoliError}</p>}
+      <Group title={t('settings.notifications.messages')}>
         <ToggleRow
-          label="Som de mensagem privada"
-          description="Toca um som ao receber uma mensagem direta"
+          label={t('settings.notifications.privateMessageSound')}
+          description={t('settings.notifications.privateMessageSoundDescription')}
           checked={somMsgPrivada}
           onChange={setSomMsgPrivada}
         />
         <ToggleRow
-          label="Som de menção"
-          description="Toca um som quando alguém te menciona"
+          label={t('settings.notifications.mentionSound')}
+          description={t('settings.notifications.mentionSoundDescription')}
           checked={somMencao}
           onChange={setSomMencao}
         />
         <ToggleRow
-          label="Notificação de mensagem privada"
-          description="Exibe uma notificação do sistema ao receber mensagens"
+          label={t('settings.notifications.privateMessageNotice')}
+          description={t('settings.notifications.privateMessageNoticeDescription')}
           checked={notifMsgPrivada}
           onChange={setNotifMsgPrivada}
         />
         <ToggleRow
-          label="Preview do conteúdo da mensagem"
-          description="Mostra o início da mensagem na notificação"
+          label={t('settings.notifications.messagePreview')}
+          description={t('settings.notifications.messagePreviewDescription')}
           checked={previewConteudo}
           onChange={setPreviewConteudo}
         />
       </Group>
 
-      <Group title="Comunidade">
+      <Group title={t('settings.notifications.community')}>
         <ToggleRow
-          label="Notificações de fórum"
-          description="Atualizações dos fóruns que você participa"
+          label={t('settings.notifications.forumNotices')}
+          description={t('settings.notifications.forumNoticesDescription')}
           checked={notifForum}
           onChange={setNotifForum}
         />
         <ToggleRow
-          label="Notificações do feed"
-          description="Novos posts de pessoas que você segue"
+          label={t('settings.notifications.feedNotices')}
+          description={t('settings.notifications.feedNoticesDescription')}
           checked={notifFeed}
           onChange={setNotifFeed}
         />
         <ToggleRow
-          label="Solicitações de amizade"
-          description="Quando alguém te envia uma solicitação"
+          label={t('settings.notifications.friendRequests')}
+          description={t('settings.notifications.friendRequestsDescription')}
           checked={notifAmizade}
           onChange={setNotifAmizade}
         />
       </Group>
 
-      <Group title="Sistema">
+      <Group title={t('settings.notifications.system')}>
         <ToggleRow
-          label="Notificações do aplicativo"
-          description="Badge no ícone da taskbar com contagem de não-lidos"
+          label={t('settings.notifications.appNotices')}
+          description={t('settings.notifications.appNoticesDescription')}
           checked={notifApp}
           onChange={setNotifApp}
         />
         <ToggleRow
-          label="Sons do sistema"
-          description="Sons ao conectar, desconectar e outras ações do app"
+          label={t('settings.notifications.systemSounds')}
+          description={t('settings.notifications.systemSoundsDescription')}
           checked={sonsSistema}
           onChange={setSonsSistema}
         />

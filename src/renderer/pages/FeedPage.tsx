@@ -15,6 +15,7 @@ import { socialApi, type PublicProfileDto } from '@/services/socialApi'
 import { UserProfileModal } from '@/components/social/index'
 import { postsApi } from '@/services/postsApi'
 import { ApiError } from '@/services/apiClient'
+import { useTranslation } from '@/i18n'
 
 const ACCEPTED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4']
 
@@ -26,6 +27,7 @@ interface MediaState {
 }
 
 const FeedPage: React.FC = () => {
+  const t = useTranslation()
   const { posts, following, feedCursor, createPost, hydrateSocial, loading, error: feedError, upsertRealtimePost, deleteRealtimePost, setRealtimePostLike, upsertRealtimeComment, deleteRealtimeComment } = useSocialStore((s) => ({
     posts: s.posts,
     following: s.following,
@@ -86,10 +88,10 @@ const FeedPage: React.FC = () => {
     setPageLoading(true); setPageError(null); setFollowingPosts([])
     void postsApi.feed(undefined, 'following').then(({ posts: rows, nextCursor }) => {
       if (active) { setFollowingPosts(rows.map(realtimePostToLocal)); setPageCursor(nextCursor) }
-    }).catch((error) => { if (active) setPageError(error instanceof Error ? error.message : 'Não foi possível carregar o feed de quem você segue.') })
+    }).catch((error) => { if (active) setPageError(error instanceof Error ? error.message : t('feed.followingLoadFailed')) })
       .finally(() => { if (active) setPageLoading(false) })
     return () => { active = false }
-  }, [feedTab, token])
+  }, [feedTab, t, token])
 
   useEffect(() => { if (feedTab === 'for-you') setPageCursor(feedCursor) }, [feedCursor, feedTab])
 
@@ -121,11 +123,11 @@ const FeedPage: React.FC = () => {
       setSearchError(null)
       void socialApi.searchUsers(query)
         .then(({ users }) => { if (active) setSearchUsers(users) })
-        .catch((error: unknown) => { if (active) setSearchError(error instanceof Error ? error.message : 'Não foi possível pesquisar agora.') })
+        .catch((error: unknown) => { if (active) setSearchError(error instanceof Error ? error.message : t('feed.searchFailed')) })
         .finally(() => { if (active) setSearching(false) })
     }, 250)
     return () => { active = false; window.clearTimeout(timer) }
-  }, [searchQuery])
+  }, [searchQuery, t])
 
   useEffect(() => {
     if (!token) return
@@ -139,12 +141,12 @@ const FeedPage: React.FC = () => {
       realtimeClient.subscribe('post.comment.updated', (event) => upsertRealtimeComment(event.payload)),
       realtimeClient.subscribe('post.comment.deleted', (event) => deleteRealtimeComment(event.payload.postId, event.payload.commentId)),
       realtimeClient.subscribe('notification.created', (event) => {
-        if (event.payload.type === 'post.comment') addNotification('Novo comentário em uma publicação sua.', 'info')
-        if (event.payload.type === 'post.reaction') addNotification('Nova reação em uma publicação sua.', 'info')
+        if (event.payload.type === 'post.comment') addNotification(t('feed.newComment'), 'info')
+        if (event.payload.type === 'post.reaction') addNotification(t('feed.newReaction'), 'info')
       }),
     ]
     return () => unsubs.forEach((unsubscribe) => unsubscribe())
-  }, [addNotification, deleteRealtimeComment, deleteRealtimePost, setRealtimePostLike, token, upsertRealtimeComment, upsertRealtimePost])
+  }, [addNotification, deleteRealtimeComment, deleteRealtimePost, setRealtimePostLike, t, token, upsertRealtimeComment, upsertRealtimePost])
 
   if (!user) return null
 
@@ -156,7 +158,7 @@ const FeedPage: React.FC = () => {
     setMediaError(null)
     try {
       const limit = await mediaApi.getUploadLimit('post-image')
-      const err = validateUpload(file, ACCEPTED_IMAGE_MIMES, limit)
+      const err = validateUpload(file, ACCEPTED_IMAGE_MIMES, limit, t)
       if (err) {
         setMediaError(err)
         return
@@ -164,7 +166,7 @@ const FeedPage: React.FC = () => {
       if (media?.preview.startsWith('blob:')) URL.revokeObjectURL(media.preview)
       setMedia({ name: file.name, type: file.type, preview: URL.createObjectURL(file), file })
     } catch (error) {
-      setMediaError(error instanceof Error ? error.message : 'Não foi possível verificar o limite de envio.')
+      setMediaError(error instanceof Error ? error.message : t('feed.uploadLimitFailed'))
     }
   }
 
@@ -195,8 +197,8 @@ const FeedPage: React.FC = () => {
       setMedia(null); setMediaError(null); setExpanded(false)
     } catch (error) {
       if (mediaAssetId && error instanceof ApiError && error.status >= 400 && error.status < 500) void mediaApi.deleteUpload(mediaAssetId).catch(() => undefined)
-      setMediaError(error instanceof Error ? error.message : 'Não foi possível publicar. Seu rascunho foi preservado.')
-      addNotification('Falha ao publicar. Tente novamente.', 'error')
+      setMediaError(error instanceof Error ? error.message : t('feed.createDraftFailed'))
+      addNotification(t('feed.createFailed'), 'error')
     } finally { uploadControllerRef.current = null; setMediaLoading(false) }
   }
 
@@ -259,7 +261,7 @@ const FeedPage: React.FC = () => {
       if (feedTab === 'following') setFollowingPosts((current) => [...new Map([...current, ...rows.map(realtimePostToLocal)].map((post) => [post.id, post])).values()])
       else rows.forEach((post) => upsertRealtimePost(post))
       setPageCursor(nextCursor)
-    } catch (error) { setPageError(error instanceof Error ? error.message : 'Não foi possível carregar mais publicações.') }
+    } catch (error) { setPageError(error instanceof Error ? error.message : t('feed.loadMoreFailed')) }
     finally { setPageLoading(false) }
   }
 
@@ -272,29 +274,29 @@ const FeedPage: React.FC = () => {
           onChange={(event) => setSearchQuery(event.target.value)}
           onKeyDown={(event) => { if (event.key === 'Escape') setSearchQuery('') }}
           className="mx-auto max-w-[720px] min-w-0 flex-1 rounded-lg border border-border bg-background-tertiary px-3 py-1.5 text-sm text-text-primary outline-none placeholder:text-text-secondary focus:border-accent focus:ring-1 focus:ring-accent"
-          placeholder="Buscar no Anceryx..."
-          aria-label="Buscar pessoas e publicações no Anceryx"
+          placeholder={t('feed.searchPlaceholder')}
+          aria-label={t('feed.searchAria')}
           aria-busy={searching}
         />
         {searchQuery.trim().length >= 2 && <div className="absolute left-3 right-3 top-[calc(100%-1px)] mx-auto max-w-[720px] rounded-b-xl border border-border bg-background-secondary p-2 shadow-xl sm:left-5 sm:right-5">
-          {searching && <p className="px-2 py-1 text-xs text-text-secondary" role="status">Buscando pessoas...</p>}
+          {searching && <p className="px-2 py-1 text-xs text-text-secondary" role="status">{t('feed.searchingPeople')}</p>}
           {searchError && <p className="px-2 py-1 text-xs text-red-300" role="alert">{searchError}</p>}
           {!searching && !searchError && searchUsers.map((profile) => <button key={profile.id} type="button" onClick={() => { setSelectedUser(profile.username); setSearchQuery('') }} className="flex w-full items-center gap-2 rounded-lg p-2 text-left hover:bg-background-tertiary"><Avatar src={profile.avatarUrl} name={profile.displayName} size="xs" /><span className="min-w-0"><span className="block truncate text-sm text-text-primary">{profile.displayName}</span><span className="block truncate text-xs text-text-secondary">@{profile.username}</span></span></button>)}
-          {!searching && !searchError && searchUsers.length === 0 && <p className="px-2 py-1 text-xs text-text-secondary">Nenhuma pessoa encontrada. As publicações correspondentes aparecem abaixo.</p>}
+          {!searching && !searchError && searchUsers.length === 0 && <p className="px-2 py-1 text-xs text-text-secondary">{t('feed.searchNoPeople')}</p>}
         </div>}
       </div>
 
       <div className="anceryx-scroll flex-1 overflow-y-auto overflow-x-hidden">
         <div className="mx-auto flex w-full max-w-[760px] flex-col gap-3 px-3 py-3 sm:gap-4 sm:px-5 sm:py-5">
-          <div className="flex rounded-xl border border-border bg-background-secondary p-1" role="tablist" aria-label="Feed da Home">
-            {([{ id: 'for-you', label: 'Para você' }, { id: 'following', label: 'Seguindo' }] as const).map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={feedTab === tab.id} onClick={() => setFeedTab(tab.id)} className={`motion-control flex-1 rounded-lg px-3 py-2 text-sm font-medium ${feedTab === tab.id ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:text-text-primary'}`}>{tab.label}</button>)}
+          <div className="flex rounded-xl border border-border bg-background-secondary p-1" role="tablist" aria-label={t('feed.tabs')}>
+            {([{ id: 'for-you', label: t('feed.tabForYou') }, { id: 'following', label: t('feed.tabFollowing') }] as const).map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={feedTab === tab.id} onClick={() => setFeedTab(tab.id)} className={`motion-control flex-1 rounded-lg px-3 py-2 text-sm font-medium ${feedTab === tab.id ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:text-text-primary'}`}>{tab.label}</button>)}
           </div>
           {pageError && <div role="alert" className="anceryx-card p-3 text-sm text-accent-red">{pageError}</div>}
-          {officialBanners.map((campaign) => <section key={campaign.id} className="relative isolate overflow-hidden rounded-2xl border border-border bg-background-secondary p-5 sm:p-7" style={{ borderColor: campaign.accentColor }} aria-label="Comunicado oficial da Anceryx">
+          {officialBanners.map((campaign) => <section key={campaign.id} className="relative isolate overflow-hidden rounded-2xl border border-border bg-background-secondary p-5 sm:p-7" style={{ borderColor: campaign.accentColor }} aria-label={t('feed.officialAnnouncement')}>
             {campaign.bannerImageUrl && <img src={mediaApi.resolvePublicUrl(campaign.bannerImageUrl)} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-20" />}
             <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background-primary/95 via-background-primary/85 to-background-primary/55" />
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent"><span className="rounded-full bg-accent/15 px-2 py-1">Anceryx oficial</span><span aria-hidden="true">•</span><span>Comunicado</span></div>
-            <h2 className="mt-3 text-xl font-bold text-text-primary sm:text-2xl">{campaign.bannerTitle ?? campaign.title ?? 'Novidade da Anceryx'}</h2>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent"><span className="rounded-full bg-accent/15 px-2 py-1">{t('feed.official')}</span><span aria-hidden="true">•</span><span>{t('feed.announcement')}</span></div>
+            <h2 className="mt-3 text-xl font-bold text-text-primary sm:text-2xl">{campaign.bannerTitle ?? campaign.title ?? t('feed.newFeature')}</h2>
             {campaign.bannerDescription && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">{campaign.bannerDescription}</p>}
             {campaign.ctaLabel && campaign.ctaUrl && <button type="button" onClick={() => { if (window.electronAPI?.openExternal) void window.electronAPI.openExternal(campaign.ctaUrl!); else window.open(campaign.ctaUrl!, '_blank', 'noopener,noreferrer') }} className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">{campaign.ctaLabel}</button>}
           </section>)}
@@ -308,9 +310,9 @@ const FeedPage: React.FC = () => {
                   role="button"
                   tabIndex={0}
                   onKeyDown={(event) => event.key === 'Enter' && setExpanded(true)}
-                  aria-label="Criar novo post"
+                  aria-label={t('feed.createPost')}
                 >
-                  O que está em sua mente?
+                  {t('feed.composerPlaceholder')}
                 </div>
               </div>
             ) : (
@@ -319,11 +321,11 @@ const FeedPage: React.FC = () => {
                   ref={textareaRef}
                   rows={3}
                   className="w-full resize-none rounded-md border border-border bg-background-tertiary p-3 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
-                  placeholder="O que está em sua mente?"
+                  placeholder={t('feed.composerPlaceholder')}
                   value={content}
                   onChange={(event) => setContent(event.target.value.slice(0, MAX_CHARS))}
                   autoFocus
-                  aria-label="Conteúdo da publicação"
+                  aria-label={t('feed.postContent')}
                 />
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -332,7 +334,7 @@ const FeedPage: React.FC = () => {
                     onClick={() => mediaInputRef.current?.click()}
                     disabled={mediaLoading}
                     className="rounded p-1 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:opacity-40"
-                    aria-label="Anexar imagem"
+                    aria-label={t('feed.attachImage')}
                   >
                     <ImagePlus size={16} />
                   </button>
@@ -340,7 +342,7 @@ const FeedPage: React.FC = () => {
                     type="button"
                     onClick={handleInsertHashtag}
                     className="rounded p-1 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                    aria-label="Inserir hashtag"
+                    aria-label={t('feed.insertHashtag')}
                   >
                     <Hash size={16} />
                   </button>
@@ -353,7 +355,7 @@ const FeedPage: React.FC = () => {
                   <span className="ml-auto text-xs text-text-secondary" aria-live="polite">
                     {content.length}/{MAX_CHARS}
                   </span>
-                  {mediaLoading && <span className="text-xs text-text-secondary animate-pulse">Enviando mídia... {mediaProgress}%</span>}
+                  {mediaLoading && <span className="text-xs text-text-secondary animate-pulse">{t('feed.uploadingMedia')} {mediaProgress}%</span>}
                 </div>
 
                 {mediaError && (
@@ -365,12 +367,12 @@ const FeedPage: React.FC = () => {
 
                 {media && (
                   <div className="relative mt-1">
-                    {media.type === 'video/mp4' ? <video src={media.preview} controls preload="metadata" playsInline className="max-h-56 w-full rounded-lg border border-border bg-background-tertiary object-contain" aria-label="Pré-visualização do vídeo" /> : <img src={media.preview} className="max-h-56 w-full rounded-lg border border-border bg-background-tertiary object-contain" alt="Pré-visualização da imagem" />}
+                    {media.type === 'video/mp4' ? <video src={media.preview} controls preload="metadata" playsInline className="max-h-56 w-full rounded-lg border border-border bg-background-tertiary object-contain" aria-label={t('feed.videoPreview')} /> : <img src={media.preview} className="max-h-56 w-full rounded-lg border border-border bg-background-tertiary object-contain" alt={t('feed.imagePreview')} />}
                     <button
                       type="button"
                       onClick={handleRemoveMedia}
                       className="absolute right-1.5 top-1.5 rounded-full bg-black/70 p-1 text-white transition-colors hover:bg-black/90"
-                      aria-label="Remover imagem"
+                      aria-label={t('feed.removeImage')}
                     >
                       <X size={13} />
                     </button>
@@ -387,9 +389,9 @@ const FeedPage: React.FC = () => {
                 />
 
                 <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleCancel}>Cancelar</Button>
+                  <Button variant="ghost" size="sm" onClick={handleCancel}>{t('common.cancel')}</Button>
                   <Button variant="primary" size="sm" onClick={() => void handlePost()} disabled={!canPost || mediaLoading}>
-                    Postar
+                    {t('feed.createPost')}
                   </Button>
                 </div>
               </div>
@@ -397,13 +399,13 @@ const FeedPage: React.FC = () => {
           </div>
 
           <div key={feedTab} className="motion-view-forward flex flex-col gap-3">
-            {(loading || pageLoading && feedTab === 'following') && <div className="anceryx-card p-4 text-sm text-text-secondary">Carregando feed...</div>}
-            {feedError && <div className="anceryx-card p-4 text-sm text-accent-red">{feedError} <button className="underline" onClick={() => void hydrateSocial()}>Tentar novamente</button></div>}
-            {searchQuery.trim() && <p className="text-xs text-text-secondary" aria-live="polite">Publicações com “{searchQuery.trim()}”</p>}
+            {(loading || pageLoading && feedTab === 'following') && <div className="anceryx-card p-4 text-sm text-text-secondary">{t('feed.loading')}</div>}
+            {feedError && <div className="anceryx-card p-4 text-sm text-accent-red">{feedError} <button className="underline" onClick={() => void hydrateSocial()}>{t('common.retry')}</button></div>}
+            {searchQuery.trim() && <p className="text-xs text-text-secondary" aria-live="polite">{t('explore.posts')} “{searchQuery.trim()}”</p>}
             {visiblePosts.length === 0 ? (
               <div className="anceryx-card flex min-h-[220px] flex-col items-center justify-center py-12 text-sm text-text-secondary">
-                <p>{searchQuery.trim() ? 'Nenhuma publicação encontrada.' : feedTab === 'following' ? 'Ainda não há publicações de quem você segue.' : 'Nenhum post ainda.'}</p>
-                {!searchQuery.trim() && feedTab === 'following' ? <button type="button" onClick={() => setActiveSection('explore')} className="mt-2 text-xs text-accent hover:underline">Descobrir pessoas</button> : !searchQuery.trim() && <p className="mt-1 text-xs">Seja a primeira pessoa a postar!</p>}
+                <p>{searchQuery.trim() ? t('explore.emptyPosts') : feedTab === 'following' ? t('feed.emptyFollowing') : t('feed.empty')}</p>
+                {!searchQuery.trim() && feedTab === 'following' ? <button type="button" onClick={() => setActiveSection('explore')} className="mt-2 text-xs text-accent hover:underline">{t('feed.discoverPeople')}</button> : !searchQuery.trim() && <p className="mt-1 text-xs">{t('feed.firstPost')}</p>}
               </div>
             ) : (
               visiblePosts.map((post) => (
@@ -415,7 +417,7 @@ const FeedPage: React.FC = () => {
                 />
               ))
             )}
-            {pageCursor && <Button variant="secondary" loading={pageLoading} onClick={() => void loadMoreFeed()}>Carregar mais</Button>}
+            {pageCursor && <Button variant="secondary" loading={pageLoading} onClick={() => void loadMoreFeed()}>{t('feed.loadMore')}</Button>}
           </div>
         </div>
       </div>

@@ -18,6 +18,12 @@ function visibleLiteral(text) {
   return text.trim().length > 0 && !/^[\s\d.,:;!?/(){}%+–—-]+$/.test(text)
 }
 
+function staticText(node) {
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text
+  if (ts.isTemplateExpression(node)) return [node.head.text, ...node.templateSpans.map((span) => span.literal.text)].join(' ')
+  return null
+}
+
 await collect(rootPath)
 const modules = new Map()
 let translatedCalls = 0
@@ -31,8 +37,16 @@ for (const file of files) {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 't') counts.translated++
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'translate' && node.arguments.length > 0 && ts.isStringLiteral(node.arguments[0])) counts.translated++
     if (ts.isJsxText(node) && visibleLiteral(node.getText(source))) counts.hardcoded++
-    if (ts.isJsxAttribute(node) && node.initializer && ts.isStringLiteral(node.initializer) && /^(aria-label|title|placeholder|alt|label|description)$/.test(node.name.getText(source)) && visibleLiteral(node.initializer.text)) counts.hardcoded++
-    if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && /^(label|title|placeholder|ariaLabel|description)$/.test(node.name.text) && ts.isStringLiteral(node.initializer) && visibleLiteral(node.initializer.text)) counts.hardcoded++
+    if (ts.isJsxExpression(node) && !ts.isJsxAttribute(node.parent) && node.expression && (ts.isStringLiteral(node.expression) || ts.isNoSubstitutionTemplateLiteral(node.expression)) && visibleLiteral(node.expression.text)) counts.hardcoded++
+    if (ts.isJsxAttribute(node) && node.initializer) {
+      const expression = ts.isJsxExpression(node.initializer) ? node.initializer.expression : node.initializer
+      const text = expression && staticText(expression)
+      if (/^(aria-label|title|placeholder|alt|label|description)$/.test(node.name.getText(source)) && text && visibleLiteral(text)) counts.hardcoded++
+    }
+    if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name)) {
+      const text = staticText(node.initializer)
+      if (/^(label|title|placeholder|ariaLabel|description)$/.test(node.name.text) && text && visibleLiteral(text)) counts.hardcoded++
+    }
     ts.forEachChild(node, visit)
   }
   visit(source)

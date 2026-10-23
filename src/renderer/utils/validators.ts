@@ -124,15 +124,16 @@ const FORUM_NAME_MAX = 60
 const FORUM_DESC_MAX = 500
 const FORUM_TAG_MAX_COUNT = 10
 const FORUM_TAG_MAX_LEN = 30
+type ValidationTranslator = (key: import('../i18nCatalog').TranslationKey, values?: Record<string, string | number>) => string
 
 /**
  * Validates a forum name.
  * Returns an error message or null if valid.
  */
-export function validateForumName(name: string): string | null {
+export function validateForumName(name: string, translate?: ValidationTranslator): string | null {
   const t = name.trim()
-  if (t.length < FORUM_NAME_MIN) return `Nome deve ter pelo menos ${FORUM_NAME_MIN} caracteres.`
-  if (t.length > FORUM_NAME_MAX) return `Nome deve ter no máximo ${FORUM_NAME_MAX} caracteres.`
+  if (t.length < FORUM_NAME_MIN) return translate?.('createForum.validation.nameMin', { count: FORUM_NAME_MIN }) ?? `Nome deve ter pelo menos ${FORUM_NAME_MIN} caracteres.`
+  if (t.length > FORUM_NAME_MAX) return translate?.('createForum.validation.nameMax', { count: FORUM_NAME_MAX }) ?? `Nome deve ter no máximo ${FORUM_NAME_MAX} caracteres.`
   return null
 }
 
@@ -140,9 +141,9 @@ export function validateForumName(name: string): string | null {
  * Validates a forum description.
  * Returns an error message or null if valid.
  */
-export function validateForumDescription(desc: string): string | null {
-  if (desc.trim().length === 0) return 'Descrição não pode ser vazia.'
-  if (desc.length > FORUM_DESC_MAX) return `Descrição deve ter no máximo ${FORUM_DESC_MAX} caracteres.`
+export function validateForumDescription(desc: string, translate?: ValidationTranslator): string | null {
+  if (desc.trim().length === 0) return translate?.('createForum.validation.descriptionRequired') ?? 'Descrição não pode ser vazia.'
+  if (desc.length > FORUM_DESC_MAX) return translate?.('createForum.validation.descriptionMax', { count: FORUM_DESC_MAX }) ?? `Descrição deve ter no máximo ${FORUM_DESC_MAX} caracteres.`
   return null
 }
 
@@ -150,12 +151,12 @@ export function validateForumDescription(desc: string): string | null {
  * Validates forum tags array.
  * Returns an error message or null if valid.
  */
-export function validateForumTags(tags: string[]): string | null {
-  if (tags.length > FORUM_TAG_MAX_COUNT) return `Máximo de ${FORUM_TAG_MAX_COUNT} tags.`
+export function validateForumTags(tags: string[], translate?: ValidationTranslator): string | null {
+  if (tags.length > FORUM_TAG_MAX_COUNT) return translate?.('createForum.validation.tagCount', { count: FORUM_TAG_MAX_COUNT }) ?? `Máximo de ${FORUM_TAG_MAX_COUNT} tags.`
   for (const tag of tags) {
-    if (tag.trim().length === 0) return 'Tag não pode ser vazia.'
-    if (tag.length > FORUM_TAG_MAX_LEN) return `Tag "${tag}" é muito longa (máx ${FORUM_TAG_MAX_LEN} caracteres).`
-    if (!/^[a-zA-Z0-9_\u00C0-\u024F\s-]+$/.test(tag)) return `Tag "${tag}" contém caracteres inválidos.`
+    if (tag.trim().length === 0) return translate?.('createForum.validation.tagEmpty') ?? 'Tag não pode ser vazia.'
+    if (tag.length > FORUM_TAG_MAX_LEN) return translate?.('createForum.validation.tagMax', { name: tag, count: FORUM_TAG_MAX_LEN }) ?? `Tag "${tag}" é muito longa (máx ${FORUM_TAG_MAX_LEN} caracteres).`
+    if (!/^[a-zA-Z0-9_\u00C0-\u024F\s-]+$/.test(tag)) return translate?.('createForum.validation.tagInvalid', { name: tag }) ?? `Tag "${tag}" contém caracteres inválidos.`
   }
   return null
 }
@@ -172,20 +173,21 @@ export function validateForumTags(tags: string[]): string | null {
 export function validateUpload(
   file: File,
   allowedMimes: string[],
-  maxBytes: number
+  maxBytes: number,
+  translate?: ValidationTranslator,
 ): string | null {
   if (!allowedMimes.includes(file.type)) {
     const readable = allowedMimes
       .map((m) => m.split('/')[1].toUpperCase())
       .join(', ')
-    return `Tipo de arquivo não suportado. Aceitos: ${readable}.`
+    return translate?.('validation.fileType', { types: readable }) ?? `Tipo de arquivo não suportado. Aceitos: ${readable}.`
   }
   if (file.size > maxBytes) {
     const maxMB = (maxBytes / (1024 * 1024)).toFixed(0)
-    return `Arquivo muito grande. Tamanho máximo: ${maxMB} MB.`
+    return translate?.('validation.fileSize', { size: maxMB }) ?? `Arquivo muito grande. Tamanho máximo: ${maxMB} MB.`
   }
   if (file.size === 0) {
-    return 'O arquivo está vazio.'
+    return translate?.('validation.fileEmpty') ?? 'O arquivo está vazio.'
   }
   return null
 }

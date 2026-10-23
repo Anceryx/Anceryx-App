@@ -1,3 +1,5 @@
+import { LocalizedUiError } from '../utils/localizedError.ts'
+
 const PRODUCTION_API_URL = 'https://admin-anceryx.site'
 const PRODUCTION_WEB_API_URL = 'https://api.anceryx.site'
 const DEVELOPMENT_API_URL = 'http://localhost:3000'
@@ -10,14 +12,14 @@ export function resolveApiBaseUrl(configured: string | undefined, isProduction: 
   try {
     url = new URL(candidate)
   } catch {
-    throw new Error('A URL da API da Anceryx e invalida.')
+    throw new LocalizedUiError('__i18n:common.apiUrlInvalid')
   }
 
   if (isProduction && (url.protocol !== 'https:' || !allowedProductionHosts.includes(url.hostname) || url.username || url.password || url.search || url.hash)) {
-    throw new Error('A versao empacotada exige uma API HTTPS oficial da Anceryx.')
+    throw new LocalizedUiError('__i18n:common.productionApiHttpsRequired')
   }
 
-  if (!['http:', 'https:'].includes(url.protocol)) throw new Error('O protocolo da API da Anceryx e invalido.')
+  if (!['http:', 'https:'].includes(url.protocol)) throw new LocalizedUiError('__i18n:common.apiProtocolInvalid')
   return url.toString().replace(/\/$/, '')
 }
 

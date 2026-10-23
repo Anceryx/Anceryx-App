@@ -2,7 +2,7 @@
 
 Status: o atualizador integrado está desativado no cliente até que haja verificação confiável de manifests assinados.
 
-O feed configurado aponta para Releases públicos de `Anceryx/Anceryx-App`; o aplicativo não contém token nem URL de feed privado. O cliente preparado para `0.15.1` usa `electron-builder` 26.18.0 e `electron-updater` 6.8.11, que não verificam a assinatura Ed25519 do manifest. Por isso, a consulta, o download e a instalação permanecem bloqueados. SHA-512 e blockmap detectam inconsistências no arquivo, mas não autenticam o manifest.
+O feed configurado aponta para Releases públicos de `Anceryx/Anceryx-App`; o aplicativo não contém token nem URL de feed privado. O cliente preparado para `0.17.0` usa `electron-builder` 26.18.0 e `electron-updater` 6.8.11, que não verificam a assinatura Ed25519 do manifest. Por isso, a consulta, o download e a instalação permanecem bloqueados. SHA-512 e blockmap detectam inconsistências no arquivo, mas não autenticam o manifest.
 
 Para reativar o fluxo, será necessário adotar versões estáveis compatíveis do builder e updater, configurar a chave pública confiável incorporada ao aplicativo, armazenar a chave privada em secret protegido e validar a assinatura do manifest antes de qualquer ação. O workflow `.github/workflows/publish-windows-release.yml` falha fechado até essas dependências e o secret `ANCERYX_UPDATE_MANIFEST_PRIVATE_KEY` estarem configurados. O flag de execução no cliente também precisará ser habilitado explicitamente após os testes.
 
