@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import { X } from 'lucide-react'
 import type { ModalProps } from '@/types/index'
+import { useTranslation } from '@/i18n'
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, dialogClassName }) => {
+  const t = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -62,7 +64,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, dialogC
             <button
               onClick={onClose}
               className="motion-control ml-auto text-text-secondary hover:text-text-primary"
-              aria-label="Fechar"
+              aria-label={t('common.close')}
             >
               <X size={20} />
             </button>

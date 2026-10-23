@@ -158,7 +158,7 @@ const DashboardPage: React.FC = () => {
             type="button"
             onClick={() => setActiveSection('perfil')}
             className="motion-control flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left"
-            aria-label="Abrir meu perfil"
+            aria-label={t('nav.openProfile')}
           >
             <Avatar src={user.avatar} name={displayName} size="sm" className="shrink-0" />
             <span className="min-w-0">
@@ -168,12 +168,12 @@ const DashboardPage: React.FC = () => {
           </button>
         )}
         <div className="flex shrink-0 items-center gap-1">
-          <button type="button" onClick={() => setActiveSection('cobranca')} className="motion-control grid h-10 w-10 place-items-center rounded-xl text-accent-secondary hover:bg-white/5" aria-label="Abrir Anceryx+"><Sparkles size={17} /></button>
-          <button type="button" onClick={() => setSettingsOpen(true)} className="motion-control grid h-10 w-10 place-items-center rounded-xl text-text-secondary hover:bg-white/5" aria-label="Abrir configurações"><Settings size={18} /></button>
+          <button type="button" onClick={() => setActiveSection('cobranca')} className="motion-control grid h-10 w-10 place-items-center rounded-xl text-accent-secondary hover:bg-white/5" aria-label={t('nav.openPremium')}><Sparkles size={17} /></button>
+          <button type="button" onClick={() => setSettingsOpen(true)} className="motion-control grid h-10 w-10 place-items-center rounded-xl text-text-secondary hover:bg-white/5" aria-label={t('nav.openSettings')}><Settings size={18} /></button>
         </div>
       </div>
 
-      <div role="group" aria-label="Acesso às notificações" className="flex h-11 shrink-0 items-center justify-end border-b border-border bg-background-primary px-3 md:px-4">
+      <div role="group" aria-label={t('nav.notificationsAccess')} className="flex h-11 shrink-0 items-center justify-end border-b border-border bg-background-primary px-3 md:px-4">
         <NotificationCenter />
       </div>
 
@@ -186,7 +186,7 @@ const DashboardPage: React.FC = () => {
             <button
               onClick={() => setActiveSection('perfil')}
               className={`group m-2 flex min-h-[56px] w-[calc(100%-1rem)] items-center rounded-2xl border border-border bg-background-tertiary/55 text-left transition-all duration-200 hover:bg-white/5 ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-2.5'}`}
-              aria-label="Ver meu perfil"
+              aria-label={t('nav.viewProfile')}
               title={isCollapsed ? `${displayName} (@${userProfile.handle || user.username})` : undefined}
             >
               <Avatar src={user.avatar} name={displayName} size="sm" className="shrink-0" />
@@ -199,7 +199,7 @@ const DashboardPage: React.FC = () => {
             </button>
           )}
 
-          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2 anceryx-scroll" aria-label="Navegação principal">
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2 anceryx-scroll" aria-label={t('nav.primary')}>
             {NAV_ITEMS.map((item) => {
               const isActive = activeSection === item.section
               return (
@@ -245,22 +245,22 @@ const DashboardPage: React.FC = () => {
             <button
               onClick={() => setSettingsOpen(true)}
               className={`motion-control flex w-full items-center rounded-xl py-2.5 text-sm font-medium text-text-secondary hover:bg-white/5 hover:text-text-primary ${isCollapsed ? 'justify-center px-2' : 'gap-3 px-3'}`}
-              aria-label="Abrir configurações"
-              title={isCollapsed ? 'Configurações' : undefined}
+              aria-label={t('nav.openSettings')}
+              title={isCollapsed ? t('nav.openSettings') : undefined}
             >
               <Settings size={18} className="shrink-0" />
-              {!isCollapsed && <span className="truncate">Configurações</span>}
+              {!isCollapsed && <span className="truncate">{t('nav.settings')}</span>}
             </button>
           </div>
 
-          <button type="button" onClick={() => { const nextCollapsed = !isCollapsed; if (sidebarMode === 'automatic' && activeSection === 'foruns') setForumSidebarOverride(nextCollapsed); else setSidebarCollapsed(nextCollapsed) }} className="motion-control mx-2 mb-2 grid h-9 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/5 hover:text-text-primary" aria-label={isCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'} aria-expanded={!isCollapsed} title={isCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}>
+          <button type="button" onClick={() => { const nextCollapsed = !isCollapsed; if (sidebarMode === 'automatic' && activeSection === 'foruns') setForumSidebarOverride(nextCollapsed); else setSidebarCollapsed(nextCollapsed) }} className="motion-control mx-2 mb-2 grid h-9 shrink-0 place-items-center rounded-xl text-text-secondary hover:bg-white/5 hover:text-text-primary" aria-label={isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')} aria-expanded={!isCollapsed} title={isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}>
             {isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
           </button>
 
           <div
             className={`absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize group ${isCollapsed ? 'hidden' : ''}`}
             onMouseDown={onDragStart}
-            role="separator" aria-orientation="vertical" aria-label="Redimensionar barra lateral" tabIndex={0}
+            role="separator" aria-orientation="vertical" aria-label={t('nav.resizeSidebar')} tabIndex={0}
             onKeyDown={(event) => { if (event.key === 'ArrowLeft') setSidebarWidth(sidebarWidth - 8); if (event.key === 'ArrowRight') setSidebarWidth(sidebarWidth + 8) }}
           >
             <div className="mx-auto h-full w-px bg-transparent transition-colors group-hover:bg-purple-500/60" />
@@ -277,7 +277,7 @@ const DashboardPage: React.FC = () => {
         </main>
       </div>
 
-      <nav className="grid shrink-0 grid-cols-4 border-t border-border bg-background-secondary/98 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação principal mobile">
+      <nav className="grid shrink-0 grid-cols-4 border-t border-border bg-background-secondary/98 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label={t('nav.mobile')}>
         {NAV_ITEMS.map((item) => {
           const isActive = activeSection === item.section
           return (

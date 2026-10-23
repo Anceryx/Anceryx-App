@@ -1,4 +1,12 @@
-﻿# Registro de alterações
+# Registro de alterações
+
+# Em desenvolvimento
+
+## Internacionalização — autenticação e navegação global
+
+- Adicionadas 96 chaves de interface em português brasileiro, inglês e espanhol para autenticação, recuperação de senha, MFA, navegação e componentes compartilhados.
+- A preferência de idioma agora atualiza `document.documentElement.lang` imediatamente e permanece salva neste dispositivo.
+- O ErrorBoundary, notificações globais e rótulos da navegação acompanham a troca de idioma sem reiniciar o aplicativo.
 
 ## Ajustes locais — 22/10/2026
 

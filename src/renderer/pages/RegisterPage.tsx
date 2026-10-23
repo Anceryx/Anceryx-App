@@ -7,16 +7,19 @@ import { isValidEmail, isStrongPassword, doPasswordsMatch } from '@/utils/valida
 import { ANCERYX_PRIVACY_URL, ANCERYX_TERMS_URL } from '@/lib/premium'
 import { authApi, AuthApiError } from '@/services/authApi'
 import { isWebPlatform, openExternalUrl, safeReturnTo } from '@/platform/platform'
+import { useTranslation } from '@/i18n'
+import type { TranslationKey } from '@/i18n'
 
 interface FieldErrors {
-  name?: string
-  username?: string
-  email?: string
-  password?: string
-  confirmPassword?: string
+  name?: TranslationKey
+  username?: TranslationKey
+  email?: TranslationKey
+  password?: TranslationKey
+  confirmPassword?: TranslationKey
 }
 
 const RegisterPage: React.FC = () => {
+  const t = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const register = useAuthStore((s) => s.register)
@@ -38,16 +41,16 @@ const RegisterPage: React.FC = () => {
     const unsubscribe = window.electronAPI?.auth.onGoogleHandoff((payload) => {
       if (payload.error) {
         const messages: Record<string, string> = {
-          access_denied: 'O cadastro com Google foi cancelado.',
-          INVALID_OAUTH_STATE: 'A autenticação Google expirou ou já foi usada. Inicie novamente.',
-          INVALID_OAUTH_NONCE: 'A autenticação Google não pôde ser validada. Inicie novamente.',
-          GOOGLE_OAUTH_FAILED: 'Não foi possível validar a autenticação com Google. Tente novamente.',
-          GOOGLE_USERNAME_UNAVAILABLE: 'Não foi possível reservar um nome de usuário para esta conta. Tente novamente.',
-          oauth_failed: 'O Google não concluiu a autenticação. Inicie novamente.',
-          GOOGLE_ACCOUNT_EXISTS: 'Já existe uma conta com este e-mail. Entre com ela e vincule o Google nas configurações.',
-          GOOGLE_EMAIL_UNVERIFIED: 'Confirme o e-mail da conta Google antes de criar uma conta Anceryx.',
+          access_denied: '__i18n:auth.registerGoogleCancelled',
+          INVALID_OAUTH_STATE: '__i18n:auth.googleStateInvalid',
+          INVALID_OAUTH_NONCE: '__i18n:auth.googleNonceInvalid',
+          GOOGLE_OAUTH_FAILED: '__i18n:auth.googleFailed',
+          GOOGLE_USERNAME_UNAVAILABLE: '__i18n:auth.googleUsernameUnavailable',
+          oauth_failed: '__i18n:auth.googleFailed',
+          GOOGLE_ACCOUNT_EXISTS: '__i18n:auth.accountGoogleExists',
+          GOOGLE_EMAIL_UNVERIFIED: '__i18n:auth.googleEmailUnverified',
         }
-        setGlobalError(messages[payload.error] ?? 'Não foi possível concluir o cadastro com Google.')
+        setGlobalError(messages[payload.error] ?? '__i18n:auth.registerGoogleFailed')
         return
       }
       if (payload.code) void consumeGoogleHandoff(payload.code).catch((reason: unknown) => {
@@ -55,7 +58,7 @@ const RegisterPage: React.FC = () => {
       })
     })
     return unsubscribe
-  }, [consumeGoogleHandoff])
+  }, [consumeGoogleHandoff, t])
 
   const startGoogleRegistration = async () => {
     setGoogleLoading(true)
@@ -77,22 +80,22 @@ const RegisterPage: React.FC = () => {
     const errors: FieldErrors = {}
 
     if (!name.trim()) {
-      errors.name = 'Nome é obrigatório'
+      errors.name = 'auth.nameRequired'
     }
     if (!/^[a-zA-Z0-9_.]{3,30}$/.test(username.trim())) {
-      errors.username = 'Use 3-30 caracteres: letras, numeros, _ ou .'
+      errors.username = 'auth.usernameInvalid'
     }
 
     if (!isValidEmail(email)) {
-      errors.email = 'E-mail inválido'
+      errors.email = 'auth.emailInvalid'
     }
 
     if (!isStrongPassword(password)) {
-      errors.password = 'A senha deve ter pelo menos 8 caracteres'
+      errors.password = 'auth.passwordWeak'
     }
 
     if (!doPasswordsMatch(password, confirmPassword)) {
-      errors.confirmPassword = 'As senhas não coincidem'
+      errors.confirmPassword = 'auth.passwordMismatch'
     }
 
     setFieldErrors(errors)
@@ -109,7 +112,7 @@ const RegisterPage: React.FC = () => {
       await register(username.trim(), name.trim(), email.trim(), password)
       navigate(safeReturnTo(location.state))
     } catch (err) {
-      setGlobalError(err instanceof Error ? err.message : 'Erro ao registrar')
+      setGlobalError(err instanceof Error ? err.message : '__i18n:auth.registerFailed')
     } finally {
       setIsLoading(false)
     }
@@ -124,7 +127,7 @@ const RegisterPage: React.FC = () => {
             Anceryx
           </h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Crie sua conta
+            {t('auth.createAccount')}
           </p>
         </div>
 
@@ -132,60 +135,60 @@ const RegisterPage: React.FC = () => {
         <div className="bg-background-secondary border border-border rounded-xl p-8 shadow-xl">
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             <Input
-              label="Nome"
+              label={t('auth.name')}
               type="text"
-              placeholder="Seu nome"
+              placeholder={t('auth.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              error={fieldErrors.name}
+              error={fieldErrors.name ? t(fieldErrors.name) : undefined}
               disabled={isLoading}
               autoComplete="name"
               required
             />
 
             <Input
-              label="Nome de usuario"
+              label={t('auth.username')}
               type="text"
-              placeholder="seu.usuario"
+              placeholder={t('auth.usernamePlaceholder')}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              error={fieldErrors.username}
+              error={fieldErrors.username ? t(fieldErrors.username) : undefined}
               disabled={isLoading}
               autoComplete="username"
               required
             />
 
             <Input
-              label="E-mail"
+              label={t('auth.email')}
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              error={fieldErrors.email}
+              error={fieldErrors.email ? t(fieldErrors.email) : undefined}
               disabled={isLoading}
               autoComplete="email"
               required
             />
 
             <Input
-              label="Senha"
+              label={t('auth.password')}
               type="password"
-              placeholder="Mínimo 8 caracteres"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              error={fieldErrors.password}
+              error={fieldErrors.password ? t(fieldErrors.password) : undefined}
               disabled={isLoading}
               autoComplete="new-password"
               required
             />
 
             <Input
-              label="Confirmar Senha"
+              label={t('auth.confirmPassword')}
               type="password"
-              placeholder="Repita a senha"
+              placeholder={t('auth.confirmPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              error={fieldErrors.confirmPassword}
+              error={fieldErrors.confirmPassword ? t(fieldErrors.confirmPassword) : undefined}
               disabled={isLoading}
               autoComplete="new-password"
               required
@@ -193,7 +196,7 @@ const RegisterPage: React.FC = () => {
 
             {globalError && (
               <p className="text-sm text-accent-red text-center" role="alert">
-                {globalError}
+                {globalError?.startsWith('__i18n:') ? t(globalError.slice(8) as TranslationKey) : globalError}
               </p>
             )}
 
@@ -204,23 +207,23 @@ const RegisterPage: React.FC = () => {
               loading={isLoading}
               className="w-full mt-1"
             >
-              Criar Conta
+              {t('auth.createAccountAction')}
             </Button>
           </form>
 
-          <div className="my-4 flex items-center gap-3 text-xs text-text-secondary"><span className="h-px flex-1 bg-border" />ou<span className="h-px flex-1 bg-border" /></div>
+          <div className="my-4 flex items-center gap-3 text-xs text-text-secondary"><span className="h-px flex-1 bg-border" />{t('auth.or')}<span className="h-px flex-1 bg-border" /></div>
           <Button type="button" variant="secondary" size="lg" className="w-full" loading={googleLoading} disabled={isLoading} onClick={() => void startGoogleRegistration()}>
-            Criar conta com Google
+            {t('auth.registerGoogle')}
           </Button>
 
           <p className="mt-4 text-center text-xs text-text-secondary/70">
-            Ao criar uma conta, você concorda com os{' '}
+            {t('auth.registerTermsIntro')}{' '}
             <button
               type="button"
               onClick={() => openExternalUrl(ANCERYX_TERMS_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
-              Termos de Uso
+              {t('auth.terms')}
             </button>{' '}
             e a{' '}
             <button
@@ -228,20 +231,20 @@ const RegisterPage: React.FC = () => {
               onClick={() => openExternalUrl(ANCERYX_PRIVACY_URL)}
               className="cursor-pointer text-blue-400 hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-sm"
             >
-              Privacidade
+              {t('auth.privacy')}
             </button>
             .
           </p>
 
           {/* Login link */}
           <p className="mt-6 text-center text-sm text-text-secondary">
-            Já tem conta?{' '}
+            {t('auth.hasAccount')}{' '}
             <Link
               to="/login"
               state={location.state}
               className="text-accent hover:underline font-medium"
             >
-              Entrar
+              {t('auth.submitLogin')}
             </Link>
           </p>
         </div>

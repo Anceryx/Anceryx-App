@@ -6,11 +6,14 @@ import ReleaseNotesModal from '@/components/layout/ReleaseNotesModal'
 import { useAuthStore } from '@/store/authStore'
 import TitleBar from '@/components/layout/TitleBar'
 import { isWebPlatform } from '@/platform/platform'
+import { useUIStore } from '@/store/uiStore'
 
 const App: React.FC = () => {
   useTheme()
+  const locale = useUIStore((state) => state.locale)
   const initialize = useAuthStore((state) => state.initialize)
   useEffect(() => { void initialize() }, [initialize])
+  useEffect(() => { document.documentElement.lang = locale }, [locale])
   useLayoutEffect(() => {
     document.documentElement.style.setProperty('--app-titlebar-height', isWebPlatform ? '0px' : '2.25rem')
     return () => { document.documentElement.style.removeProperty('--app-titlebar-height') }
