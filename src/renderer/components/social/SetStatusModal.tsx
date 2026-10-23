@@ -6,6 +6,7 @@ import { useSocialStore } from '@/store/socialStore'
 import { useUIStore } from '@/store/uiStore'
 import { socialApi } from '@/services/socialApi'
 import type { CustomStatus } from '@/types/social'
+import { useTranslation } from '@/i18n'
 import {
   insertAtCursor,
   isOnlyAnceryxEmojis,
@@ -19,15 +20,15 @@ interface SetStatusModalProps {
   currentStatus: CustomStatus | null
 }
 
-const CLEAR_OPTIONS = [
-  { value: 'none', label: 'Não limpar' },
-  { value: '1h', label: 'Em 1 hora' },
-  { value: '3h', label: 'Em 3 horas' },
-  { value: '12h', label: 'Em 12 horas' },
-  { value: '24h', label: 'Em 24 horas' },
-]
-
 const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, currentStatus }) => {
+  const t = useTranslation()
+  const CLEAR_OPTIONS = [
+    { value: 'none', label: t('status.clearNone') },
+    { value: '1h', label: t('status.clear1h') },
+    { value: '3h', label: t('status.clear3h') },
+    { value: '12h', label: t('status.clear12h') },
+    { value: '24h', label: t('status.clear24h') },
+  ]
   const [text, setText] = useState('')
   const [clearAfter, setClearAfter] = useState('none')
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -59,7 +60,7 @@ const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, curren
       useSocialStore.getState().setCustomStatus(trimmed ? { text: trimmed, expiresAt } : null)
       onClose()
     } catch (error) {
-      useUIStore.getState().addNotification(error instanceof Error ? error.message : 'Falha ao atualizar status.', 'error')
+      useUIStore.getState().addNotification(error instanceof Error ? error.message : t('status.updateFailed'), 'error')
     } finally {
       setSaving(false)
     }
@@ -72,7 +73,7 @@ const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, curren
       useSocialStore.getState().setCustomStatus(null)
       onClose()
     } catch (error) {
-      useUIStore.getState().addNotification(error instanceof Error ? error.message : 'Falha ao remover status.', 'error')
+      useUIStore.getState().addNotification(error instanceof Error ? error.message : t('status.removeFailed'), 'error')
     } finally {
       setSaving(false)
     }
@@ -98,7 +99,7 @@ const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, curren
   const onlyEmoji = isOnlyAnceryxEmojis(previewText)
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Definir seu status">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('status.title')}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 rounded-lg border border-border bg-background-tertiary px-2 py-1.5 focus-within:ring-2 focus-within:ring-accent">
@@ -107,17 +108,17 @@ const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, curren
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, 100))}
-              placeholder="No que você está pensando?"
+              placeholder={t('status.placeholder')}
               maxLength={100}
               className="min-w-0 flex-1 bg-transparent px-1 py-1 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none"
-              aria-label="Texto do status"
+              aria-label={t('status.textAria')}
             />
             <EmojiPicker
               isOpen={emojiOpen}
               onToggle={() => setEmojiOpen((value) => !value)}
               onClose={() => setEmojiOpen(false)}
               onSelect={handleInsertEmoji}
-              label="Abrir emojis para status"
+              label={t('status.emojiAria')}
             />
           </div>
           <span className="self-end text-xs text-text-secondary" aria-live="polite">
@@ -126,31 +127,31 @@ const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, curren
         </div>
 
         <div className="rounded-xl border border-border bg-background-tertiary/70 p-3">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">Preview</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{t('status.preview')}</p>
           {previewText ? (
             <div
               className={[
                 'inline-flex max-w-full items-center rounded-xl border border-border bg-background-secondary px-3 py-1.5 text-text-primary',
                 onlyEmoji ? 'text-2xl leading-none' : 'text-sm',
               ].join(' ')}
-              aria-label={`Preview do status: ${previewText}`}
+              aria-label={t('status.previewAria', { name: previewText })}
             >
               <span className="truncate">{renderAnceryxText(previewText)}</span>
             </div>
           ) : (
-            <p className="text-sm text-text-secondary">Sem status definido.</p>
+            <p className="text-sm text-text-secondary">{t('status.empty')}</p>
           )}
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            Limpar status
+            {t('status.clearLabel')}
           </label>
           <select
             value={clearAfter}
             onChange={(e) => setClearAfter(e.target.value)}
             className="w-full rounded-lg border border-border bg-background-tertiary px-3 py-2 text-sm text-text-primary transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent"
-            aria-label="Limpar status após"
+            aria-label={t('status.clearAria')}
           >
             {CLEAR_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -168,17 +169,17 @@ const SetStatusModal: React.FC<SetStatusModalProps> = ({ isOpen, onClose, curren
               disabled={saving}
               className="text-xs text-text-secondary transition-colors hover:text-red-400"
             >
-              Limpar status agora
+              {t('status.clearNow')}
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" size="sm" loading={saving} onClick={() => void handleSave()}>
-              Salvar
+              {t('common.save')}
             </Button>
           </div>
         </div>

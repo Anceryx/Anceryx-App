@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/index'
 import { useSocialStore } from '@/store/socialStore'
 import { useAuthStore } from '@/store/authStore'
 import { mediaApi } from '@/services/mediaApi'
+import { useTranslation } from '@/i18n'
+import { useUIStore } from '@/store/uiStore'
 
 interface ForumCardProps {
   forum: Forum
@@ -49,6 +51,8 @@ export const ForumAvatar: React.FC<{ iconImage: string | null; name: string; siz
 }
 
 const ForumCard: React.FC<ForumCardProps> = ({ forum, onClick }) => {
+  const t = useTranslation()
+  const locale = useUIStore((s) => s.locale)
   const toggleForumJoin = useSocialStore((s) => s.toggleForumJoin)
   const currentUserId   = useAuthStore((s) => s.user?.id ?? '')
   const isOwner         = forum.ownerId === currentUserId
@@ -79,10 +83,10 @@ const ForumCard: React.FC<ForumCardProps> = ({ forum, onClick }) => {
                   background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
                   color: 'var(--color-accent)',
                 }}
-                title="Você criou este fórum"
+                title={t('forums.createdByYou')}
               >
                 <Crown size={9} />
-                Criado por você
+                {t('forums.createdByYou')}
               </span>
             )}
           </div>
@@ -106,12 +110,12 @@ const ForumCard: React.FC<ForumCardProps> = ({ forum, onClick }) => {
           <div className="flex items-center gap-3 mt-2">
             <span className="flex items-center gap-1 text-xs text-text-secondary">
               <Users size={11} aria-hidden="true" />
-              {forum.memberCount.toLocaleString('pt-BR')}
+              {forum.memberCount.toLocaleString(locale)}
             </span>
             <span className="text-xs text-text-secondary" aria-hidden="true">·</span>
             <span className="flex items-center gap-1 text-xs text-text-secondary">
               <FileText size={11} aria-hidden="true" />
-              {forum.postCount.toLocaleString('pt-BR')} posts
+              {forum.postCount.toLocaleString(locale)} {t('forums.posts')}
             </span>
           </div>
         </div>
@@ -125,9 +129,9 @@ const ForumCard: React.FC<ForumCardProps> = ({ forum, onClick }) => {
             toggleForumJoin(forum.id)
           }}
           className="shrink-0"
-          aria-label={forum.isJoined ? `Sair de ${forum.name}` : `Entrar em ${forum.name}`}
+          aria-label={t(forum.isJoined ? 'forums.leaveAria' : 'forums.joinAria', { name: forum.name })}
         >
-          {forum.isJoined ? 'Entrado' : 'Entrar'}
+          {forum.isJoined ? t('forums.joined') : t('forums.join')}
         </Button>
       </div>
     </div>

@@ -8,6 +8,16 @@
 - A preferência de idioma agora atualiza `document.documentElement.lang` imediatamente e permanece salva neste dispositivo.
 - O ErrorBoundary, notificações globais e rótulos da navegação acompanham a troca de idioma sem reiniciar o aplicativo.
 
+## Internacionalização — Feed e ações sociais
+
+- O Feed, os cartões e detalhes de publicações, comentários, denúncias, bloqueios e status personalizados agora usam o catálogo nos três idiomas.
+- Conteúdos escritos pelos usuários, incluindo publicações, comentários, nomes e status, continuam no idioma original.
+- O relatório de cobertura inclui as novas chamadas de tradução; a métrica automatizada continua sendo parcial.
+- Os controles e a sobreposição de chamadas, a seleção de dispositivos e rótulos da navegação de configurações também acompanham o idioma ativo.
+- A tela de notificações localiza ações, estados vazios e falhas padrão; textos dinâmicos recebidos da API permanecem intactos.
+- O compositor e o estado vazio de conversas localizam anexos, envio e acessibilidade sem alterar o texto digitado ou recebido nas mensagens.
+- O cartão de fórum localiza seus rótulos e formata contagens conforme o idioma, mantendo nomes, descrições e tags definidos pelos membros.
+
 ## Ajustes locais — 22/10/2026
 
 - A barra de título do Electron agora aparece também no login e no cadastro, sem duplicação no Dashboard; o build web mantém a barra oculta.

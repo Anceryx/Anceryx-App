@@ -1,12 +1,15 @@
 import React from 'react'
 import { MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/index'
+import { useTranslation } from '@/i18n'
 
 interface EmptyConversationProps {
   onNewConversation: () => void
 }
 
-const EmptyConversation: React.FC<EmptyConversationProps> = ({ onNewConversation }) => (
+const EmptyConversation: React.FC<EmptyConversationProps> = ({ onNewConversation }) => {
+  const t = useTranslation()
+  return (
   <div className="flex-1 flex flex-col items-center justify-center gap-5 select-none">
     <div
       className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -15,9 +18,9 @@ const EmptyConversation: React.FC<EmptyConversationProps> = ({ onNewConversation
       <MessageCircle size={36} style={{ color: 'var(--color-accent)' }} strokeWidth={1.5} />
     </div>
     <div className="text-center">
-      <p className="text-lg font-semibold text-text-primary mb-1">Suas mensagens</p>
+      <p className="text-lg font-semibold text-text-primary mb-1">{t('messages.yourMessages')}</p>
       <p className="text-sm text-text-secondary max-w-xs leading-relaxed">
-        Inicie conversas com pessoas que você segue ou retome uma conversa existente.
+        {t('messages.emptyConversationHint')}
       </p>
     </div>
     <Button
@@ -26,9 +29,10 @@ const EmptyConversation: React.FC<EmptyConversationProps> = ({ onNewConversation
       onClick={onNewConversation}
       leftIcon={<MessageCircle size={15} />}
     >
-      Enviar mensagem
+      {t('messages.send')}
     </Button>
   </div>
-)
+  )
+}
 
 export default EmptyConversation
