@@ -38,4 +38,5 @@ test('lists the base role and every custom role in the member card labels', () =
   ])
 
   assert.deepEqual(getCommunityMemberRoleLabels(user), ['Moderador', 'Equipe', 'Revisor'])
+  assert.deepEqual(getCommunityMemberRoleLabels(user, (key) => ({ 'forumManage.role.moderator': 'Moderator' })[key] ?? key), ['Moderator', 'Equipe', 'Revisor'])
 })

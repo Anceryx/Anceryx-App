@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **1149**.
-- Strings visíveis fixas detectadas: **724**.
-- Cobertura medida neste subconjunto: **61.3%**.
+- Chamadas de tradução detectadas: **1771**.
+- Strings visíveis fixas detectadas: **391**.
+- Cobertura medida neste subconjunto: **81.9%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -48,7 +48,7 @@
 | `components/social/CommunityForumChannel.tsx` | 38 | 4 | 90.5% |
 | `components/social/CommunityManagementModal.tsx` | 7 | 0 | 100.0% |
 | `components/social/CommunityVoiceActionButtons.tsx` | 14 | 0 | 100.0% |
-| `components/social/CommunityWorkspaceModal.tsx` | 55 | 352 | 13.5% |
+| `components/social/CommunityWorkspaceModal.tsx` | 672 | 19 | 97.3% |
 | `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
 | `components/social/ForumDetailModal.tsx` | 0 | 9 | 0.0% |
@@ -85,4 +85,9 @@
 | `pages/SavedPostsPage.tsx` | 11 | 0 | 100.0% |
 | `pages/WebOAuthCallbackPage.tsx` | 0 | 3 | 0.0% |
 | `router/WebDeepLinkPage.tsx` | 0 | 1 | 0.0% |
+| `utils/communityMemberGroups.ts` | 5 | 0 | 100.0% |
 | `utils/communityVoiceControls.ts` | 0 | 6 | 0.0% |
+
+## Verificação manual do workspace comunitário
+
+O `CommunityWorkspaceModal.tsx` e o `CommunityForumChannel.tsx` foram revisados, incluindo rótulos JSX, estados montados em callbacks, confirmações, mensagens de erro locais, filtros, formulários e atributos de acessibilidade. Os 19 itens contabilizados como texto fixo no modal principal são marcadores visuais (`#`, `ID:`, setas e separadores), o exemplo técnico `community.role.update` e o prefixo de URI `anceryx://invite/`; não restaram frases estáticas de interface nesse componente. Os erros livres retornados pela API, nomes de pessoas/canais/cargos personalizados e conteúdo de mensagens, publicações, tópicos e recursos continuam sem tradução automática.

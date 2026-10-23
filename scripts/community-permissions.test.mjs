@@ -20,4 +20,5 @@ test('grants only administrator to owner and handles members with no custom role
 test('shows Portuguese permission labels while preserving unknown API values', () => {
   assert.equal(communityPermissionLabel('manageChannels'), 'Gerenciar canais')
   assert.equal(communityPermissionLabel('futurePermission'), 'futurePermission')
+  assert.equal(communityPermissionLabel('manageChannels', (key) => key === 'workspacePermission.manageChannels' ? 'Manage channels' : key), 'Manage channels')
 })

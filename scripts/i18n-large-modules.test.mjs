@@ -18,6 +18,13 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'communityForum.topic', 'communityForum.topicTitle', 'communityForum.topicContent',
     'communityForum.writeReply', 'communityForum.noPosts', 'communityForum.postsDescription',
     'communityForum.loadTopicsFailed', 'communityForum.repliesCount',
+    'workspaceUi.applyFilters', 'workspaceUi.noCases', 'workspaceUi.auditTitle',
+    'workspaceUi.noAuditEvents', 'workspaceUi.caseDetails', 'workspaceUi.changedTo',
+    'workspaceUi.globalNavigation', 'workspaceUi.sectionFeed', 'workspaceUi.sectionMessages',
+    'workspaceUi.sectionExplore', 'workspaceUi.sectionForums', 'workspaceUi.sectionProfile',
+    'workspaceUi.appealReviewerDisabled', 'workspaceUi.confirmAdministrativeCorrection',
+    'workspaceUi.reportsRange', 'workspaceUi.casesRange', 'workspaceUi.eventsRange',
+    'workspaceUi.inviteUseCount', 'workspaceUi.microphoneMuted', 'workspaceUi.speaking',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -32,6 +39,22 @@ assert.match(forumManagement, /t\(roleLabelKey\(member\.role\)\)/)
 assert.match(forumManagement, /t\(reportStatusKey\(report\.status\)\)/)
 assert.match(communityWorkspace, /t\('workspaceModeration\.bannedMembers'\)/)
 assert.match(communityWorkspace, /t\('workspaceModeration\.moderationAction'\)/)
+assert.match(communityWorkspace, /t\('workspaceUi\.applyFilters'\)/)
+assert.match(communityWorkspace, /t\('workspaceUi\.auditTitle'\)/)
+assert.match(communityWorkspace, /communityPermissionLabel\(permission, t\)/)
+assert.match(communityWorkspace, /getCommunityMemberRoleLabels\(member, t\)/)
+assert.match(communityWorkspace, /t\('workspaceUi\.appealDecisionDate', \{ value:/)
+assert.match(communityWorkspace, /t\('workspaceUi\.reportsRange', \{ start:/)
+assert.match(communityWorkspace, /t\('workspaceUi\.casesRange', \{ start:/)
+assert.match(communityWorkspace, /t\('workspaceUi\.eventsRange', \{ start:/)
+for (const untranslatedLabel of [
+  'Não foi possível carregar a auditoria do fórum.', 'Sem resultados',
+  'Registrar advertência', 'Pendente — aguardando revisor independente',
+  'Preferências do Fórum', 'Confirmar presença', 'Microfone ativo',
+  'Mensagem excluída', 'Voltar ao conteúdo',
+]) {
+  assert.ok(!communityWorkspace.includes(`'${untranslatedLabel}'`), `CommunityWorkspaceModal still has a fixed UI string: ${untranslatedLabel}`)
+}
 
 // These values come from members or server records and must remain as received.
 assert.match(profile, /\{shown\.bio\}/)
@@ -42,6 +65,9 @@ assert.match(forumManagement, /\{topic\.title\}/)
 assert.match(forumManagement, /\{topic\.content\}/)
 assert.match(forumManagement, /\{report\.reason\}/)
 assert.match(communityWorkspace, /renderAnceryxText\(message\.content\)/)
+assert.match(communityWorkspace, /\{report\.message\.content\}/)
+assert.match(communityWorkspace, /\{item\.reason\}/)
+assert.match(communityWorkspace, /\{appeal\.statement\}/)
 assert.match(communityForumChannel, /t\('communityForum\.postsDescription'\)/)
 assert.match(communityForumChannel, /t\('communityForum\.loadTopicsFailed'\)/)
 

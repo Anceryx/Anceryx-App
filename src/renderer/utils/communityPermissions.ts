@@ -1,4 +1,34 @@
 import type { CommunityMemberDto, CommunityRoleDto } from '@/services/communityApi'
+import type { TranslationKey } from '@/i18nCatalog'
+
+const COMMUNITY_PERMISSION_TRANSLATION_KEYS: Record<string, TranslationKey> = {
+  manageCommunity: 'workspacePermission.manageCommunity',
+  viewChannel: 'workspacePermission.viewChannel',
+  sendMessages: 'workspacePermission.sendMessages',
+  readHistory: 'workspacePermission.readHistory',
+  createTopics: 'workspacePermission.createTopics',
+  manageTopics: 'workspacePermission.manageTopics',
+  manageChannels: 'workspacePermission.manageChannels',
+  manageRoles: 'workspacePermission.manageRoles',
+  manageMessages: 'workspacePermission.manageMessages',
+  manageNicknames: 'workspacePermission.manageNicknames',
+  manageInvites: 'workspacePermission.manageInvites',
+  manageEvents: 'workspacePermission.manageEvents',
+  kickMembers: 'workspacePermission.kickMembers',
+  banMembers: 'workspacePermission.banMembers',
+  timeoutMembers: 'workspacePermission.timeoutMembers',
+  attachFiles: 'workspacePermission.attachFiles',
+  embedLinks: 'workspacePermission.embedLinks',
+  mentionEveryone: 'workspacePermission.mentionEveryone',
+  addReactions: 'workspacePermission.addReactions',
+  useExternalEmojis: 'workspacePermission.useExternalEmojis',
+  connect: 'workspacePermission.connect',
+  speak: 'workspacePermission.speak',
+  muteMembers: 'workspacePermission.muteMembers',
+  deafenMembers: 'workspacePermission.deafenMembers',
+  moveMembers: 'workspacePermission.moveMembers',
+  viewAuditLog: 'workspacePermission.viewAuditLog',
+}
 
 export const COMMUNITY_PERMISSION_LABELS: Record<string, string> = {
   administrator: 'Administrador',
@@ -41,6 +71,8 @@ export function getEffectiveCommunityPermissions(member: Pick<CommunityMemberDto
   return [...new Set([...base, ...member.roles.flatMap((role: CommunityRoleDto) => role.permissions)])]
 }
 
-export function communityPermissionLabel(permission: string): string {
+export function communityPermissionLabel(permission: string, translate?: (key: TranslationKey) => string): string {
+  const key = COMMUNITY_PERMISSION_TRANSLATION_KEYS[permission]
+  if (key && translate) return translate(key)
   return COMMUNITY_PERMISSION_LABELS[permission] ?? permission
 }
