@@ -7,6 +7,7 @@ const forumManagement = await readFile(new URL('../src/renderer/components/socia
 const communityWorkspace = await readFile(new URL('../src/renderer/components/social/CommunityWorkspaceModal.tsx', import.meta.url), 'utf8')
 const communityForumChannel = await readFile(new URL('../src/renderer/components/social/CommunityForumChannel.tsx', import.meta.url), 'utf8')
 const forumDetail = await readFile(new URL('../src/renderer/components/social/ForumDetailModal.tsx', import.meta.url), 'utf8')
+const createForum = await readFile(new URL('../src/renderer/components/social/CreateForumModal.tsx', import.meta.url), 'utf8')
 const privacySettings = await readFile(new URL('../src/renderer/components/settings/sections/DadosPrivacidadeSection.tsx', import.meta.url), 'utf8')
 const notificationSettings = await readFile(new URL('../src/renderer/components/settings/sections/NotificacoesSection.tsx', import.meta.url), 'utf8')
 const profileSettings = await readFile(new URL('../src/renderer/components/settings/sections/PerfilSection.tsx', import.meta.url), 'utf8')
@@ -41,6 +42,11 @@ for (const locale of ['pt-BR', 'en-US', 'es-ES']) {
     'forumManage.memberJoined', 'forumManage.decisionRecorded', 'forumManage.removeTagAria',
     'forums.detailAria', 'forums.joinFailed', 'forums.openCommunity', 'forums.enterCommunity',
     'forums.created', 'forums.contentsTitle', 'forums.contentsDescription',
+    'createForum.title', 'createForum.template.blank.title', 'createForum.template.games.title',
+    'createForum.template.friends.title', 'createForum.template.community.title',
+    'createForum.templateCounts', 'createForum.visibility.public', 'createForum.visibility.private',
+    'createForum.validation.nameMin', 'createForum.validation.descriptionRequired',
+    'createForum.validation.tagInvalid', 'createForum.validation.fileType', 'createForum.created',
   ]) {
     assert.ok(messages[locale][key], `${locale} is missing ${key}`)
   }
@@ -115,6 +121,16 @@ assert.match(communityForumChannel, /\{topic\.title\}/)
 assert.match(communityForumChannel, /\{topic\.content\}/)
 assert.match(forumDetail, /renderAnceryxText\(liveForum\.description\)/)
 assert.match(forumDetail, /\{liveForum\.name\}/)
+for (const key of ['createForum.title', 'createForum.chooseStructure', 'createForum.namePlaceholder', 'createForum.descriptionPlaceholder', 'createForum.visibilityQuestion', 'createForum.purposeNote']) {
+  assert.ok(createForum.includes(`t('${key}')`) || createForum.includes(`aria-label={t('${key}')}`), `CreateForumModal does not use ${key}`)
+}
+assert.match(createForum, /value=\{name\}/)
+assert.match(createForum, /value=\{description\}/)
+assert.match(createForum, /name,\s*description,/)
+assert.match(createForum, /t\(category\.nameKey\)/)
+assert.match(createForum, /t\(channel\.nameKey\)/)
+assert.match(createForum, /validateForumTags\(tags, t\)/)
+assert.match(createForum, /validateUpload\(file, ICON_MIMES, ICON_MAX, t\)/)
 assert.match(privacySettings, /\{user\.displayName\}/)
 assert.match(privacySettings, /\{user\.username\}/)
 assert.match(profileSettings, /\{request\.user\.displayName\}/)

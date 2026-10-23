@@ -2,9 +2,9 @@
 
 > Estimativa automatizada de rótulos estáticos declarados em JSX e chamadas `t()`/`translate()`. Textos dinâmicos do servidor, mensagens montadas em arrays/objetos fora dos campos reconhecidos e strings em código imperativo não entram na métrica. Este percentual é uma medida parcial, não cobertura total de toda a interface.
 
-- Chamadas de tradução detectadas: **2091**.
-- Strings visíveis fixas detectadas: **170**.
-- Cobertura medida neste subconjunto: **92.5%**.
+- Chamadas de tradução detectadas: **2152**.
+- Strings visíveis fixas detectadas: **129**.
+- Cobertura medida neste subconjunto: **94.3%**.
 - Catálogos exigidos: pt-BR, en-US e es-ES; paridade, placeholders e chaves vazias são verificados por `npm run test:i18n-catalog`.
 
 | Módulo | Chamadas traduzidas | Strings fixas detectadas | Cobertura medida |
@@ -49,7 +49,7 @@
 | `components/social/CommunityManagementModal.tsx` | 7 | 0 | 100.0% |
 | `components/social/CommunityVoiceActionButtons.tsx` | 14 | 0 | 100.0% |
 | `components/social/CommunityWorkspaceModal.tsx` | 672 | 19 | 97.3% |
-| `components/social/CreateForumModal.tsx` | 0 | 44 | 0.0% |
+| `components/social/CreateForumModal.tsx` | 50 | 3 | 94.3% |
 | `components/social/ForumCard.tsx` | 6 | 2 | 75.0% |
 | `components/social/ForumDetailModal.tsx` | 11 | 1 | 91.7% |
 | `components/social/ForumManagementModal.tsx` | 147 | 3 | 98.0% |
@@ -88,8 +88,11 @@
 | `utils/communityMemberGroups.ts` | 5 | 0 | 100.0% |
 | `utils/communityVoiceControls.ts` | 0 | 6 | 0.0% |
 
-## Verificação manual desta etapa
+## Revisão manual: criação de fóruns
 
-Foram revisados os controles, estados e rótulos acessíveis das páginas de cobrança e do resultado do checkout; das seções de privacidade, notificações, perfil, atualizações, histórico de login e segurança; e dos modais de gerenciamento, detalhes e perfil de fórum. Os textos de interface desses módulos usam o catálogo nos três idiomas. Nomes, biografias, descrições, tópicos, denúncias, evidências, justificativas e notas de versão recebidos como conteúdo permanecem intactos.
+`components/social/CreateForumModal.tsx` foi revisado. O inventário automatizado encontra três ocorrências fixas (`*`, `*` e `#`), classificadas como símbolos de campo obrigatório e prefixos visuais de tags/canais; nenhuma delas é texto de interface que precise de tradução. Os rótulos, modelos, campos, validações, mensagens locais, opções de privacidade e controles de imagem usam o catálogo pt-BR, en-US e es-ES. Nome, descrição e tags digitados pelo usuário e erros livres recebidos da API permanecem sem tradução.
 
-A medição estática aponta 98,0% em `ForumManagementModal.tsx`, 91,7% em `ForumDetailModal.tsx` e 94,0% em `UserProfileModal.tsx`; os itens restantes são símbolos, separadores e conteúdo dinâmico preservado. A medição global de 92,5% é parcial. O inventário ainda identifica outros módulos com textos fixos, incluindo criação de fóruns, Explore, Feed, perfil e telas de autenticação; essas áreas continuam pendentes de revisão.
+## Pendências do inventário
+
+O relatório estático mede apenas os padrões descritos no cabeçalho e não identifica automaticamente se cada literal restante é texto de interface, conteúdo dinâmico, símbolo ou identificador técnico. A lista priorizada de módulos que ainda exigem revisão manual é: `ExplorePage.tsx`, `FeedPage.tsx`, `PerfilPage.tsx`, `DashboardPage.tsx`, `ForumCard.tsx`, `PostDetailModal.tsx`, `CommunityWorkspaceModal.tsx`, `CommunityForumChannel.tsx`, `UserProfileModal.tsx`, componentes de mensagens e configurações listados na tabela. Os valores restantes devem ser classificados no código antes de serem tratados como falta de tradução; percentuais deste inventário não provam cobertura integral.
+| `utils/validators.ts` | 11 | 0 | 100.0% |

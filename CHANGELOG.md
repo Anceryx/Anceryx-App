@@ -2,6 +2,7 @@
 - O workspace comunitário agora localiza controles, moderação, recursos, convites, canais, mensagens, eventos e voz em pt-BR, inglês e espanhol. Permissões, conteúdo enviado por membros e mensagens de erro livres da API permanecem preservados.
 - O modal de publicações do Fórum também localiza seus controles e estados, mantendo títulos, respostas e conteúdo dos membros no idioma original.
 - O modal de detalhes do Fórum agora localiza ações, contadores, descrição acessível e estados nos três idiomas; nomes e descrições do fórum continuam sendo conteúdo original.
+- A criação de fóruns localiza os modelos iniciais, configurações, validações, upload de imagens e controles em português, inglês e espanhol. Os campos digitados e erros livres da API continuam preservados.
 
 # Em desenvolvimento
 
